@@ -6,7 +6,7 @@
 | Tipo | Funcionalidade |
 | Prioridade | Should |
 | Estimativa | 5 pts |
-| Sprint | — (fora de sprint, v2.57.1) |
+| Sprint | — (fora de sprint, v2.57.1; celular deitado na v2.57.2) |
 | Status | Concluído |
 | Dependências | OG-417 |
 | Regras de negócio | RN-UI-01, RN-UI-08 |
@@ -17,6 +17,7 @@ Como jogador no celular ou no tablet, quero entrar numa partida Casual com contr
 
 ## Contexto
 - Contribuição da comunidade: PR #27 (Marco Lima, `0xmlima`), mesclado com squash em 2026-11-01 (bfe2a42) sobre a v2.57.0, com as travas de 3963e2d.
+- Celular deitado: PR #28 (Marco Lima), mesclado com squash em 2026-11-01 (b69a96d), v2.57.2.
 - Revê a D-80 (antes: partida só no computador).
 
 ## Escopo
@@ -24,10 +25,12 @@ Como jogador no celular ou no tablet, quero entrar numa partida Casual com contr
 - HUD em pé (modo `celular` de `screen-layout.ts`): sala em cima, barra, minimapa e placar lado a lado; o placar desliza entre time vermelho, azul e chat (HTML, com campo de mensagem).
 - Controles de toque (`TouchControls.tsx`): direcional de 8 direções, andar sozinho, Shift e Alt fixos, tiro e tiro automático; F8, menu e F2 nos cantos da sala; tocar num mapa da lista F2 vota nele.
 - Travas: toque e HUD do celular só em sala Casual; no celular, sala Ranked ou da OutCup leva ao aviso "só no computador"; a página da OutCup no celular não mostra "Entrar na sala"; controles escondidos no lobby Ranked e no fim da partida.
+- Deitado (#28): sala no meio com a altura toda, minimapa com FPS e ping na coluna da direita, placar e chat abrem por ícones na coluna da esquerda; direcional na borda corre junto; canvas acompanha o contêiner ao virar o aparelho; sem a dica "Esc abre o menu" no toque.
 - `vite.phone.config.ts` e `DEVELOPMENT.md`: testar no aparelho pelo ngrok.
 
 ## Critérios de aceite
 - [x] No celular, "Jogar agora (experimental)" entra numa sala Casual e os controles de toque movem, atiram e votam.
 - [x] Computador sem mudança no HUD nem na lista F2.
+- [x] Deitado, a sala ocupa a altura toda e placar e chat abrem pelos ícones.
 - [x] Ranked e OutCup não abrem a partida no celular.
 - [x] lint, typecheck, build e testes passam.
