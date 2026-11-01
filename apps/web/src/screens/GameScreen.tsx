@@ -5,7 +5,7 @@
 // ?server=ws://...&sala=ID&name=NOME&lag=MS&loss=PCT (partida; lag/loss simulam rede ruim; a senha
 // da sala vem do lobby no estado da navegação),
 // ?demo=JOGADORES (partida local) e ?map=NOME&theme=TEMA&rooms=N&room=X,Y (visualizador de mapa).
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { message } from '@outgun/protocol';
 import { joinName, useAccount } from '../app/account.js';
@@ -373,11 +373,36 @@ export default function GameScreen() {
     { kind: 'action', label: t('Leave game'), onActivate: () => void navigate('/') },
   ];
 
+  // celular e tablet: sem Esc, sem "Esc abre o menu" (o × do canto abre)
+  const escHint = isTouchGame() ? null : t('Press Esc for the menu');
+  const hint =
+    status?.kind === 'error'
+      ? status.message
+      : status?.kind === 'ready'
+        ? escHint
+          ? `${status.map.title} - ${escHint}`
+          : status.map.title
+        : status?.kind === 'connecting'
+          ? t('Connecting to the game server...')
+          : status?.kind === 'reconnecting'
+            ? t('Connection lost. Reconnecting...')
+            : escHint;
+
   return (
-    <div ref={gameRef} className={phone ? 'game game-touch' : 'game'} data-status={status?.kind ?? 'loading'} data-game-over={gameOver ? '1' : '0'} data-map={status?.kind === 'ready' ? status.map.title : ''}>
+    <div
+      ref={gameRef}
+      className={phone ? 'game game-touch' : 'game'}
+      // deitado: largura das colunas dos lados da sala, para centralizar os controles nelas (ui/phone.css)
+      style={phone && screen?.landscape ? ({ '--side-l': `${screen.playfield.x}px`, '--side-r': `${screen.screenW - screen.playfield.x - screen.playfield.w}px` } as CSSProperties) : undefined}
+      data-status={status?.kind ?? 'loading'} data-game-over={gameOver ? '1' : '0'} data-map={status?.kind === 'ready' ? status.map.title : ''}>
       <div ref={hostRef} className="game-host" />
       {phone && !inLobby && !matchEnd && <TouchControls host={host} />}
-      {phone && screen?.scoreboard && <PhoneBoard host={host} place={screen.scoreboard} onTyping={setTyping} />}
+      {phone && screen?.scoreboard && <PhoneBoard
+          host={host}
+          place={screen.scoreboard}
+          onTyping={setTyping}
+          {...(screen.landscape ? { icons: { left: 0, width: screen.playfield.x } } : {})}
+        />}
       {phone && !menuOpen && screen && (
         <>
           <button type="button" className="touch-corner touch-vote"
@@ -421,21 +446,9 @@ export default function GameScreen() {
           <InGameOptions tab={optionsTab} onTab={setOptionsTab} onClose={() => setOptionsTab(null)} />
         ) : menuOpen ? (
           <Menu caption="Outgun" items={items} onBack={() => setMenuOpen(false)} />
-        ) : lobby || (onlineKey !== null && status?.kind === 'ready') ? null : (
+        ) : lobby || (onlineKey !== null && status?.kind === 'ready') || !hint ? null : (
           <p className="game-hint">
-            <BitmapText
-              text={
-                status?.kind === 'error'
-                  ? status.message
-                  : status?.kind === 'ready'
-                    ? `${status.map.title} - ${t('Press Esc for the menu')}`
-                    : status?.kind === 'connecting'
-                      ? t('Connecting to the game server...')
-                      : status?.kind === 'reconnecting'
-                        ? t('Connection lost. Reconnecting...')
-                        : t('Press Esc for the menu')
-              }
-            />
+            <BitmapText text={hint} />
           </p>
         )}
       </div>
