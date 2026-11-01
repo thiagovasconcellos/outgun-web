@@ -62,7 +62,8 @@ function LockIcon({ label }: { label: string }) {
 }
 
 const seriesLabel = (bestOf: SeriesBestOf) => (bestOf === 1 ? 'Single game' : `Best of ${bestOf}`);
-const isFull = (r: RoomSummary) => r.online && r.players >= r.maxPlayers;
+// o bot substituto não fecha a vaga: quem foi substituído volta pela conta e o bot sai (OG-262); o servidor recusa os demais
+const isFull = (r: RoomSummary) => r.online && r.humans >= r.maxPlayers;
 
 /** Aba Ranked do lobby. */
 /** "Assistir" de uma sala da lista (OG-320, D-57): qualquer sala no ar, cheia, em jogo ou com senha; não ativa a linha. */
