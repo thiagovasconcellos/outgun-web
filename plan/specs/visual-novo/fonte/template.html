@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visual novo do Outgun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Um mundo só (escuro, como a partida): painel de controle à esquerda da sala, texto em coluna de leitura. */
+  --bg: #10141d;
+  --panel: #171d29;
+  --line: #2a3345;
+  --ink: #e6e9f0;
+  --muted: #98a1b3;
+  --accent: #f2b24c;
+  --red: #ff5a4f;
+  --blue: #5b8cff;
+  --ok: #57c78a;
+  --warn: #f2b24c;
+  --bad: #ff6b6b;
+  --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--mono); font-size: .88em; background: #1f2636; padding: .05em .35em; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2rem, 4vw, 2.9rem); letter-spacing: .01em; }
+h2 { font-size: 1.65rem; margin-bottom: .6rem; }
+h3 { font-size: 1.12rem; margin-bottom: .35rem; }
+p { margin: 0 0 .8rem; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+.read { max-width: 72ch; }
+header.top { padding: 40px 0 26px; border-bottom: 1px solid var(--line); }
+.eyebrow { font-family: var(--mono); font-size: .8rem; color: var(--accent); letter-spacing: .08em; text-transform: uppercase; margin-bottom: .6rem; }
+.lede { font-size: 1.12rem; color: var(--muted); margin-top: .8rem; }
+.notice { margin-top: 18px; border: 1px solid #5a4620; background: #2a2214; color: #f4dcaa; padding: 12px 16px; border-radius: 8px; font-size: .95rem; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 18px; font-size: .92rem; }
+nav.toc a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--line); }
+nav.toc a:hover { color: var(--ink); }
+section { padding: 40px 0; border-bottom: 1px solid var(--line); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 14px; }
+.fact { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-size: .93rem; }
+.fact b { display: block; font-family: var(--display); font-size: 1.05rem; color: var(--ink); margin-bottom: 2px; }
+.fact span { color: var(--muted); }
+
+/* demo */
+.demo { display: grid; grid-template-columns: 300px 1fr; gap: 18px; margin-top: 16px; align-items: start; }
+@media (max-width: 960px) { .demo { grid-template-columns: 1fr; } }
+.ctrl { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 14px; font-size: .9rem; }
+.ctrl label.row { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; padding: 3px 0; }
+.ctrl label.row input { margin-top: 4px; accent-color: var(--accent); }
+.ctrl .tag { font-family: var(--mono); font-size: .7rem; padding: 0 5px; border-radius: 3px; margin-left: 4px; white-space: nowrap; }
+.tag.free { background: #1d3a2a; color: #8fe0b0; }
+.tag.low { background: #3a341d; color: #f0d68a; }
+.tag.mid { background: #3e2a1c; color: #f5b07a; }
+.tag.high { background: #44201f; color: #ff9c96; }
+.grp h4 { margin: 0 0 4px; font-family: var(--display); font-size: .95rem; color: var(--accent); font-weight: 600; letter-spacing: .02em; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button, .btn { font: inherit; font-size: .85rem; background: #222a3a; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #1a1406; border-color: var(--accent); font-weight: 600; }
+.seg button:hover, .btn:hover { border-color: var(--accent); }
+select { font: inherit; background: #222a3a; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 100%; }
+.stage { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.canvas-wrap { position: relative; width: 100%; aspect-ratio: 472 / 354; background: #000; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); touch-action: none; }
+#view { width: 100%; height: 100%; display: block; cursor: ew-resize; }
+.lbl { position: absolute; top: 10px; font-family: var(--display); font-size: .85rem; background: rgba(10,12,18,.78); padding: 3px 9px; border-radius: 4px; pointer-events: none; }
+.lbl.l { left: 10px; } .lbl.r { right: 10px; color: var(--accent); }
+.stagebar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: .88rem; color: var(--muted); }
+.stagebar .stat { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+#mini { width: 100%; image-rendering: pixelated; cursor: pointer; border-radius: 6px; border: 1px solid var(--line); background: #0b0e14; }
+.hint { color: var(--muted); font-size: .82rem; }
+
+/* tabelas */
+.tablewrap { overflow-x: auto; margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 820px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font-family: var(--display); font-weight: 600; background: #1a2130; color: var(--ink); position: sticky; top: 0; }
+tr:last-child td { border-bottom: 0; }
+td.n { white-space: nowrap; font-weight: 600; }
+td small, .muted { color: var(--muted); }
+tr.cat td { background: #141a26; font-family: var(--display); color: var(--accent); font-weight: 600; letter-spacing: .02em; }
+.pill { display: inline-block; font-family: var(--mono); font-size: .72rem; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+.pill.y { background: #1d3a2a; color: #8fe0b0; }
+.pill.m { background: #3a341d; color: #f0d68a; }
+.pill.n { background: #44201f; color: #ff9c96; }
+.pill.d { background: #23304a; color: #a9c2ff; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 12px; margin-top: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; font-size: .93rem; }
+.card ul { margin: .3rem 0 0; padding-left: 1.1rem; }
+.card li { margin: .15rem 0; }
+.phase { border-left: 3px solid var(--accent); }
+.pts { font-family: var(--mono); color: var(--accent); font-size: .85rem; }
+ol.q { padding-left: 0; list-style: none; counter-reset: q; display: grid; gap: 10px; margin-top: 14px; }
+ol.q li { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px 12px 64px; position: relative; }
+ol.q li::before { counter-increment: q; content: "P" counter(q); position: absolute; left: 16px; top: 11px; font-family: var(--display); font-weight: 700; color: var(--accent); font-size: 1.05rem; }
+ol.q li b { display: block; margin-bottom: 2px; }
+ol.q li .opts { color: var(--muted); font-size: .9rem; }
+.care { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 12px; }
+footer { padding: 30px 0 50px; color: var(--muted); font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Proposta para a comunidade · novembro de 2026</div>
+    <h1>Visual novo do Outgun</h1>
+    <p class="lede read">Os mapas continuam exatamente os mesmos (arquivo, colisão, física e CRC do replay). Muda só a pintura: chão, paredes, luz, efeitos de combate e atmosfera. Esta página mostra o que dá para fazer, quanto custa, de onde pode vir a arte e o que precisamos decidir juntos.</p>
+    <div class="notice"><b>Sobre a demonstração:</b> a sala abaixo usa mapas e texturas <b>reais</b> do jogo (temas Grass, Ice e Metal). Os jogadores, foguetes e explosões são simulados e os efeitos novos são um <b>rascunho feito com código</b>, sem arte final. A ideia é mostrar o tipo de ganho. A arte de verdade seria produzida depois, com as ferramentas e fontes listadas mais abaixo.</div>
+    <nav class="toc" aria-label="Seções">
+      <a href="#hoje">Como é hoje</a>
+      <a href="#demo">Demonstração</a>
+      <a href="#catalogo">Todas as melhorias</a>
+      <a href="#fontes">Fontes e ferramentas</a>
+      <a href="#producao">Quem faz a arte</a>
+      <a href="#referencias">Jogos de referência</a>
+      <a href="#fases">Fases e estimativa</a>
+      <a href="#cuidados">Cuidados</a>
+      <a href="#perguntas">Perguntas</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section id="hoje">
+  <div class="wrap">
+    <h2>Como o jogo desenha hoje</h2>
+    <p class="read">Ponto de partida técnico, para todo mundo falar da mesma coisa. Um detalhe importante: os mapas do Outgun <b>não são de blocos</b> (tiles). Paredes e áreas de chão são formas geométricas (retângulos, triângulos e arcos). Por isso as técnicas de "autotiling" dos editores de pixel art não servem direto aqui. O equivalente é tratar as <b>bordas das formas</b>, que é o que a demonstração faz.</p>
+    <div class="facts">
+      <div class="fact"><b>PixiJS 8</b><span>Motor de desenho do cliente (WebGL). Aceita filtros, shaders, partículas e camadas de luz sem trocar de tecnologia.</span></div>
+      <div class="fact"><b>Sala pintada uma vez</b><span><code>room-painter.ts</code> desenha cada sala num canvas em segundo plano (<code>room-worker.ts</code>) e a imagem vira textura. Tudo o que é estático pode entrar aí sem custo por quadro.</span></div>
+      <div class="fact"><b>6 temas</b><span>Colors, Grass, Grid, Grid 2, Ice e Metal. Texturas de 128×128 (Grid usa 32×32, parte do Metal usa 16×16), repetidas pela sala.</span></div>
+      <div class="fact"><b>8 chãos e 8 paredes</b><span>Chão: normal 1–3, vermelho, azul, gelo, areia e lama. Parede: normal 1–3, vermelho, azul, metal, madeira e borracha (RN-MAP-04). Textura não afeta a física.</span></div>
+      <div class="fact"><b>Sala de 472×354</b><span>Unidades do mundo. Paredes: <code>rect</code>, <code>tri</code> e <code>circ</code> (com arco e furo). O mesmo formato desde o original de 2011.</span></div>
+      <div class="fact"><b>Opções gráficas</b><span><code>graphics-options.ts</code> já guarda as preferências por jogador. Novas camadas entram ali como liga/desliga e perfis.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="wrap">
+    <h2>Demonstração: clássico × novo na mesma sala</h2>
+    <p class="read">Arraste o divisor sobre a sala para comparar. Escolha mapa, sala (clique no minimapa) e tema. Cada camada pode ser ligada e desligada. A etiqueta ao lado diz o custo de desempenho: <span class="tag free">grátis</span> entra na pintura da sala e não pesa durante a partida; <span class="tag low">leve</span>, <span class="tag mid">médio</span> e <span class="tag high">alto</span> rodam a cada quadro.</p>
+    <div class="demo">
+      <div class="ctrl" id="ctrl">
+        <div class="grp">
+          <h4>Mapa e tema</h4>
+          <label for="mapSel" class="hint">Mapa</label>
+          <select id="mapSel"></select>
+          <canvas id="mini" width="240" height="135" aria-label="Minimapa: clique para escolher a sala"></canvas>
+          <div class="hint" id="roomInfo"></div>
+          <div class="seg" id="themeSeg" role="group" aria-label="Tema" style="margin-top:8px"></div>
+        </div>
+        <div class="grp">
+          <h4>Perfil</h4>
+          <div class="seg" id="presetSeg" role="group" aria-label="Perfil"></div>
+        </div>
+        <div id="toggles"></div>
+      </div>
+      <div class="stage">
+        <div class="canvas-wrap" id="cw">
+          <canvas id="view" aria-label="Sala do mapa com visual clássico à esquerda e novo à direita"></canvas>
+          <div class="lbl l">Clássico (hoje)</div>
+          <div class="lbl r">Novo (proposta)</div>
+        </div>
+        <div class="stagebar">
+          <div class="seg" id="cmpSeg" role="group" aria-label="Comparação"></div>
+          <button class="btn" id="pauseBtn" type="button">Pausar</button>
+          <button class="btn" id="burstBtn" type="button">Disparar foguetes</button>
+          <span>Custo do lado novo neste navegador: <span class="stat" id="perf">–</span></span>
+        </div>
+        <p class="hint">O custo medido inclui o desenho em Canvas 2D desta página. No jogo, o PixiJS faz o mesmo na placa de vídeo, em geral mais rápido. Serve para comparar camadas entre si, não como número final.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="catalogo">
+  <div class="wrap">
+    <h2>Todas as melhorias possíveis</h2>
+    <p class="read">Catálogo completo, por camada. "Na demo" indica o que dá para ver acima. "Risco competitivo" é o quanto a melhoria pode atrapalhar a leitura da partida ou dar vantagem a quem liga ou desliga.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Melhoria</th><th>O que é</th><th>Desempenho</th><th>Trabalho</th><th>Risco competitivo</th><th>Na demo</th></tr></thead>
+        <tbody id="catBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="fontes">
+  <div class="wrap">
+    <h2>Fontes, bibliotecas e ferramentas</h2>
+    <p class="read">O repositório é público e GPL, e os assets vão junto. Por isso a licença decide o que pode entrar. <span class="pill y">pode</span> = livre para usar e redistribuir (CC0, MIT, GPL, CC-BY com crédito no <code>CREDITS.md</code>). <span class="pill m">conferir</span> = depende de cada item ou da versão. <span class="pill n">não</span> = a licença proíbe redistribuir ou uso comercial, então serve só como inspiração. <span class="pill d">só ferramenta</span> = o programa pode ser pago, mas o que você produz com ele é seu.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Nome</th><th>O que oferece</th><th>Licença / preço</th><th>No repo</th><th>Uso sugerido no Outgun</th></tr></thead>
+        <tbody id="provBody"></tbody>
+      </table>
+    </div>
+    <p class="hint" style="margin-top:10px">Licenças e preços conferidos até meados de 2026. Antes de usar qualquer item, abrir a página e confirmar a licença daquele arquivo específico.</p>
+  </div>
+</section>
+
+<section id="producao">
+  <div class="wrap">
+    <h2>Quem faz a arte</h2>
+    <p class="read">O código das camadas (sombra, luz, partículas, opções) é trabalho nosso, em cards normais. Já a arte dos temas novos precisa de uma origem. Os caminhos podem ser combinados:</p>
+    <div class="cards">
+      <div class="card"><h3>1. Procedural no Material Maker</h3><p>Texturas montadas por nós (ruído, padrões, desgaste), contínuas nas bordas, já com normal map. Dá para refazer os 16 materiais de cada tema com controle total da paleta.</p><p class="muted"><b>Prós:</b> grátis, licença limpa, fácil de variar. <b>Contras:</b> visual pode ficar "genérico" sem um olho artístico.</p></div>
+      <div class="card"><h3>2. Bancos CC0 + estilização</h3><p>Partir de ambientCG, Poly Haven ou Kenney, reduzir, ajustar à paleta (Lospec) e retocar no Krita, Aseprite ou Pixelorama.</p><p class="muted"><b>Prós:</b> rápido, qualidade alta. <b>Contras:</b> fotos precisam de muito ajuste para combinar com o resto.</p></div>
+      <div class="card"><h3>3. Artistas da comunidade</h3><p>Concurso de temas: regras de tamanho e paleta, licença CC-BY ou GPL, votação no Discord ou no grupo. O tema vencedor entra com crédito no jogo.</p><p class="muted"><b>Prós:</b> identidade própria, comunidade envolvida. <b>Contras:</b> prazo incerto, qualidade variável.</p></div>
+      <div class="card"><h3>4. Contratar</h3><p>Um artista de pixel art ou texturas (itch.io, ArtStation, Fiverr) com contrato que ceda a licença CC-BY ou GPL.</p><p class="muted"><b>Prós:</b> consistência profissional. <b>Contras:</b> custo (um tema completo fica na ordem de centenas de dólares).</p></div>
+      <div class="card"><h3>5. Geração por IA</h3><p>Ferramentas que geram texturas contínuas e variações. Úteis para rascunho e exploração de estilo.</p><p class="muted"><b>Prós:</b> muito rápido. <b>Contras:</b> direitos autorais incertos, termos variam por serviço e parte da comunidade rejeita. Só com decisão explícita (P7).</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="referencias">
+  <div class="wrap">
+    <h2>Jogos de referência (direção de arte)</h2>
+    <p class="read">Todos vistos de cima e com tiro, que é o que importa para o Outgun. Servem para apontar "quero algo assim", sem copiar arte.</p>
+    <div class="cards">
+      <div class="card"><h3>Enter the Gungeon</h3><p>Paredes com altura falsa e topo visível, muitas partículas sem perder a leitura dos tiros.</p></div>
+      <div class="card"><h3>Nuclear Throne</h3><p>Paleta forte por bioma (cada área uma cor), impacto exagerado com tremor curto e marcas no chão.</p></div>
+      <div class="card"><h3>Hotline Miami</h3><p>Cor e clima como identidade, com efeitos simples. Mostra que estilo vale mais que resolução.</p></div>
+      <div class="card"><h3>Teleglitch</h3><p>Luz e linha de visão como mecânica. Bom exemplo do que <b>não</b> fazer sem pensar no competitivo.</p></div>
+      <div class="card"><h3>Door Kickers</h3><p>Leitura tática limpa vista de cima, com sombras suaves e materiais claros.</p></div>
+      <div class="card"><h3>Heat Signature</h3><p>Luz ambiente forte, contornos legíveis e personagens pequenos que ainda se destacam.</p></div>
+      <div class="card"><h3>Brotato e Vampire Survivors</h3><p>Muitos inimigos e efeitos na tela, sempre com o jogador fácil de achar. Referência de contraste.</p></div>
+      <div class="card"><h3>Running With Rifles</h3><p>Terreno com variação natural (grama, terra, areia) e transições suaves, sem padrão repetido.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="fases">
+  <div class="wrap">
+    <h2>Fases e estimativa</h2>
+    <p class="read">Estimativa preliminar em pontos (a mesma escala dos cards). Cada fase entrega algo visível e pode ir ao beta sozinha. Os cards só são criados depois das respostas.</p>
+    <div class="cards">
+      <div class="card phase"><h3>Fase 1 · Salas estáticas</h3><p class="pts">≈ 12 pts · 1 sprint</p><ul><li>Sombra projetada, oclusão, altura falsa e realce das bordas</li><li>Variação de tom, detalhes semeados por sala e transição entre pisos</li><li>Bases estilizadas</li><li>Tudo na pintura da sala (custo zero por quadro) e com opção para desligar</li></ul></div>
+      <div class="card phase"><h3>Fase 2 · Temas HD</h3><p class="pts">≈ 8 pts + produção de arte</p><ul><li>Grass HD, Ice HD e Metal HD (texturas 256×256 ou 512×512, com variações)</li><li>Normal maps (se a fase 4 tiver luz com relevo)</li><li>Pipeline de assets e licenças no <code>CREDITS.md</code></li><li>Temas clássicos continuam disponíveis</li></ul></div>
+      <div class="card phase"><h3>Fase 3 · Combate</h3><p class="pts">≈ 10 pts · 1 sprint</p><ul><li>Rastro e chama dos foguetes</li><li>Impacto por material (faísca no metal, lasca na madeira, poeira)</li><li>Explosão com onda de choque e marcas que ficam até o fim da partida</li><li>Sombra e brilho de jogadores, bandeiras e power-ups</li></ul></div>
+      <div class="card phase"><h3>Fase 4 · Luz e cor</h3><p class="pts">≈ 8 pts · 1 sprint</p><ul><li>Luz ambiente por tema e luzes pontuais (bandeiras, tiros, explosões)</li><li>Brilho (bloom), correção de cor e vinheta</li><li>Perfis gráficos: Clássico, Competitivo, Equilibrado, Máximo</li></ul></div>
+      <div class="card phase"><h3>Fase 5 · Atmosfera</h3><p class="pts">≈ 5 pts</p><ul><li>Folhas, neve e poeira por tema</li><li>Gelo e lama animados</li><li>Fundo fora do mapa com profundidade</li></ul></div>
+      <div class="card phase"><h3>Fase 6 · Opcional</h3><p class="pts">≈ 8–13 pts</p><ul><li>Relevo com normal maps</li><li>Decorações e luzes posicionadas no mapa (formato do TXT, ver P9)</li><li>Animação dos jogadores (passos, sprite novo)</li><li>Temas sazonais</li></ul></div>
+    </div>
+    <p class="read" style="margin-top:14px"><b>Total:</b> cerca de 43 pts nas fases 1–5 (umas 4 sprints) e 8–13 pts na fase 6. A produção de arte da fase 2 corre em paralelo e depende da resposta da P7.</p>
+  </div>
+</section>
+
+<section id="cuidados">
+  <div class="wrap">
+    <h2>Cuidados</h2>
+    <div class="care">
+      <div class="card"><h3>Leitura acima de beleza</h3><p>Jogadores, foguetes, bandeiras e power-ups precisam se destacar em qualquer tema. As cores dos times não mudam. Nenhum efeito pode esconder um tiro.</p></div>
+      <div class="card"><h3>Visual não muda a colisão</h3><p>A altura falsa da parede é desenhada <b>dentro</b> da forma original, nunca para fora. Se a parede parecer maior do que é, o jogador erra o desvio. A sombra pode sair da parede porque é só escurecimento.</p></div>
+      <div class="card"><h3>Justiça no Ranked</h3><p>Se escuridão, neblina ou sombra dinâmica esconderem alguém, quem desliga a camada ganha vantagem. Essas camadas ficam fora do Ranked ou iguais para todos (P4, P5).</p></div>
+      <div class="card"><h3>Desempenho</h3><p>Notebooks fracos e o Casual no celular. Cada camada tem liga/desliga e o perfil padrão precisa rodar a 60 quadros por segundo numa máquina modesta.</p></div>
+      <div class="card"><h3>HUD intocado</h3><p>Nada disso mexe no placar, no minimapa ou nas barras. A mudança fica no mundo do jogo.</p></div>
+      <div class="card"><h3>Acessibilidade</h3><p>Tremor de tela e flashes vêm desligados por padrão e respeitam a preferência do sistema por menos movimento.</p></div>
+      <div class="card"><h3>Licenças</h3><p>Só entra o que pode ser redistribuído num repositório GPL público, com autor e licença registrados. Shadertoy e pacotes pagos ficam como inspiração.</p></div>
+      <div class="card"><h3>Tamanho do download</h3><p>Texturas HD aumentam o download do cliente web e da Steam. Carregar o tema só quando for usado e comprimir (WebP ou KTX2).</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="perguntas">
+  <div class="wrap">
+    <h2>Perguntas para a comunidade</h2>
+    <p class="read">Respondam pelo número. As opções são sugestões; outra resposta também vale.</p>
+    <ol class="q">
+      <li><b>Qual direção de arte?</b><span class="opts">(a) Clássico melhorado: mesmas cores e texturas, refeitas em alta resolução. (b) Identidade nova: um estilo próprio (pixel art, pintado à mão ou semi-realista). (c) As duas: o clássico melhorado primeiro, temas novos depois.</span></li>
+      <li><b>Refazer os temas atuais ou criar temas novos?</b><span class="opts">Grass HD, Ice HD e Metal HD ao lado dos originais, ou temas inteiramente novos? Os clássicos continuam escolhíveis em qualquer caso.</span></li>
+      <li><b>O visual novo vira o padrão?</b><span class="opts">(a) Padrão para todos, com opção de voltar ao clássico. (b) Opcional: quem quiser liga.</span></li>
+      <li><b>Ranked e OutCup: perfil livre ou travado?</b><span class="opts">(a) Cada um usa o que quiser. (b) Camadas que escondem informação (escuridão, neblina) ficam desligadas para todos. (c) Perfil "Competitivo" obrigatório.</span></li>
+      <li><b>Luz e sombra podem esconder jogadores?</b><span class="opts">Sombras dinâmicas e linha de visão (como no Teleglitch) mudam o jogo. (a) Não, só luz decorativa. (b) Só em salas ou modos específicos. (c) Sim, como modo novo.</span></li>
+      <li><b>Sangue e marcas de morte?</b><span class="opts">(a) Como hoje. (b) Mais detalhados, com opção de desligar. (c) Estilizados, sem sangue (faíscas, tinta da cor do time).</span></li>
+      <li><b>De onde vem a arte?</b><span class="opts">Procedural (Material Maker), bancos CC0, artistas da comunidade (concurso), contratar alguém ou geração por IA? Pode marcar mais de um. Existe orçamento?</span></li>
+      <li><b>Só licenças livres?</b><span class="opts">Proposta: aceitar só CC0, CC-BY e GPL, com crédito no jogo. Concordam?</span></li>
+      <li><b>Os mapas podem ganhar dados visuais opcionais?</b><span class="opts">Por exemplo: tema sugerido, luzes e decorações posicionadas pelo autor. Isso mexe no formato do TXT e nas revisões de mapa (E17). Para os autores, como o Nosferatu: interessa?</span></li>
+      <li><b>O que vem primeiro?</b><span class="opts">Ordenem: salas estáticas, temas HD, combate, luz e cor, atmosfera.</span></li>
+      <li><b>Tremor de tela e flashes?</b><span class="opts">(a) Nunca. (b) Opcional, desligado por padrão. (c) Opcional, ligado por padrão.</span></li>
+      <li><b>No celular (Casual)?</b><span class="opts">(a) Mesmo visual. (b) Versão leve (só as camadas grátis). (c) Clássico.</span></li>
+      <li><b>Jogadores com animação?</b><span class="opts">Sprite novo com passos e recuo do tiro entra nesta leva ou fica para depois?</span></li>
+      <li><b>Clima e hora do dia?</b><span class="opts">Neve, folhas e poeira por tema. E variação de dia, tarde e noite por partida: sim, não ou só em salas privadas?</span></li>
+      <li><b>Algum jogo que vocês querem como referência?</b><span class="opts">Além da lista acima, mandem nomes ou prints.</span></li>
+    </ol>
+  </div>
+</section>
+</main>
+<footer><div class="wrap">Outgun Web · proposta de visual novo · os mapas mostrados são de seus autores (Nosferatu, Kiss e equipe do Outgun original), texturas dos temas originais do jogo (GPL).</div></footer>
+
+<script>
+"use strict";
+const TEX = "__TEX__";
+const MAPS = "__MAPS__";
+
+/* ---------- catálogo e fontes ---------- */
+const CAT = [
+  ["Paredes"],
+  ["Sombra projetada", "Sombra suave das paredes no chão, sempre para o mesmo lado (sol fixo).", "grátis", "baixo", "nenhum", "sim"],
+  ["Oclusão ambiente", "Escurecimento leve do chão colado na parede. Dá volume sem mudar formas.", "grátis", "baixo", "nenhum", "sim"],
+  ["Altura falsa (face frontal)", "Faixa inferior da parede mais escura, como se víssemos a lateral. Desenhada dentro da forma.", "grátis", "baixo", "baixo (ver Cuidados)", "sim"],
+  ["Realce das bordas", "Luz no canto de cima e sombra no de baixo. Separa a parede do chão.", "grátis", "baixo", "nenhum", "sim"],
+  ["Topo e lateral com texturas diferentes", "Topo com acabamento (grama, telhado, chapa) e lateral com tijolo, concreto ou madeira.", "grátis", "médio", "nenhum", "parcial"],
+  ["Desgaste nas quinas", "Lascas, ferrugem e musgo semeados nas quinas das formas.", "grátis", "médio", "nenhum", "não"],
+  ["Paredes reagem a tiros", "Faísca no metal, lasca na madeira, poeira no concreto, quique visível na borracha.", "leve", "médio", "nenhum", "sim"],
+  ["Chão"],
+  ["Variação de tom", "Manchas grandes de ruído que quebram a repetição dos 128×128.", "grátis", "baixo", "nenhum", "sim"],
+  ["Detalhes semeados", "Tufos, pedras, rachaduras, rebites e manchas de óleo sorteados com semente pela sala: sempre iguais no mesmo mapa.", "grátis", "baixo", "baixo (não pode parecer item)", "sim"],
+  ["Transição entre pisos", "Borda suave entre chão normal e gelo, areia ou lama.", "grátis", "baixo", "nenhum", "sim"],
+  ["Bases estilizadas", "Círculo da bandeira com anel e marcas, mesmo raio e cor do time.", "grátis", "baixo", "nenhum", "sim"],
+  ["Pisos animados", "Brilho correndo no gelo, lama se mexendo, anel da base girando.", "leve", "baixo", "nenhum", "sim"],
+  ["Texturas HD", "Texturas de 256×256 ou 512×512 com 2–4 variações cada.", "grátis", "arte", "nenhum", "não"],
+  ["Pegadas e rastros", "Pegadas na lama, areia e neve que somem com o tempo.", "leve", "médio", "baixo (revela caminho)", "não"],
+  ["Combate e entidades"],
+  ["Rastro de foguete", "Fumaça e chama atrás do foguete, brilho na ponta.", "leve", "baixo", "nenhum (ajuda a ver)", "sim"],
+  ["Explosão completa", "Clarão, onda de choque, faíscas, fumaça e detritos.", "médio", "médio", "baixo", "sim"],
+  ["Marcas persistentes", "Queimados de explosão que ficam no chão até o fim da partida.", "leve", "baixo", "nenhum", "sim"],
+  ["Sombra dos jogadores", "Sombra elíptica sob jogadores, bandeiras e power-ups.", "leve", "baixo", "nenhum", "sim"],
+  ["Jogadores com volume", "Sombreado e contorno que destacam o jogador do chão.", "leve", "baixo", "nenhum", "sim"],
+  ["Bandeira tremulando", "Pano animado e brilho da cor do time.", "leve", "baixo", "nenhum", "sim"],
+  ["Power-ups vivos", "Flutuam, pulsam e brilham, cada um com sua cor.", "leve", "baixo", "nenhum", "sim"],
+  ["Rastro do turbo e escudo", "Rastro de velocidade com turbo e bolha brilhante no escudo.", "leve", "baixo", "nenhum", "não"],
+  ["Animação dos jogadores", "Sprite novo com passos, recuo do tiro e morte animada.", "leve", "arte", "nenhum", "não"],
+  ["Deathbringer com distorção", "Onda que distorce o fundo (filtro de deslocamento).", "médio", "médio", "nenhum", "não"],
+  ["Tremor de tela", "Sacudida curta nas explosões próximas. Desligado por padrão.", "grátis", "baixo", "baixo (acessibilidade)", "sim"],
+  ["Luz, cor e pós-processamento"],
+  ["Luz 2D", "Luz ambiente por tema e luzes coloridas em bandeiras, tiros e explosões.", "médio", "médio", "médio se escurecer demais", "sim"],
+  ["Brilho (bloom)", "Fontes de luz vazam um pouco ao redor.", "médio", "baixo", "baixo", "sim"],
+  ["Correção de cor por tema", "Cada tema com uma temperatura (tarde quente, gelo frio, metal neutro).", "leve", "baixo", "nenhum", "sim"],
+  ["Vinheta", "Bordas da tela um pouco mais escuras.", "leve", "baixo", "baixo", "sim"],
+  ["Modo retrô CRT", "Linhas de varredura, para quem gosta do clima de 2011.", "leve", "baixo", "nenhum", "sim"],
+  ["Relevo com normal maps", "A luz reage ao relevo das texturas (tijolo, chapa).", "alto", "alto + arte", "nenhum", "não"],
+  ["Sombras dinâmicas / visão", "Paredes bloqueiam a luz e a visão (estilo Teleglitch).", "alto", "alto", "alto: muda o jogo", "não"],
+  ["Ambiente"],
+  ["Partículas de ambiente", "Folhas na grama, neve no gelo, poeira e brasas no metal.", "leve", "baixo", "baixo", "sim"],
+  ["Sombras de nuvens", "Manchas suaves passando devagar pelo mapa.", "leve", "baixo", "baixo", "não"],
+  ["Fundo fora do mapa", "O que fica além da borda ganha profundidade (paralaxe) em vez de cor sólida.", "leve", "médio", "nenhum", "não"],
+  ["Hora do dia", "Dia, tarde ou noite por partida, mudando luz e cor.", "médio", "médio", "médio", "não"],
+  ["Temas sazonais", "Natal, festa junina, Halloween: só troca de texturas e partículas.", "grátis", "arte", "nenhum", "não"],
+  ["Infraestrutura"],
+  ["Perfis gráficos", "Clássico, Competitivo, Equilibrado e Máximo, com ajuste camada a camada.", "–", "baixo", "–", "sim"],
+  ["Atlas de texturas e compressão", "Menos trocas de textura na GPU e download menor (WebP/KTX2).", "ganho", "médio", "–", "não"],
+  ["Prévia de tema", "O <code>map:preview</code> gera imagens dos mapas com o tema novo para revisar sem jogar.", "–", "baixo", "–", "não"],
+];
+const PROV = [
+  ["Efeitos e código (rodam no jogo)"],
+  ["PixiJS 8 (núcleo)", "Já usamos. ParticleContainer para dezenas de milhares de partículas, filtros, shaders próprios, RenderTexture para marcas no chão, modos de mistura.", "MIT · grátis", "y", "Base de tudo: partículas, camadas de luz, marcas persistentes.", "https://pixijs.com"],
+  ["pixi-filters", "Cerca de 40 filtros prontos para o Pixi 8: Glow, AdvancedBloom, Shockwave, DropShadow, Bevel, Outline, Godray, ColorMap (LUT de cor), Adjustment, CRT, OldFilm, RGBSplit, ZoomBlur, MotionBlur, KawaseBlur, SimpleLightmap, Reflection.", "MIT · grátis", "y", "Bloom, onda de choque, correção de cor, CRT, contorno de jogadores.", "https://github.com/pixijs/filters"],
+  ["Pixelfx (patch-gg)", "Catálogo de efeitos em JavaScript: partículas, impactos, halos, explosões, com prévia ao vivo.", "conferir no repositório", "m", "Referência visual para explosões, impactos e power-ups.", "https://patch-gg.github.io/pixelfx/"],
+  ["pixi-particle-emitter", "Emissores de partículas configuráveis por JSON, com editor visual. Existem versões da comunidade para o Pixi 8.", "MIT · grátis", "m", "Fumaça, faíscas, neve, folhas. Conferir a versão compatível com o v8.", "https://github.com/pixijs-userland/particle-emitter"],
+  ["pixi-lights", "Iluminação diferida com normal maps para Pixi.", "MIT · grátis", "m", "Parou em versões antigas do Pixi: usar como referência ou portar o shader.", "https://github.com/pixijs/lights"],
+  ["Shadertoy", "Milhares de shaders: água, fogo, distorção, ruído.", "Padrão CC BY-NC-SA 3.0", "n", "Só estudar. A cláusula não comercial é incompatível com GPL.", "https://www.shadertoy.com"],
+  ["The Book of Shaders", "Curso gratuito de GLSL: ruído, padrões, formas, cores.", "texto livre para ler", "d", "Aprender a escrever os shaders de gelo, lama e luz.", "https://thebookofshaders.com"],
+  ["Red Blob Games", "Artigos interativos de visibilidade 2D, luz e ruído para mapas.", "leitura", "d", "Base teórica se um dia houver sombras dinâmicas (P5).", "https://www.redblobgames.com/articles/visibility/"],
+  ["Godot · luzes e sombras 2D", "Documentação de Light2D, LightOccluder2D e normal maps.", "leitura", "d", "Referência de conceitos, sem trocar de motor.", "https://docs.godotengine.org/en/stable/tutorials/2d/2d_lights_and_shadows.html"],
+  ["Texturas e assets prontos"],
+  ["Kenney", "Milhares de assets: Top-down Shooter, Topdown Tanks, Particle Pack, Smoke Particles, tilesets.", "CC0 · grátis", "y", "Partículas (fumaça, faísca, fogo) e rascunhos. O estilo cartum pode destoar.", "https://kenney.nl/assets"],
+  ["ambientCG", "Cerca de 2.000 materiais com cor, normal, rugosidade, oclusão e altura, de 1K a 8K.", "CC0 · grátis", "y", "Base para pisos e paredes HD (reduzir e estilizar). Normal maps prontos.", "https://ambientcg.com"],
+  ["Poly Haven", "Texturas de alta qualidade, HDRIs e modelos 3D.", "CC0 · grátis", "y", "Texturas de terra, pedra, metal e madeira para estilizar.", "https://polyhaven.com/textures"],
+  ["ShareTextures", "Texturas e modelos com mapas completos.", "CC0 · grátis", "y", "Complemento ao ambientCG.", "https://www.sharetextures.com"],
+  ["OpenGameArt", "Acervo enorme da comunidade: tilesets, sprites, partículas.", "CC0, CC-BY, CC-BY-SA, GPL (por item)", "m", "Conferir item a item e registrar autor no CREDITS.md.", "https://opengameart.org"],
+  ["Quaternius", "Modelos 3D low poly (pedras, árvores, caixas, ruínas).", "CC0 · grátis", "y", "Pré-renderizar decorações vistas de cima no Blender.", "https://quaternius.com"],
+  ["game-icons.net", "Mais de 4.000 ícones vetoriais de jogo.", "CC BY 3.0", "y", "Ícones de power-ups e menus, com crédito.", "https://game-icons.net"],
+  ["Lospec", "Milhares de paletas de pixel art e tutoriais.", "paletas de uso livre", "y", "Escolher uma paleta por tema para tudo combinar.", "https://lospec.com/palette-list"],
+  ["itch.io (game assets)", "Milhares de pacotes de pixel art vista de cima, muitos baratos.", "licença de cada autor", "m", "Muitos proíbem redistribuir os arquivos. Só os CC0 ou CC-BY servem para um repo público.", "https://itch.io/game-assets"],
+  ["Textures.com", "Biblioteca enorme de fotos de texturas.", "licença própria", "n", "Proíbe redistribuir o arquivo bruto: incompatível com repo aberto.", "https://www.textures.com"],
+  ["Ferramentas de produção"],
+  ["Material Maker", "Texturas procedurais por nós, contínuas, exporta cor, normal, oclusão e altura.", "MIT · grátis", "d", "Recomendado: refazer os 16 materiais de cada tema.", "https://www.materialmaker.org"],
+  ["Adobe Substance 3D Designer / Sampler", "Padrão da indústria para materiais procedurais e a partir de fotos.", "assinatura paga", "d", "Se alguém da comunidade já usa.", "https://www.adobe.com/products/substance3d.html"],
+  ["Laigter", "Gera normal, specular e parallax a partir de sprites 2D.", "GPL-3.0 · grátis", "d", "Normal maps para paredes e jogadores.", "https://azagaya.itch.io/laigter"],
+  ["SpriteIlluminator", "Normal maps para sprites com pincéis e prévia de luz.", "pago (CodeAndWeb)", "d", "Alternativa ao Laigter com mais controle.", "https://www.codeandweb.com/spriteilluminator"],
+  ["Sprite Lamp", "Normal maps a partir de desenhos iluminados de 4 direções.", "pago", "d", "Para artistas que pintam à mão.", "http://www.snakehillgames.com/spritelamp/"],
+  ["Aseprite", "Editor de pixel art e animação, com camadas e tiles.", "pago (~US$ 20), código disponível", "d", "Sprites de jogadores, power-ups e retoques.", "https://www.aseprite.org"],
+  ["LibreSprite", "Versão livre derivada do Aseprite antigo.", "GPL-2.0 · grátis", "d", "Alternativa gratuita ao Aseprite.", "https://libresprite.github.io"],
+  ["Pixelorama", "Pixel art, animação e tilemaps, feito em Godot.", "MIT · grátis", "d", "Alternativa gratuita, roda até no navegador.", "https://pixelorama.org"],
+  ["Krita", "Pintura digital com modo de repetição (wrap-around) para texturas contínuas.", "GPL · grátis", "d", "Texturas pintadas à mão.", "https://krita.org"],
+  ["GIMP", "Edição de imagem, filtro de tornar contínua, plugins de normal map.", "GPL · grátis", "d", "Ajustes e conversões.", "https://www.gimp.org"],
+  ["Blender", "Modelar e renderizar vista de cima, gerar normal e oclusão.", "GPL · grátis", "d", "Decorações e paredes pré-renderizadas com volume real.", "https://www.blender.org"],
+  ["Free Texture Packer", "Junta imagens num atlas.", "MIT · grátis", "d", "Atlas de partículas e sprites (menos trocas na GPU).", "https://free-tex-packer.com"],
+  ["Geração por IA", "Stable Diffusion com modo de repetição, Scenario, Retro Diffusion e similares.", "termos variam por serviço", "m", "Só rascunho, e só com decisão explícita (P7).", ""],
+];
+(function fillTables() {
+  const cost = { "grátis": "y", "leve": "m", "médio": "n", "alto": "n", "ganho": "y", "–": "d" };
+  document.getElementById("catBody").innerHTML = CAT.map(r => r.length === 1
+    ? `<tr class="cat"><td colspan="6">${r[0]}</td></tr>`
+    : `<tr><td class="n">${r[0]}</td><td>${r[1]}</td><td><span class="pill ${cost[r[2]] || "d"}">${r[2]}</span></td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5] === "sim" ? '<span class="pill y">sim</span>' : r[5] === "parcial" ? '<span class="pill m">parcial</span>' : '<span class="muted">não</span>'}</td></tr>`).join("");
+  const lab = { y: "pode", m: "conferir", n: "não", d: "só ferramenta" };
+  document.getElementById("provBody").innerHTML = PROV.map(r => r.length === 1
+    ? `<tr class="cat"><td colspan="5">${r[0]}</td></tr>`
+    : `<tr><td class="n">${r[5] ? `<a href="${r[5]}" target="_blank" rel="noopener">${r[0]}</a>` : r[0]}</td><td>${r[1]}</td><td><small>${r[2]}</small></td><td><span class="pill ${r[3]}">${lab[r[3]]}</span></td><td>${r[4]}</td></tr>`).join("");
+})();
+
+/* ---------- demo ---------- */
+const RW = 472, RH = 354, PR = 15, FLAGR = 30;
+const DPR = Math.min(2, window.devicePixelRatio || 1);
+const CW = 944, CH = 708;
+const W = Math.round(CW * DPR), H = Math.round(CH * DPR);
+const S = W / RW;                // mundo -> pixel do canvas
+const TS = 0.5 * DPR;            // texel (fiel ao jogo em 1080p: textura de 128 cobre 1/15 da sala)
+const FLOOR = ["floor_normal1","floor_normal2","floor_normal3","floor_red","floor_blue","floor_ice","floor_sand","floor_mud"];
+const WALL = ["wall_normal1","wall_normal2","wall_normal3","wall_red","wall_blue","wall_metal","wall_wood","wall_rubber"];
+const THEMES = ["Grass","Ice","Metal"];
+const TEAM = ["#FF0000", "#0000FF", "#00FF00"];
+const TEAM_SOFT = ["#ff5a4f", "#5b8cff", "#7dff7a"];
+const THEME_LOOK = {
+  Grass: { ambient: "rgb(158,150,170)", tint: "#ffb860", tintA: 0.22, detail: "grass", wallMat: "stone" },
+  Ice:   { ambient: "rgb(150,170,210)", tint: "#7fb2ff", tintA: 0.22, detail: "ice", wallMat: "ice" },
+  Metal: { ambient: "rgb(130,132,150)", tint: "#80a8b8", tintA: 0.2, detail: "metal", wallMat: "metal" },
+};
+
+const OPTS = [
+  ["Paredes", [
+    ["sombra", "Sombra projetada", "free"], ["ao", "Oclusão ambiente", "free"], ["altura", "Altura falsa", "free"], ["bevel", "Realce das bordas", "free"]]],
+  ["Chão", [
+    ["variacao", "Variação de tom", "free"], ["detalhes", "Detalhes semeados", "free"], ["bordas", "Transição entre pisos", "free"], ["bases", "Bases estilizadas", "free"], ["animado", "Pisos e bases animados", "low"]]],
+  ["Combate", [
+    ["entidades", "Jogadores, bandeiras e power-ups com volume", "low"], ["rastro", "Rastro de foguete", "low"], ["impacto", "Explosão e impacto por material", "mid"], ["marcas", "Marcas persistentes", "low"], ["tremor", "Tremor de tela", "free"]]],
+  ["Luz e cor", [
+    ["luz", "Luz 2D", "mid"], ["bloom", "Brilho (bloom)", "mid"], ["cor", "Correção de cor do tema", "low"], ["vinheta", "Vinheta", "low"], ["atmosfera", "Partículas de ambiente", "low"], ["crt", "Modo retrô CRT", "low"]]],
+];
+const STATIC_KEYS = ["sombra","ao","altura","bevel","variacao","detalhes","bordas","bases"];
+const PRESETS = {
+  "Competitivo": ["sombra","ao","altura","bevel","variacao","detalhes","bordas","bases","entidades","rastro","impacto"],
+  "Equilibrado": ["sombra","ao","altura","bevel","variacao","detalhes","bordas","bases","animado","entidades","rastro","impacto","marcas","luz","bloom","cor"],
+  "Máximo": ["sombra","ao","altura","bevel","variacao","detalhes","bordas","bases","animado","entidades","rastro","impacto","marcas","luz","bloom","cor","vinheta","atmosfera"],
+  "Nada": [],
+};
+const TAGTXT = { free: "grátis", low: "leve", mid: "médio", high: "alto" };
+const o = {};
+for (const [, list] of OPTS) for (const [k] of list) o[k] = false;
+for (const k of PRESETS["Equilibrado"]) o[k] = true;
+
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+let paused = reduceMotion;
+let cmp = "split";
+let split = 0.5;
+let theme = "Grass";
+let mapKey = "lola";
+let room = [0, 0];
+
+/* imagens */
+const IMG = {};
+function loadImages() {
+  const ps = [];
+  for (const th of THEMES) {
+    IMG[th] = {};
+    for (const [name, uri] of Object.entries(TEX[th] || {})) {
+      const im = new Image();
+      im.src = uri;
+      IMG[th][name] = im;
+      ps.push(im.decode().catch(() => {}));
+    }
+  }
+  return Promise.all(ps);
+}
+function fills(th) {
+  const t = IMG[th];
+  return {
+    floor: FLOOR.map(n => t[n] || t[FLOOR[0]]),
+    wall: WALL.map(n => t[n] || t[WALL[0]]),
+  };
+}
+function pat(c, img) {
+  const p = c.createPattern(img, "repeat");
+  p.setTransform(new DOMMatrix([TS, 0, 0, TS, 0, 0]));
+  return p;
+}
+
+/* ruído contínuo (para variação de tom) */
+function rngOf(seed) {
+  let a = seed >>> 0;
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+function hashStr(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+const NOISE = (() => {
+  const N = 128, cv = document.createElement("canvas"); cv.width = cv.height = N;
+  const c = cv.getContext("2d"), img = c.createImageData(N, N), r = rngOf(7);
+  const oct = [[4, 0.6], [8, 0.3], [16, 0.1]];
+  const grids = oct.map(([g]) => Array.from({ length: g * g }, r));
+  const sm = t => t * t * (3 - 2 * t);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    let v = 0;
+    oct.forEach(([g, w], i) => {
+      const fx = x / N * g, fy = y / N * g, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = sm(fx - x0), ty = sm(fy - y0);
+      const G = grids[i], at = (a, b) => G[((b % g + g) % g) * g + ((a % g + g) % g)];
+      const top = at(x0, y0) * (1 - tx) + at(x0 + 1, y0) * tx, bot = at(x0, y0 + 1) * (1 - tx) + at(x0 + 1, y0 + 1) * tx;
+      v += (top * (1 - ty) + bot * ty) * w;
+    });
+    const g = Math.max(0, Math.min(255, Math.round((v - 0.5) * 2.2 * 128 + 128)));
+    const k = (y * N + x) * 4; img.data[k] = img.data[k + 1] = img.data[k + 2] = g; img.data[k + 3] = 255;
+  }
+  c.putImageData(img, 0, 0);
+  return cv;
+})();
+
+/* formas */
+function addShape(p, s, sc) {
+  const X = x => x * sc, Y = y => y * sc;
+  if (s[0] === "r") { p.rect(X(s[2]), Y(s[3]), (s[4] - s[2]) * sc, (s[5] - s[3]) * sc); return; }
+  if (s[0] === "t") {
+    let pts = [[s[2], s[3]], [s[4], s[5]], [s[6], s[7]]];
+    const a = (pts[1][0] - pts[0][0]) * (pts[2][1] - pts[0][1]) - (pts[1][1] - pts[0][1]) * (pts[2][0] - pts[0][0]);
+    if (a < 0) pts = [pts[0], pts[2], pts[1]];
+    p.moveTo(X(pts[0][0]), Y(pts[0][1])); p.lineTo(X(pts[1][0]), Y(pts[1][1])); p.lineTo(X(pts[2][0]), Y(pts[2][1])); p.closePath();
+    return;
+  }
+  const cx = X(s[2]), cy = Y(s[3]), ro = s[4] * sc, ri = s[5] * sc, a1 = s[6], a2 = s[7];
+  if (a1 === a2) {
+    p.moveTo(cx + ro, cy); p.arc(cx, cy, ro, 0, 2 * Math.PI, false);
+    if (ri > 0) { p.moveTo(cx + ri, cy); p.arc(cx, cy, ri, 2 * Math.PI, 0, true); }
+  } else {
+    const t1 = (a1 - 90) * Math.PI / 180, t2 = (a2 - 90) * Math.PI / 180;
+    p.moveTo(cx + ro * Math.cos(t1), cy + ro * Math.sin(t1)); p.arc(cx, cy, ro, t1, t2, false);
+    if (ri > 0) p.arc(cx, cy, ri, t2, t1, true); else p.lineTo(cx, cy);
+  }
+  p.closePath();
+}
+function groups(shapes, sc) {
+  const m = new Map();
+  for (const s of shapes) { if (!m.has(s[1])) m.set(s[1], new Path2D()); addShape(m.get(s[1]), s, sc); }
+  return m;
+}
+function union(shapes, sc) { const p = new Path2D(); for (const s of shapes) addShape(p, s, sc); return p; }
+
+/* estado da sala */
+const view = document.getElementById("view");
+view.width = W; view.height = H;
+const V = view.getContext("2d");
+function mk() { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; }
+const bgC = mk(), bgE = mk(), decal = mk(), sideC = mk(), sideE = mk(), light = mk();
+const testCtx = document.createElement("canvas").getContext("2d");
+let R = null; // sala atual
+
+function setupRoom() {
+  const m = MAPS[mapKey], rm = m.rooms[room[0]][room[1]];
+  const here = (p) => p[0] === room[0] && p[1] === room[1];
+  R = {
+    walls: rm.w, ground: rm.g,
+    wallW: union(rm.w, 1), wallC: union(rm.w, S), wallG: groups(rm.w, S), groundG: groups(rm.g, S),
+    flags: [0, 1, 2].flatMap(t => m.flags[t].filter(here).map(f => ({ x: f[2], y: f[3], t }))),
+    seed: hashStr(mapKey + room.join(",")),
+  };
+  decal.getContext("2d").clearRect(0, 0, W, H);
+  spawnEntities();
+  paintStatic();
+  drawMini();
+  document.getElementById("roomInfo").textContent = `${m.title} · ${m.author} · sala ${room[0] + 1},${room[1] + 1} de ${m.w}×${m.h}`;
+}
+
+/* colisão só para a simulação da demo */
+function blocked(x, y, r) {
+  if (x < r || y < r || x > RW - r || y > RH - r) return true;
+  if (testCtx.isPointInPath(R.wallW, x, y)) return true;
+  for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; if (testCtx.isPointInPath(R.wallW, x + Math.cos(a) * r, y + Math.sin(a) * r)) return true; }
+  return false;
+}
+function freeSpot(r, rnd) {
+  for (let i = 0; i < 400; i++) { const x = r + rnd() * (RW - 2 * r), y = r + rnd() * (RH - 2 * r); if (!blocked(x, y, r + 4)) return [x, y]; }
+  return [RW / 2, RH / 2];
+}
+
+/* ---------- pintura estática ---------- */
+function paintStaticTo(cv, enh) {
+  const c = cv.getContext("2d"), F = fills(theme), look = THEME_LOOK[theme];
+  const on = k => enh && o[k];
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, W, H); c.globalCompositeOperation = "source-over";
+  // 1. chão base
+  c.fillStyle = pat(c, F.floor[0]); c.fillRect(0, 0, W, H);
+  // 2. áreas de chão
+  for (const [t, p] of R.groundG) {
+    if (on("bordas")) {
+      c.save(); c.shadowColor = "rgba(0,0,0,.55)"; c.shadowBlur = 10 * DPR; c.fillStyle = pat(c, F.floor[t]); c.fill(p); c.restore();
+    }
+    c.fillStyle = pat(c, F.floor[t]); c.fill(p);
+    if (on("bordas")) { c.save(); c.clip(p); c.lineWidth = 4 * DPR; c.strokeStyle = "rgba(255,255,255,.14)"; c.stroke(p); c.restore(); }
+  }
+  // 3. variação de tom
+  if (on("variacao")) {
+    const np = c.createPattern(NOISE, "repeat");
+    c.save(); c.globalCompositeOperation = "soft-light";
+    np.setTransform(new DOMMatrix([3.2 * DPR, 0, 0, 3.2 * DPR, 0, 0])); c.globalAlpha = .75; c.fillStyle = np; c.fillRect(0, 0, W, H);
+    const np2 = c.createPattern(NOISE, "repeat"); np2.setTransform(new DOMMatrix([0, 1.1 * DPR, 1.1 * DPR, 0, 37, 11]));
+    c.globalAlpha = .35; c.fillStyle = np2; c.fillRect(0, 0, W, H);
+    c.restore();
+  }
+  // 4. detalhes semeados
+  if (on("detalhes")) drawDetails(c, look.detail, rngOf(R.seed));
+  // 5. bases
+  for (const f of R.flags) {
+    const cx = f.x * S, cy = f.y * S, r = FLAGR * S, col = TEAM[f.t];
+    if (on("bases")) {
+      const g = c.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, col + "70"); g.addColorStop(.7, col + "38"); g.addColorStop(1, col + "00");
+      c.fillStyle = g; c.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+      c.lineWidth = 2 * DPR; c.strokeStyle = TEAM_SOFT[f.t]; c.globalAlpha = .9;
+      c.beginPath(); c.arc(cx, cy, r * .82, 0, 7); c.stroke();
+      c.globalAlpha = .55; c.lineWidth = 1.2 * DPR;
+      for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.beginPath(); c.moveTo(cx + Math.cos(a) * r * .62, cy + Math.sin(a) * r * .62); c.lineTo(cx + Math.cos(a) * r * .74, cy + Math.sin(a) * r * .74); c.stroke(); }
+      c.globalAlpha = 1;
+    } else {
+      const g = c.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, col); g.addColorStop(1 - 256 / 300, col); g.addColorStop(1, col + "00");
+      c.fillStyle = g; c.fillRect(cx - r, cy - r, 2 * r, 2 * r);
+    }
+  }
+  // 6. borda da sala
+  c.fillStyle = "#202040"; const bw = .5 * DPR;
+  c.fillRect(0, 0, W, bw); c.fillRect(0, H - bw, W, bw); c.fillRect(0, 0, bw, H); c.fillRect(W - bw, 0, bw, H);
+  // 7. sombras das paredes
+  if (on("ao")) { c.save(); c.shadowColor = "rgba(0,0,0,.7)"; c.shadowBlur = 22 * DPR; c.fillStyle = "#000"; c.fill(R.wallC); c.restore(); }
+  if (on("sombra")) { c.save(); c.shadowColor = "rgba(0,0,0,.62)"; c.shadowBlur = 8 * DPR; c.shadowOffsetX = 12 * DPR; c.shadowOffsetY = 16 * DPR; c.fillStyle = "#000"; c.fill(R.wallC); c.restore(); }
+  // 8. paredes
+  const h = 5 * S;
+  for (const [t, p] of R.wallG) {
+    const P = pat(c, F.wall[t]);
+    if (on("altura")) {
+      c.save(); c.clip(p);
+      c.fillStyle = P; c.fill(p);
+      c.fillStyle = "rgba(0,0,0,.52)"; c.fillRect(0, 0, W, H);
+      c.translate(0, -h);
+      c.fillStyle = pat(c, F.wall[t]); c.fill(p);
+      if (on("bevel")) {
+        c.lineWidth = 2.4 * DPR; c.strokeStyle = "rgba(255,255,255,.30)"; c.stroke(p);
+      } else { c.lineWidth = 1.4 * DPR; c.strokeStyle = "rgba(0,0,0,.4)"; c.stroke(p); }
+      c.restore();
+    } else {
+      c.fillStyle = P; c.fill(p);
+      if (on("bevel")) {
+        c.save(); c.clip(p); c.lineWidth = 3 * DPR;
+        c.translate(1.5 * DPR, 1.5 * DPR); c.strokeStyle = "rgba(255,255,255,.28)"; c.stroke(p);
+        c.translate(-3 * DPR, -3 * DPR); c.strokeStyle = "rgba(0,0,0,.4)"; c.stroke(p);
+        c.restore();
+      }
+    }
+  }
+  if (on("variacao") && R.walls.length) {
+    const np = c.createPattern(NOISE, "repeat"); np.setTransform(new DOMMatrix([2 * DPR, 0, 0, 2 * DPR, 13, 29]));
+    c.save(); c.clip(R.wallC); c.globalCompositeOperation = "soft-light"; c.globalAlpha = .6; c.fillStyle = np; c.fillRect(0, 0, W, H); c.restore();
+  }
+  c.restore();
+}
+function paintStatic() { paintStaticTo(bgC, false); paintStaticTo(bgE, true); }
+
+function drawDetails(c, kind, rnd) {
+  const n = kind === "metal" ? 70 : 160;
+  c.save();
+  if (kind === "metal") {
+    // juntas de chapa e rebites
+    const step = 64 * TS * 2;
+    c.strokeStyle = "rgba(0,0,0,.28)"; c.lineWidth = 1.5 * DPR;
+    for (let x = step; x < W; x += step) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+    for (let y = step; y < H; y += step) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+    c.strokeStyle = "rgba(255,255,255,.08)";
+    for (let x = step + 1.5 * DPR; x < W; x += step) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+    for (let x = step; x < W; x += step) for (let y = step; y < H; y += step) {
+      for (const [dx, dy] of [[-6, -6], [6, -6], [-6, 6], [6, 6]]) {
+        const px = x + dx * DPR, py = y + dy * DPR;
+        c.fillStyle = "rgba(0,0,0,.4)"; c.beginPath(); c.arc(px + .6 * DPR, py + .6 * DPR, 1.8 * DPR, 0, 7); c.fill();
+        c.fillStyle = "rgba(255,255,255,.35)"; c.beginPath(); c.arc(px, py, 1.4 * DPR, 0, 7); c.fill();
+      }
+    }
+  }
+  for (let i = 0; i < n; i++) {
+    const x = rnd() * W, y = rnd() * H, s = (0.6 + rnd() * 0.8) * S, k = rnd();
+    if (kind === "grass") {
+      if (k < .55) { // tufo
+        for (let j = 0; j < 5; j++) {
+          const a = -Math.PI / 2 + (rnd() - .5) * 1.3, l = (3 + rnd() * 4) * s;
+          c.strokeStyle = j % 2 ? "rgba(185,230,120,.5)" : "rgba(20,55,15,.55)"; c.lineWidth = 1.2 * DPR;
+          c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + Math.cos(a) * l * .5 + 2, y + Math.sin(a) * l * .5, x + Math.cos(a) * l, y + Math.sin(a) * l); c.stroke();
+        }
+      } else if (k < .85) { // pedra
+        c.fillStyle = "rgba(0,0,0,.3)"; c.beginPath(); c.ellipse(x + 1.5 * s, y + 1.5 * s, 3 * s, 2 * s, 0, 0, 7); c.fill();
+        c.fillStyle = "rgba(170,165,150,.85)"; c.beginPath(); c.ellipse(x, y, 3 * s, 2.1 * s, rnd(), 0, 7); c.fill();
+        c.fillStyle = "rgba(255,255,255,.35)"; c.beginPath(); c.ellipse(x - s, y - .8 * s, 1.2 * s, .7 * s, 0, 0, 7); c.fill();
+      } else { // flor
+        c.fillStyle = rnd() < .5 ? "rgba(255,240,140,.9)" : "rgba(255,255,255,.85)";
+        for (let j = 0; j < 4; j++) { c.beginPath(); c.arc(x + Math.cos(j * 1.57) * 1.3 * s, y + Math.sin(j * 1.57) * 1.3 * s, 1 * s, 0, 7); c.fill(); }
+      }
+    } else if (kind === "ice") {
+      if (k < .4) { // rachadura
+        c.strokeStyle = "rgba(255,255,255,.45)"; c.lineWidth = .9 * DPR; c.beginPath(); c.moveTo(x, y);
+        let px = x, py = y, a = rnd() * 6.28;
+        for (let j = 0; j < 6; j++) { a += (rnd() - .5) * 1.2; px += Math.cos(a) * 4 * s; py += Math.sin(a) * 4 * s; c.lineTo(px, py); }
+        c.stroke();
+      } else if (k < .8) { // neve acumulada
+        const g = c.createRadialGradient(x, y, 0, x, y, 9 * s); g.addColorStop(0, "rgba(255,255,255,.28)"); g.addColorStop(1, "rgba(255,255,255,0)");
+        c.fillStyle = g; c.fillRect(x - 9 * s, y - 9 * s, 18 * s, 18 * s);
+      } else { c.fillStyle = "rgba(255,255,255,.9)"; c.fillRect(x, y, 1.5 * DPR, 1.5 * DPR); }
+    } else { // metal: manchas e riscos
+      if (k < .35) {
+        const g = c.createRadialGradient(x, y, 0, x, y, 10 * s); g.addColorStop(0, "rgba(10,8,5,.35)"); g.addColorStop(1, "rgba(10,8,5,0)");
+        c.fillStyle = g; c.beginPath(); c.ellipse(x, y, 10 * s, 6 * s, rnd() * 3, 0, 7); c.fill();
+      } else {
+        c.strokeStyle = "rgba(255,255,255,.12)"; c.lineWidth = .8 * DPR; const a = rnd() * 6.28, l = 8 * s;
+        c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); c.stroke();
+      }
+    }
+  }
+  c.restore();
+}
+
+/* ---------- simulação ---------- */
+let players = [], rockets = [], booms = [], parts = [], atmos = [], pup = null, shake = 0, fireT = 1;
+function spawnEntities() {
+  const rnd = rngOf(R.seed ^ 99);
+  players = [];
+  for (let i = 0; i < 6; i++) {
+    const [x, y] = freeSpot(PR, rnd);
+    players.push({ x, y, t: i % 2, a: rnd() * 6.28, tx: x, ty: y, wait: rnd() * 2 });
+  }
+  const [px, py] = freeSpot(12, rnd);
+  pup = { x: px, y: py };
+  rockets = []; booms = []; parts = []; atmos = [];
+}
+function pickTarget(p) {
+  const r = Math.random;
+  for (let i = 0; i < 20; i++) {
+    const a = r() * 6.28, d = 40 + r() * 120, x = p.x + Math.cos(a) * d, y = p.y + Math.sin(a) * d;
+    if (!blocked(x, y, PR + 2)) { p.tx = x; p.ty = y; return; }
+  }
+}
+function fire(p) {
+  const target = players.filter(q => q.t !== p.t)[Math.floor(Math.random() * 3)];
+  let a = target ? Math.atan2(target.y - p.y, target.x - p.x) : p.a;
+  a += (Math.random() - .5) * .5; p.a = a;
+  const sp = 300;
+  rockets.push({ x: p.x + Math.cos(a) * (PR + 4), y: p.y + Math.sin(a) * (PR + 4), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: p.t, age: 0 });
+}
+function materialAt(x, y) {
+  for (const s of R.walls) { const p = new Path2D(); addShape(p, s, 1); if (testCtx.isPointInPath(p, x, y)) return s[1]; }
+  return 0;
+}
+function explode(x, y, wallHit) {
+  const tex = wallHit ? materialAt(x, y) : -1;
+  const look = THEME_LOOK[theme];
+  const mat = tex === 5 ? "metal" : tex === 6 ? "wood" : tex === 7 ? "rubber" : tex === -1 ? "dirt" : look.wallMat;
+  booms.push({ x, y, age: 0 });
+  shake = Math.min(1, shake + .6);
+  const col = { metal: ["#fff3b0", "#ffc04a", "#ff8a2a"], wood: ["#c08850", "#8a5a30", "#e0b070"], rubber: ["#555", "#333", "#777"], stone: ["#d8d0c0", "#a89f90", "#ffe0a0"], ice: ["#ffffff", "#cfe6ff", "#9cc8ff"], dirt: ["#b09070", "#806048", "#ffd08a"] }[mat];
+  for (let i = 0; i < 26; i++) {
+    const a = Math.random() * 6.28, v = 60 + Math.random() * 220;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0, max: .25 + Math.random() * .45, size: 1 + Math.random() * 1.8, col: col[i % 3], kind: mat === "metal" || i % 3 === 2 ? "spark" : "chip", drag: 3.5 });
+  }
+  for (let i = 0; i < 9; i++) {
+    const a = Math.random() * 6.28, v = 10 + Math.random() * 40;
+    parts.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0, max: .8 + Math.random() * .8, size: 6 + Math.random() * 8, col: "rgba(60,58,55,", kind: "smoke", drag: 1.5 });
+  }
+  // marca persistente
+  const d = decal.getContext("2d");
+  d.save();
+  const g = d.createRadialGradient(x * S, y * S, 0, x * S, y * S, 20 * S);
+  g.addColorStop(0, "rgba(15,10,5,.6)"); g.addColorStop(.55, "rgba(20,14,8,.3)"); g.addColorStop(1, "rgba(20,14,8,0)");
+  d.fillStyle = g; d.beginPath(); d.arc(x * S, y * S, 20 * S, 0, 7); d.fill();
+  d.strokeStyle = "rgba(10,6,3,.35)"; d.lineWidth = 1.2 * DPR;
+  for (let i = 0; i < 9; i++) { const a = Math.random() * 6.28, l = (10 + Math.random() * 14) * S; d.beginPath(); d.moveTo(x * S, y * S); d.lineTo(x * S + Math.cos(a) * l, y * S + Math.sin(a) * l); d.stroke(); }
+  d.globalCompositeOperation = "destination-out"; d.fillStyle = "#000"; d.fill(R.wallC);
+  d.restore();
+}
+function step(dt) {
+  for (const p of players) {
+    if (p.wait > 0) { p.wait -= dt; continue; }
+    const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy);
+    if (d < 3) { p.wait = .3 + Math.random() * 1.2; pickTarget(p); continue; }
+    const v = 70 * dt, nx = p.x + dx / d * v, ny = p.y + dy / d * v;
+    if (blocked(nx, ny, PR)) { pickTarget(p); continue; }
+    p.x = nx; p.y = ny; p.a = Math.atan2(dy, dx);
+  }
+  fireT -= dt;
+  if (fireT <= 0) { fire(players[Math.floor(Math.random() * players.length)]); fireT = .7 + Math.random() * 1.1; }
+  for (const r of rockets) {
+    r.age += dt;
+    const n = 4;
+    for (let i = 0; i < n && !r.dead; i++) {
+      r.x += r.vx * dt / n; r.y += r.vy * dt / n;
+      if (r.x < 0 || r.y < 0 || r.x > RW || r.y > RH) { r.dead = true; explode(Math.max(2, Math.min(RW - 2, r.x)), Math.max(2, Math.min(RH - 2, r.y)), false); }
+      else if (testCtx.isPointInPath(R.wallW, r.x, r.y)) { r.dead = true; explode(r.x, r.y, true); }
+      else for (const p of players) if (p.t !== r.t && Math.hypot(p.x - r.x, p.y - r.y) < PR) { r.dead = true; explode(r.x, r.y, false); break; }
+    }
+    if (!r.dead && Math.random() < .9) parts.push({ x: r.x - r.vx * .01, y: r.y - r.vy * .01, vx: (Math.random() - .5) * 14, vy: (Math.random() - .5) * 14, life: 0, max: .45 + Math.random() * .3, size: 2.5 + Math.random() * 2, col: "rgba(150,150,150,", kind: "smoke", drag: 2 });
+  }
+  rockets = rockets.filter(r => !r.dead);
+  for (const b of booms) b.age += dt;
+  booms = booms.filter(b => b.age < .6);
+  for (const q of parts) { q.life += dt; const f = Math.exp(-q.drag * dt); q.vx *= f; q.vy *= f; q.x += q.vx * dt; q.y += q.vy * dt; }
+  parts = parts.filter(q => q.life < q.max);
+  shake = Math.max(0, shake - dt * 3);
+  // atmosfera
+  const want = theme === "Ice" ? 90 : theme === "Grass" ? 26 : 45;
+  while (atmos.length < want) atmos.push(newAtmo(true));
+  for (const a of atmos) {
+    a.ph += dt;
+    if (theme === "Ice") { a.y += a.v * dt; a.x += Math.sin(a.ph * 1.3 + a.s) * 12 * dt + 6 * dt; }
+    else if (theme === "Grass") { a.x += (22 + Math.sin(a.ph) * 10) * dt; a.y += (10 + Math.cos(a.ph * .7) * 8) * dt; a.rot += dt * a.s; }
+    else { a.x += Math.sin(a.ph * .5 + a.s) * 6 * dt; a.y -= a.v * .25 * dt; }
+    if (a.x > RW + 10 || a.y > RH + 10 || a.y < -10) Object.assign(a, newAtmo(false));
+  }
+}
+function newAtmo(anywhere) {
+  const r = Math.random;
+  if (theme === "Grass") return { x: anywhere ? r() * RW : -8, y: r() * RH, ph: r() * 6, s: (r() - .5) * 4, rot: r() * 6, v: 0, c: ["#6f9a35", "#a7b83e", "#c9a23c", "#5b7f2a"][Math.floor(r() * 4)] };
+  if (theme === "Ice") return { x: r() * RW, y: anywhere ? r() * RH : -5, ph: r() * 6, s: r() * 6, v: 18 + r() * 26, size: .6 + r() * 1.4 };
+  return { x: r() * RW, y: anywhere ? r() * RH : RH + 5, ph: r() * 6, s: r() * 6, v: 10 + r() * 20, ember: r() < .25 };
+}
+
+/* ---------- desenho por quadro ---------- */
+let T = 0;
+function drawSide(cv, enh) {
+  const c = cv.getContext("2d");
+  const on = k => enh && o[k];
+  c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = "source-over"; c.globalAlpha = 1;
+  c.fillStyle = "#000"; c.fillRect(0, 0, W, H);
+  if (on("tremor") && shake > 0) c.translate((Math.random() - .5) * 7 * DPR * shake, (Math.random() - .5) * 7 * DPR * shake);
+  c.drawImage(enh ? bgE : bgC, 0, 0);
+  if (on("marcas")) c.drawImage(decal, 0, 0);
+  if (on("animado")) animatedFloors(c);
+  // power-up
+  drawPowerup(c, on("entidades"));
+  // bandeiras
+  for (const f of R.flags) drawFlag(c, f, on("entidades"));
+  // jogadores
+  for (const p of players) drawPlayer(c, p, on("entidades"));
+  // fumaça (abaixo das faíscas)
+  if (on("rastro") || on("impacto")) for (const q of parts) if (q.kind === "smoke") {
+    const k = q.life / q.max; c.fillStyle = q.col + (0.32 * (1 - k)).toFixed(3) + ")";
+    c.beginPath(); c.arc(q.x * S, q.y * S, q.size * (0.6 + k) * S, 0, 7); c.fill();
+  }
+  // foguetes
+  for (const r of rockets) {
+    const x = r.x * S, y = r.y * S;
+    if (on("rastro")) {
+      const g = c.createRadialGradient(x, y, 0, x, y, 9 * S); g.addColorStop(0, "rgba(255,220,140,.9)"); g.addColorStop(1, "rgba(255,120,40,0)");
+      c.save(); c.globalCompositeOperation = "lighter"; c.fillStyle = g; c.fillRect(x - 9 * S, y - 9 * S, 18 * S, 18 * S); c.restore();
+      c.fillStyle = "#fff"; c.beginPath(); c.arc(x, y, 2.6 * S, 0, 7); c.fill();
+      c.fillStyle = TEAM_SOFT[r.t]; c.beginPath(); c.arc(x, y, 1.6 * S, 0, 7); c.fill();
+    } else {
+      c.fillStyle = TEAM[r.t]; c.beginPath(); c.arc(x, y, 3 * S, 0, 7); c.fill();
+      c.fillStyle = "#fff"; c.beginPath(); c.arc(x, y, 1.5 * S, 0, 7); c.fill();
+    }
+  }
+  // explosões
+  for (const b of booms) {
+    const k = b.age / .6, x = b.x * S, y = b.y * S;
+    if (on("impacto")) {
+      c.save(); c.globalCompositeOperation = "lighter";
+      const r0 = (12 + 30 * k) * S, g = c.createRadialGradient(x, y, 0, x, y, r0);
+      g.addColorStop(0, `rgba(255,240,200,${(.9 * (1 - k)).toFixed(3)})`); g.addColorStop(.4, `rgba(255,150,50,${(.6 * (1 - k)).toFixed(3)})`); g.addColorStop(1, "rgba(255,80,0,0)");
+      c.fillStyle = g; c.fillRect(x - r0, y - r0, 2 * r0, 2 * r0);
+      c.restore();
+      c.strokeStyle = `rgba(255,255,255,${(.55 * (1 - k)).toFixed(3)})`; c.lineWidth = (3 * (1 - k) + .5) * S;
+      c.beginPath(); c.arc(x, y, (8 + 52 * k) * S, 0, 7); c.stroke();
+    } else if (k < .35) {
+      c.fillStyle = `rgba(255,200,80,${(1 - k / .35).toFixed(3)})`; c.beginPath(); c.arc(x, y, (6 + 14 * k) * S, 0, 7); c.fill();
+    }
+  }
+  if (on("impacto")) {
+    c.save(); c.globalCompositeOperation = "lighter";
+    for (const q of parts) if (q.kind !== "smoke") {
+      const k = q.life / q.max; c.globalAlpha = 1 - k; c.fillStyle = q.col;
+      if (q.kind === "spark") { c.strokeStyle = q.col; c.lineWidth = q.size * DPR; c.beginPath(); c.moveTo(q.x * S, q.y * S); c.lineTo((q.x - q.vx * .03) * S, (q.y - q.vy * .03) * S); c.stroke(); }
+      else c.fillRect(q.x * S - q.size * DPR, q.y * S - q.size * DPR, q.size * 2 * DPR, q.size * 2 * DPR);
+    }
+    c.restore();
+  }
+  // atmosfera
+  if (on("atmosfera")) drawAtmos(c);
+  // luz
+  if (on("luz")) {
+    const l = light.getContext("2d"); l.save(); l.globalCompositeOperation = "source-over";
+    l.fillStyle = THEME_LOOK[theme].ambient; l.fillRect(0, 0, W, H);
+    l.globalCompositeOperation = "lighter";
+    const blob = (x, y, r, col, a) => { const g = l.createRadialGradient(x * S, y * S, 0, x * S, y * S, r * S); g.addColorStop(0, col.replace("A", a)); g.addColorStop(1, col.replace("A", 0)); l.fillStyle = g; l.fillRect((x - r) * S, (y - r) * S, 2 * r * S, 2 * r * S); };
+    for (const f of R.flags) blob(f.x, f.y - 8, 120, ["rgba(255,90,70,A)", "rgba(90,130,255,A)", "rgba(120,255,120,A)"][f.t], .55);
+    for (const p of players) blob(p.x, p.y, 55, "rgba(255,240,220,A)", .22);
+    if (pup) blob(pup.x, pup.y, 70, "rgba(90,220,255,A)", .45 + .15 * Math.sin(T * 4));
+    for (const r of rockets) blob(r.x, r.y, 60, "rgba(255,170,80,A)", .7);
+    for (const b of booms) blob(b.x, b.y, 140, "rgba(255,190,110,A)", (1 - b.age / .6) * 1.1);
+    l.restore();
+    c.save(); c.globalCompositeOperation = "multiply"; c.drawImage(light, 0, 0); c.restore();
+  }
+  if (on("bloom")) {
+    c.save(); c.globalCompositeOperation = "lighter";
+    const glow = (x, y, r, col, a) => { const g = c.createRadialGradient(x * S, y * S, 0, x * S, y * S, r * S); g.addColorStop(0, col.replace("A", a)); g.addColorStop(1, col.replace("A", 0)); c.fillStyle = g; c.fillRect((x - r) * S, (y - r) * S, 2 * r * S, 2 * r * S); };
+    for (const f of R.flags) glow(f.x + 5, f.y - 14, 22, ["rgba(255,80,60,A)", "rgba(80,120,255,A)", "rgba(100,255,100,A)"][f.t], .45);
+    if (pup) glow(pup.x, pup.y, 24, "rgba(90,220,255,A)", .5);
+    for (const r of rockets) glow(r.x, r.y, 16, "rgba(255,200,120,A)", .6);
+    c.restore();
+  }
+  if (on("cor")) { c.save(); c.globalCompositeOperation = "soft-light"; c.globalAlpha = THEME_LOOK[theme].tintA * 2; c.fillStyle = THEME_LOOK[theme].tint; c.fillRect(0, 0, W, H); c.restore(); }
+  if (on("vinheta")) { const g = c.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, W * .62); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "rgba(0,0,0,.55)"); c.fillStyle = g; c.fillRect(0, 0, W, H); }
+  if (on("crt")) { c.fillStyle = "rgba(0,0,0,.22)"; for (let y = 0; y < H; y += 3 * DPR) c.fillRect(0, y, W, 1 * DPR); }
+  c.restore();
+}
+function animatedFloors(c) {
+  for (const [t, p] of R.groundG) {
+    if (t === 5) { // gelo
+      c.save(); c.clip(p); c.globalCompositeOperation = "screen";
+      const off = ((T * 120) % (W + H)) - H;
+      const g = c.createLinearGradient(off, 0, off + H * .5, H * .5);
+      g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(.5, "rgba(220,240,255,.35)"); g.addColorStop(1, "rgba(255,255,255,0)");
+      c.fillStyle = g; c.fillRect(0, 0, W, H); c.restore();
+    } else if (t === 7) { // lama
+      c.save(); c.clip(p); c.globalCompositeOperation = "multiply";
+      const np = c.createPattern(NOISE, "repeat"); np.setTransform(new DOMMatrix([2.5 * DPR, 0, 0, 2.5 * DPR, Math.sin(T * .4) * 30, T * 8]));
+      c.globalAlpha = .35; c.fillStyle = np; c.fillRect(0, 0, W, H); c.restore();
+    }
+  }
+  for (const f of R.flags) {
+    if (!o.bases) continue;
+    c.save(); c.translate(f.x * S, f.y * S); c.rotate(T * .6);
+    c.strokeStyle = TEAM_SOFT[f.t]; c.globalAlpha = .6; c.lineWidth = 1.6 * DPR; c.setLineDash([6 * DPR, 7 * DPR]);
+    c.beginPath(); c.arc(0, 0, FLAGR * S * .95, 0, 7); c.stroke(); c.restore();
+  }
+}
+function drawPlayer(c, p, enh) {
+  const x = p.x * S, y = p.y * S, r = PR * S;
+  if (enh) {
+    c.fillStyle = "rgba(0,0,0,.35)"; c.beginPath(); c.ellipse(x + 4 * S, y + 6 * S, r * .95, r * .8, 0, 0, 7); c.fill();
+    const g = c.createRadialGradient(x - r * .35, y - r * .4, r * .1, x, y, r);
+    g.addColorStop(0, p.t ? "#9fb8ff" : "#ff9a8f"); g.addColorStop(.55, TEAM[p.t]); g.addColorStop(1, p.t ? "#000055" : "#550000");
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    c.lineWidth = 1.6 * DPR; c.strokeStyle = "rgba(255,255,255,.7)"; c.stroke();
+    c.save(); c.translate(x, y); c.rotate(p.a); c.fillStyle = "#e8e8e8"; c.fillRect(r * .4, -2.2 * S, r * .85, 4.4 * S); c.fillStyle = "#555"; c.fillRect(r * 1.05, -2.2 * S, r * .2, 4.4 * S); c.restore();
+  } else {
+    c.fillStyle = TEAM[p.t]; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
+    c.lineWidth = 1 * DPR; c.strokeStyle = "#000"; c.stroke();
+    c.strokeStyle = "#fff"; c.lineWidth = 2 * DPR; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(p.a) * r * 1.2, y + Math.sin(p.a) * r * 1.2); c.stroke();
+  }
+}
+function drawFlag(c, f, enh) {
+  const x = f.x * S, y = f.y * S, col = TEAM[f.t];
+  if (enh) {
+    c.fillStyle = "rgba(0,0,0,.3)"; c.beginPath(); c.ellipse(x + 8 * S, y + 2 * S, 10 * S, 3 * S, -.3, 0, 7); c.fill();
+    c.strokeStyle = "#ffe066"; c.lineWidth = 2 * DPR; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - 24 * S); c.stroke();
+    c.fillStyle = col; c.beginPath(); c.moveTo(x, y - 24 * S);
+    for (let i = 0; i <= 8; i++) { const u = i / 8; c.lineTo(x + u * 16 * S, y - 24 * S + u * 5 * S + Math.sin(T * 6 - u * 4) * 2 * S * u); }
+    for (let i = 8; i >= 0; i--) { const u = i / 8; c.lineTo(x + u * 16 * S, y - 13 * S - u * 0 * S + Math.sin(T * 6 - u * 4) * 2 * S * u); }
+    c.closePath(); c.fill(); c.strokeStyle = "rgba(255,255,255,.6)"; c.lineWidth = 1 * DPR; c.stroke();
+  } else {
+    c.strokeStyle = "#FFFF00"; c.lineWidth = 2 * DPR; c.beginPath(); c.moveTo(x, y); c.lineTo(x, y - 24 * S); c.stroke();
+    c.fillStyle = col; c.beginPath(); c.moveTo(x, y - 24 * S); c.lineTo(x + 16 * S, y - 18.5 * S); c.lineTo(x, y - 13 * S); c.closePath(); c.fill();
+  }
+}
+function drawPowerup(c, enh) {
+  if (!pup) return;
+  const x = pup.x * S, y = pup.y * S;
+  if (enh) {
+    const bob = Math.sin(T * 3) * 2 * S, pulse = 1 + Math.sin(T * 4) * .08;
+    c.fillStyle = "rgba(0,0,0,.3)"; c.beginPath(); c.ellipse(x + 3 * S, y + 6 * S, 8 * S, 3 * S, 0, 0, 7); c.fill();
+    c.save(); c.translate(x, y + bob); c.scale(pulse, pulse); c.rotate(Math.sin(T) * .15);
+    const g = c.createLinearGradient(-8 * S, -8 * S, 8 * S, 8 * S); g.addColorStop(0, "#c8f4ff"); g.addColorStop(1, "#00a0dd");
+    c.fillStyle = g; c.beginPath(); c.roundRect(-8 * S, -8 * S, 16 * S, 16 * S, 3 * S); c.fill();
+    c.strokeStyle = "#fff"; c.lineWidth = 1.5 * DPR; c.stroke();
+    c.fillStyle = "#fff"; c.font = `700 ${11 * S}px sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("P", 0, .5 * S);
+    c.restore();
+  } else {
+    c.fillStyle = "#00AAFF"; c.fillRect(x - 8 * S, y - 8 * S, 16 * S, 16 * S);
+    c.strokeStyle = "#fff"; c.lineWidth = 1 * DPR; c.strokeRect(x - 8 * S, y - 8 * S, 16 * S, 16 * S);
+  }
+}
+function drawAtmos(c) {
+  c.save();
+  for (const a of atmos) {
+    const x = a.x * S, y = a.y * S;
+    if (theme === "Grass") { c.save(); c.translate(x, y); c.rotate(a.rot); c.fillStyle = a.c; c.globalAlpha = .85; c.beginPath(); c.ellipse(0, 0, 3.2 * S, 1.4 * S, 0, 0, 7); c.fill(); c.restore(); }
+    else if (theme === "Ice") { c.fillStyle = "rgba(255,255,255,.85)"; c.beginPath(); c.arc(x, y, a.size * S, 0, 7); c.fill(); }
+    else { c.globalCompositeOperation = "lighter"; c.fillStyle = a.ember ? `rgba(255,150,60,${(.5 + .4 * Math.sin(a.ph * 5)).toFixed(2)})` : "rgba(200,210,230,.25)"; c.beginPath(); c.arc(x, y, (a.ember ? .9 : 1.2) * S, 0, 7); c.fill(); c.globalCompositeOperation = "source-over"; }
+  }
+  c.restore();
+}
+
+/* composição na tela */
+let perfAvg = 0;
+function render() {
+  if (!R) return;
+  if (cmp !== "new") drawSide(sideC, false);
+  if (cmp !== "old") {
+    const t0 = performance.now(); drawSide(sideE, true); const dt = performance.now() - t0;
+    perfAvg = perfAvg ? perfAvg * .95 + dt * .05 : dt;
+  }
+  V.setTransform(1, 0, 0, 1, 0, 0);
+  if (cmp === "old") V.drawImage(sideC, 0, 0);
+  else if (cmp === "new") V.drawImage(sideE, 0, 0);
+  else {
+    const sx = Math.round(split * W);
+    V.drawImage(sideE, 0, 0);
+    V.save(); V.beginPath(); V.rect(0, 0, sx, H); V.clip(); V.drawImage(sideC, 0, 0); V.restore();
+    V.fillStyle = "#f2b24c"; V.fillRect(sx - 1.5 * DPR, 0, 3 * DPR, H);
+    V.beginPath(); V.arc(sx, H / 2, 13 * DPR, 0, 7); V.fill();
+    V.fillStyle = "#1a1406"; V.font = `700 ${14 * DPR}px sans-serif`; V.textAlign = "center"; V.textBaseline = "middle"; V.fillText("⇆", sx, H / 2 + DPR);
+  }
+  document.getElementById("perf").textContent = cmp === "old" ? "–" : perfAvg.toFixed(1) + " ms/quadro";
+  document.querySelector(".lbl.l").style.display = cmp === "new" ? "none" : "";
+  document.querySelector(".lbl.r").style.display = cmp === "old" ? "none" : "";
+}
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  if (!paused) { T += dt; step(dt); }
+  render();
+  requestAnimationFrame(loop);
+}
+
+/* minimapa */
+const mini = document.getElementById("mini");
+function drawMini() {
+  const m = MAPS[mapKey], c = mini.getContext("2d");
+  const cell = Math.min(240 / m.w, 160 / m.h), cw = cell, ch = cell * RH / RW;
+  mini.width = Math.ceil(m.w * cw * 2); mini.height = Math.ceil(m.h * ch * 2);
+  c.setTransform(2, 0, 0, 2, 0, 0);
+  c.fillStyle = "#0b0e14"; c.fillRect(0, 0, mini.width, mini.height);
+  for (let x = 0; x < m.w; x++) for (let y = 0; y < m.h; y++) {
+    c.save(); c.translate(x * cw, y * ch);
+    c.fillStyle = "#2b3a2a"; c.fillRect(0, 0, cw, ch);
+    const sc = cw / RW;
+    const gp = union(m.rooms[x][y].g, sc); c.fillStyle = "#466a8a"; c.fill(gp);
+    const wp = union(m.rooms[x][y].w, sc); c.fillStyle = "#c8ccd6"; c.fill(wp);
+    for (let t = 0; t < 3; t++) for (const f of m.flags[t]) if (f[0] === x && f[1] === y) { c.fillStyle = TEAM_SOFT[t]; c.beginPath(); c.arc(f[2] * sc, f[3] * sc, 3, 0, 7); c.fill(); }
+    c.strokeStyle = "#10141d"; c.lineWidth = 1; c.strokeRect(.5, .5, cw - 1, ch - 1);
+    if (x === room[0] && y === room[1]) { c.strokeStyle = "#f2b24c"; c.lineWidth = 2; c.strokeRect(1, 1, cw - 2, ch - 2); }
+    c.restore();
+  }
+  mini._cw = cw; mini._ch = ch;
+}
+mini.addEventListener("click", e => {
+  const b = mini.getBoundingClientRect(), m = MAPS[mapKey];
+  const x = Math.floor((e.clientX - b.left) / b.width * mini.width / 2 / mini._cw), y = Math.floor((e.clientY - b.top) / b.height * mini.height / 2 / mini._ch);
+  if (x >= 0 && y >= 0 && x < m.w && y < m.h) { room = [x, y]; setupRoom(); }
+});
+
+/* controles */
+function bestRoom(key) {
+  const m = MAPS[key]; let best = [0, 0], bs = -1;
+  for (let x = 0; x < m.w; x++) for (let y = 0; y < m.h; y++) {
+    const rm = m.rooms[x][y];
+    const flags = [0, 1, 2].reduce((n, t) => n + m.flags[t].filter(f => f[0] === x && f[1] === y).length, 0);
+    const inner = rm.w.filter(w => w[0] !== "r" || (w[2] > 5 && w[3] > 5 && w[4] < RW - 5 && w[5] < RH - 5)).length;
+    const sc = rm.w.length + 8 * inner + 6 * rm.g.length + 6 * flags;
+    if (sc > bs) { bs = sc; best = [x, y]; }
+  }
+  return best;
+}
+function segment(id, items, cur, onPick) {
+  const el = document.getElementById(id); el.innerHTML = "";
+  for (const [val, label] of items) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.setAttribute("aria-pressed", String(val === cur()));
+    b.addEventListener("click", () => { onPick(val); for (const x of el.children) x.setAttribute("aria-pressed", String(x === b)); });
+    el.appendChild(b);
+  }
+}
+function buildToggles() {
+  const host = document.getElementById("toggles"); host.innerHTML = "";
+  for (const [title, list] of OPTS) {
+    const g = document.createElement("div"); g.className = "grp";
+    g.innerHTML = `<h4>${title}</h4>`;
+    for (const [k, label, cost] of list) {
+      const l = document.createElement("label"); l.className = "row"; l.htmlFor = "opt-" + k;
+      l.innerHTML = `<input type="checkbox" id="opt-${k}" ${o[k] ? "checked" : ""}><span>${label}<span class="tag ${cost}">${TAGTXT[cost]}</span></span>`;
+      l.querySelector("input").addEventListener("change", ev => {
+        o[k] = ev.target.checked;
+        if (STATIC_KEYS.includes(k)) paintStatic();
+        if (k === "marcas" && !o[k]) decal.getContext("2d").clearRect(0, 0, W, H);
+        markPreset();
+      });
+      g.appendChild(l);
+    }
+    host.appendChild(g);
+  }
+}
+function markPreset() {
+  const cur = Object.entries(PRESETS).find(([, ks]) => Object.keys(o).every(k => o[k] === ks.includes(k)));
+  const name = cur ? (cur[0] === "Nada" ? "Clássico" : cur[0]) : null;
+  for (const b of document.getElementById("presetSeg").children) b.setAttribute("aria-pressed", String(b.textContent === name));
+}
+function applyPreset(name) {
+  for (const k of Object.keys(o)) o[k] = PRESETS[name].includes(k);
+  buildToggles(); paintStatic(); markPreset();
+}
+
+const mapSel = document.getElementById("mapSel");
+for (const [k, m] of Object.entries(MAPS)) { const op = document.createElement("option"); op.value = k; op.textContent = `${m.title} (${m.w}×${m.h})`; mapSel.appendChild(op); }
+mapSel.value = mapKey;
+mapSel.addEventListener("change", () => { mapKey = mapSel.value; room = bestRoom(mapKey); setupRoom(); });
+segment("themeSeg", THEMES.map(t => [t, t]), () => theme, v => { theme = v; atmos = []; paintStatic(); });
+segment("presetSeg", [["Nada", "Clássico"], ["Competitivo", "Competitivo"], ["Equilibrado", "Equilibrado"], ["Máximo", "Máximo"]], () => "Equilibrado", applyPreset);
+segment("cmpSeg", [["split", "Dividido"], ["new", "Só o novo"], ["old", "Só o clássico"]], () => cmp, v => { cmp = v; });
+const pauseBtn = document.getElementById("pauseBtn");
+const syncPause = () => { pauseBtn.textContent = paused ? "Continuar" : "Pausar"; };
+pauseBtn.addEventListener("click", () => { paused = !paused; syncPause(); }); syncPause();
+document.getElementById("burstBtn").addEventListener("click", () => { for (const p of players) fire(p); if (paused) { paused = false; syncPause(); } });
+
+// divisor arrastável
+let dragging = false;
+const setSplit = e => { const b = view.getBoundingClientRect(); split = Math.max(0, Math.min(1, (e.clientX - b.left) / b.width)); };
+view.addEventListener("pointerdown", e => { if (cmp !== "split") return; dragging = true; view.setPointerCapture(e.pointerId); setSplit(e); });
+view.addEventListener("pointermove", e => { if (dragging) setSplit(e); });
+view.addEventListener("pointerup", () => { dragging = false; });
+view.tabIndex = 0;
+view.addEventListener("keydown", e => { if (e.key === "ArrowLeft") split = Math.max(0, split - .05); if (e.key === "ArrowRight") split = Math.min(1, split + .05); });
+
+loadImages().then(() => {
+  room = bestRoom(mapKey);
+  buildToggles();
+  setupRoom();
+  markPreset();
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>
