@@ -8,6 +8,7 @@ import { Navigate, useNavigate } from 'react-router';
 import { useAccount } from '../app/account.js';
 import { api, ApiError } from '../app/api.js';
 import { usePrefs } from '../app/prefs.js';
+import { withRegion } from '../app/regions.js';
 import { JoinError, joinErrorText, requestTicket } from '../game/net/ticket.js';
 import { defaultServerUrl } from '../game/net/connection.js';
 import { Badge, Button } from '../ui/Button.js';
@@ -229,7 +230,9 @@ export function CreateRankedRoomScreen() {
   const create = () => {
     if (!name.trim()) return;
     setError(null);
-    api<{ room: RoomSummary }>('/rooms/ranked', { body: { name: name.trim(), format, bestOf, ...(password ? { password } : {}) } }).then(
+    void withRegion({ name: name.trim(), format, bestOf, ...(password ? { password } : {}) })
+      .then((body) => api<{ room: RoomSummary }>('/rooms/ranked', { body }))
+      .then(
       ({ room }) => void navigate(`/play?sala=${encodeURIComponent(room.id)}`, password ? { state: { password } } : undefined),
       (e: unknown) => setError(t(e instanceof ApiError && e.code === 'rate_limited' ? 'Too many rooms. Try again later.' : 'Could not create the room.')),
     );

@@ -19,6 +19,7 @@ import { loadManifest } from '../assets.js';
 import { joinName, useAccount } from '../app/account.js';
 import { deviceId } from '../app/device.js';
 import { api, ApiError } from '../app/api.js';
+import { usePings, withRegion } from '../app/regions.js';
 import { BOT_LEVEL_CHOICES, usePrefs } from '../app/prefs.js';
 import { copyText } from '../app/clipboard.js';
 import { joinErrorText } from '../game/net/ticket.js';
@@ -109,54 +110,10 @@ export function sortRooms(rooms: readonly RoomSummary[]): RoomSummary[] {
   );
 }
 
-/** Ping de cada região (ms), medido com `GET <pingUrl>` (o /health do game server). */
-function usePings(): ReadonlyMap<string, number> {
-  const [pings, setPings] = useState<ReadonlyMap<string, number>>(new Map());
-  useEffect(() => {
-    let alive = true;
-    const measure = async () => {
-      try {
-        const { regions } = await api<{ regions: { region: string; pingUrl: string }[] }>(
-          '/regions',
-        );
-        const result = new Map<string, number>();
-        for (const { region, pingUrl } of regions) {
-          let best = Infinity;
-          for (let i = 0; i < 3; i++) {
-            const t0 = performance.now();
-            try {
-              await fetch(pingUrl, { cache: 'no-store' });
-              best = Math.min(best, performance.now() - t0);
-            } catch {
-              // região fora do ar: fica sem ping
-            }
-          }
-          if (best < Infinity) result.set(region, Math.round(best));
-        }
-        if (alive) setPings(result);
-      } catch {
-        // sem API: sem ping
-      }
-    };
-    void measure();
-    const id = setInterval(() => void measure(), 30_000);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, []);
-  return pings;
-}
-
-/** Região de menor ping (preferência ao abrir salas e no "Jogar agora"). */
-function bestRegion(pings: ReadonlyMap<string, number>): string | undefined {
-  return [...pings].sort((a, b) => a[1] - b[1])[0]?.[0];
-}
-
 /** "Jogar agora": a API escolhe a sala do modo; o jogo pede o próprio ticket ao entrar. */
-export async function quickJoin(mode: Mode, name: string, region?: string): Promise<string> {
+export async function quickJoin(mode: Mode, name: string): Promise<string> {
   const r = await api<{ roomId: string }>('/rooms/quick-join', {
-    body: { mode, name, device: deviceId(), ...(region ? { region } : {}) },
+    body: await withRegion({ mode, name, device: deviceId() }),
   });
   return r.roomId;
 }
@@ -228,7 +185,7 @@ export function LobbyScreen() {
     void navigate(`/play?sala=${encodeURIComponent(room.id)}`);
   };
   const playNow = () =>
-    void quickJoin('casual', name, bestRegion(pings)).then(
+    void quickJoin('casual', name).then(
       (id) => void navigate(`/play?sala=${encodeURIComponent(id)}`),
       fail,
     );
@@ -514,7 +471,9 @@ export function CreateRoomScreen() {
           ...(maps.length ? { maps } : {}),
           ...(customBots ? { bots: { count: Math.min(bots, slots - 1), level: botLevel } } : {}),
         };
-    api<{ room: RoomSummary; inviteUrl: string }>('/rooms', { body }).then(
+    void withRegion(body)
+      .then((nearest) => api<{ room: RoomSummary; inviteUrl: string }>('/rooms', { body: nearest }))
+      .then(
       ({ room }) =>
         void navigate(
           `/play?sala=${encodeURIComponent(room.id)}`,

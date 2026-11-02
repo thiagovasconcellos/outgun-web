@@ -10,7 +10,7 @@ import { migrateUp } from '../db/migrate.js';
 import { gameServers, rooms, users } from '../db/schema.js';
 import { seed } from '../db/seed.js';
 import { MemoryMailer } from '../mail/mailer.js';
-import { ONLINE_MS, pickServer, type ServerRow } from '../registry.js';
+import { ONLINE_MS, pickServer, regionFallback, type ServerRow } from '../registry.js';
 import { createTestDatabase, pgAdminUrl, type TestDatabase } from '../test/db.js';
 
 const ORIGIN = 'http://localhost:5173';
@@ -34,6 +34,13 @@ describe('escolha do servidor', () => {
     expect(pickServer([s('a', 0, 1, 'us'), s('b', 9, 1, 'eu')], 'eu')?.id).toBe('b');
     expect(pickServer([s('a', 0, 1, 'us'), s('b', 9, 10, 'eu')], 'eu')?.id).toBe('a');
     expect(pickServer([])).toBeUndefined();
+  });
+
+  it('desvio de região só quando a pedida não tem vaga (OG-545)', () => {
+    expect(regionFallback({ region: 'es' }, 'br')).toBe(true);
+    expect(regionFallback({ region: 'br' }, 'br')).toBe(false);
+    expect(regionFallback({ region: 'br' }, undefined)).toBe(false);
+    expect(regionFallback(undefined, 'br')).toBe(false);
   });
 });
 
@@ -173,6 +180,33 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
     expect((await post('/rooms/quick-join', { mode: 'ranked', name: 'Rápido' })).json().error).toBe('account_required');
     const ranked = await post('/rooms/quick-join', { mode: 'ranked' }, true);
     expect(ranked.json()).toMatchObject({ roomId: 'ranked', wsUrl: 'ws://gs-1.test/rooms/ranked' });
+  });
+
+  it('com duas regiões, "Jogar agora" e as salas novas ficam na região pedida (OG-545)', async () => {
+    // Madrid vazio e com sala aberta; quem pede `br` não vai para lá
+    await heartbeat('gs-2', [{ id: 'main', players: 3 }], 'es');
+    await heartbeat('gs-1', [], 'br');
+    // sem outra sala fixa para abrir, melhor a sala aberta de lá do que nenhuma
+    expect((await post('/rooms/quick-join', { mode: 'casual', name: 'Brasileiro', region: 'br' })).json().wsUrl).toBe('ws://gs-2.test/rooms/main');
+    // com sala fixa fora do ar, ela abre no Brasil
+    await t.db.insert(rooms).values({ id: 'c-fixa', name: 'Fixa', mode: 'casual', preset: 'classic', maxPlayers: 16, persistent: true }).onConflictDoNothing();
+    const quick = await post('/rooms/quick-join', { mode: 'casual', name: 'Brasileiro', region: 'br' });
+    expect(quick.statusCode).toBe(200);
+    expect(quick.json()).toMatchObject({ roomId: 'c-fixa', wsUrl: 'ws://gs-1.test/rooms/c-fixa' });
+    // quem pede `es` entra na sala aberta de lá
+    expect((await post('/rooms/quick-join', { mode: 'casual', name: 'Europeu', region: 'es' })).json()).toMatchObject({ roomId: 'main', wsUrl: 'ws://gs-2.test/rooms/main' });
+    // sala da plataforma fora do ar abre na região de quem entra, mesmo com o outro servidor mais vazio
+    await t.db.update(gameServers).set({ players: 9 }).where(eq(gameServers.id, 'gs-1'));
+    expect((await post('/rooms/ranked/join', { region: 'br' }, true)).json().wsUrl).toBe('ws://gs-1.test/rooms/ranked');
+    // sala privada e Ranked nascem na região pedida
+    const priv = await post('/rooms', { name: 'Privada BR', preset: 'classic', region: 'br' }, true);
+    expect(priv.json().room.region).toBe('br');
+    const ranked = await post('/rooms/ranked', { name: 'Ranked BR', format: '3x3', bestOf: 1, region: 'br' }, true);
+    expect(ranked.json().room.region).toBe('br');
+    // região sem vaga: vai para a outra
+    await heartbeat('gs-1', [], 'br', 0);
+    expect((await post('/rooms', { name: 'Privada 2', preset: 'classic', region: 'br' }, true)).json().room.region).toBe('es');
+    await t.db.delete(rooms).where(eq(rooms.id, 'c-fixa'));
   });
 
   it('cria sala privada Casual em menos de 1 s, com senha e mapas próprios', async () => {

@@ -9,7 +9,7 @@ import { randomBytes } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
 import { hashPassword } from '../auth/password.js';
 import { gameServers, panelMaps, rooms } from '../db/schema.js';
-import { onlineServers, pickServer, roomHumans, roomListed, roomOnline } from '../registry.js';
+import { onlineServers, pickServer, regionFallback, roomHumans, roomListed, roomOnline } from '../registry.js';
 import { ErrorSchema, GameModeSchema, LobbyPhaseSchema, RankedFormatSchema, RoomId, SeriesBestOfSchema } from './schemas.js';
 
 const RoomSummary = Type.Object({
@@ -250,7 +250,9 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
           return reply.code(429).send({ error: 'rate_limited', message: 'too many rooms, try later' });
         }
         const servers = await onlineServers(db);
-        const server = pickServer(servers, body.region);
+        const region = body.region ?? config.defaultRegion;
+        const server = pickServer(servers, region);
+        if (regionFallback(server, region)) request.log.warn({ event: 'region_fallback', wanted: region, got: server?.region }, 'sala criada fora da região pedida (sem vaga nela)');
         if (!server && !config.devRoomWsUrl) return reply.code(503).send({ error: 'no_server', message: 'no game server available' });
 
         const id = `p-${randomBytes(6).toString('base64url').toLowerCase().replace(/[^a-z0-9]/g, '0')}`;
@@ -308,7 +310,9 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
         if (!(await rateLimit.allow(`create-room:${user.id}`, config.limits.roomsPerHourPerUser, HOUR))) {
           return reply.code(429).send({ error: 'rate_limited', message: 'too many rooms, try later' });
         }
-        const server = pickServer(await onlineServers(db), body.region);
+        const region = body.region ?? config.defaultRegion;
+        const server = pickServer(await onlineServers(db), region);
+        if (regionFallback(server, region)) request.log.warn({ event: 'region_fallback', wanted: region, got: server?.region }, 'sala Ranked criada fora da região pedida (sem vaga nela)');
         if (!server && !config.devRoomWsUrl) return reply.code(503).send({ error: 'no_server', message: 'no game server available' });
         const id = `r-${randomBytes(6).toString('base64url').toLowerCase().replace(/[^a-z0-9]/g, '0')}`;
         const [row] = await db

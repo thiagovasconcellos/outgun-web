@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S59 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | — |
 | Regras de negócio | RN-REG-01, RN-REG-02 |
 | Skills | `outgun-card-workflow` |
@@ -27,12 +27,16 @@ Como jogador no Brasil, quero que "Jogar agora", a sala privada e a sala Ranked 
 - O quick-join só junta o jogador a salas abertas da mesma região; sem sala aberta lá, abre uma nova na região dele.
 
 ## Critérios de aceite
-- [ ] Com dois servidores (`br` e `es`) no ambiente local, um cliente com menor ping para `br` cai sempre em `br` nas quatro entradas, mesmo com `es` vazio.
-- [ ] Sem região no pedido, a sala vai para a região padrão.
-- [ ] Região sem vaga → outra região, com log `region_fallback`.
-- [ ] Testes do `pickServer`/`placeRoom` e do quick-join cobrindo os casos acima.
+- [x] Com dois servidores (`br` e `es`) no ambiente local, um cliente com menor ping para `br` cai sempre em `br` nas quatro entradas, mesmo com `es` vazio.
+- [x] Sem região no pedido, a sala vai para a região padrão.
+- [x] Região sem vaga → outra região, com log `region_fallback`.
+- [x] Testes do `pickServer`/`placeRoom` e do quick-join cobrindo os casos acima.
 
 ## Notas técnicas
 - `tools/dev` sobe dois game-servers locais com `REGION` diferente para o teste (porta e `GS_ID` próprios).
 
 ## Notas de implementação
+- `apps/web/src/app/regions.ts`: ping por região compartilhado (cache de 60 s, espera no máximo 1,5 s; a tela inicial já começa a medir). Todas as entradas mandam a região, inclusive o ticket de uma sala ainda fora do ar.
+- `DEFAULT_REGION` (API) vale para pedido sem região e para a OutCup; sem ela, o comportamento de antes (o beta não muda até o OG-547 pôr `br`).
+- Quick-join: sala aberta na região → sala fixa fora do ar (se a região tiver vaga) → sala aberta de outra região. Abrir sala nova por região depende das salas fixas por região (OG-546).
+- O teste com dois servidores ficou no `registry.test.ts` (servidores simulados por heartbeat); não criei o modo de dois game-servers no `tools/dev`.

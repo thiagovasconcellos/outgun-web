@@ -14,7 +14,7 @@ import { verifyPassword } from '../auth/password.js';
 import { bans, clanMembers, clans, gameServers, rooms } from '../db/schema.js';
 import { playerSkillRank } from '../skill.js';
 import { botLevelFrom, recentRanked } from '../bot-level.js';
-import { onlineServers, placeRoom, roomHumans, roomOnline, type RoomRow } from '../registry.js';
+import { onlineServers, placeRoom, roomHumans, roomOnline, regionFallback, type RoomRow } from '../registry.js';
 import { ErrorSchema, GameModeSchema, RoomId } from './schemas.js';
 import { nameBlocked } from '../name-filter.js';
 import { previousPodium } from '../ranking.js';
@@ -87,8 +87,12 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
     // bots não contam: o game server tira um para o humano entrar (`Room.join`, OG-445)
     if (!returning && roomOnline(room) && roomHumans(room) >= room.maxPlayers) return fail(409, 'room_full', 'room is full');
 
-    const place = await placeRoom(db, room, deps.config.devRoomWsUrl, body.region);
+    const region = body.region ?? deps.config.defaultRegion;
+    const place = await placeRoom(db, room, deps.config.devRoomWsUrl, region);
     if (!place.ok) return fail(503, 'room_offline', 'no game server available');
+    if (place.region !== undefined && regionFallback({ region: place.region }, region)) {
+      request.log.warn({ event: 'region_fallback', room: room.id, wanted: region, got: place.region }, 'sala aberta fora da região pedida (sem vaga nela)');
+    }
 
     // clã cadastrado: no lobby Ranked entra do mesmo lado (OG-253); com cores, o lado pode virar o clã (OG-408)
     const [member] = user
@@ -201,7 +205,8 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
         },
       },
       async (request, reply) => {
-        const { mode, region } = request.body;
+        const { mode } = request.body;
+        const region = request.body.region ?? deps.config.defaultRegion;
         const list = await db
           .select({ room: rooms, region: gameServers.region })
           .from(rooms)
@@ -209,14 +214,19 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
           .where(and(eq(rooms.mode, mode), isNull(rooms.passwordHash), isNull(rooms.format))) // salas de lobby Ranked: pela lista (RN-RKL-05)
           .orderBy(desc(rooms.players), rooms.id);
         const now = Date.now();
-        const canSpawn = deps.config.devRoomWsUrl !== undefined || (await onlineServers(db, now)).length > 0;
+        const servers = await onlineServers(db, now);
+        const canSpawn = deps.config.devRoomWsUrl !== undefined || servers.length > 0;
+        // a região pedida tem servidor com vaga para abrir uma sala nova
+        const regionCanSpawn = servers.some((s) => s.region === region && s.rooms < s.maxRooms);
         // Sala no ar com vaga, na região pedida e com mais gente primeiro (quem chega completa
-        // partidas em vez de abrir salas vazias); senão uma sala da plataforma que possa abrir.
+        // partidas em vez de abrir salas vazias); senão uma sala da plataforma que possa abrir na
+        // região pedida (`placeRoom`); só sem nenhuma das duas, uma sala no ar de outra região
+        // (RN-REG-02, OG-545). Sem região (nem padrão), qualquer sala no ar, como antes.
         const open = list.filter((r) => roomOnline(r.room, now) && r.room.players < r.room.maxPlayers);
-        const choice =
-          open.find((r) => !region || r.region === region)?.room ??
-          open[0]?.room ??
-          (canSpawn ? list.find((r) => r.room.persistent && !roomOnline(r.room, now))?.room : undefined);
+        const spawnable = canSpawn ? list.find((r) => r.room.persistent && !roomOnline(r.room, now))?.room : undefined;
+        const choice = region
+          ? (open.find((r) => r.region === region)?.room ?? (regionCanSpawn ? spawnable : undefined) ?? open[0]?.room ?? spawnable)
+          : (open[0]?.room ?? spawnable);
         if (!choice) return reply.code(503).send({ error: 'no_room', message: `no ${mode} room available` });
         const result = await admit(request, choice, request.body);
         if (!result.ok) return reply.code(result.code).send({ error: result.error, message: result.message });

@@ -480,12 +480,13 @@ export function roundName(round: number, rounds: number): string {
 }
 
 /** Abre a sala Ranked 2x2 travada para as 4 contas (RN-CUP-09); sem servidor, tenta no minuto seguinte. */
-async function openRoom(tx: Tx, cup: CupRow, m: MatchRow, devRoomWsUrl: string | undefined, outbox: CupOutbox): Promise<boolean> {
+async function openRoom(tx: Tx, cup: CupRow, m: MatchRow, devRoomWsUrl: string | undefined, outbox: CupOutbox, region?: string): Promise<boolean> {
   const duos = await tx.select().from(cupDuos).where(inArray(cupDuos.id, [m.duoA!, m.duoB!]));
   const da = duos.find((d) => d.id === m.duoA);
   const db = duos.find((d) => d.id === m.duoB);
   if (!da || !db) return false;
-  const server = pickServer(await onlineServers(tx as Db));
+  // OutCup na região padrão da plataforma (D-90); sem servidor com vaga nela, em outra
+  const server = pickServer(await onlineServers(tx as Db), region);
   if (!server && !devRoomWsUrl) return false;
   const sides: RoomCup['sides'] = {};
   for (const id of duoPlayers(da)) if (id) sides[id] = 0;
@@ -523,6 +524,8 @@ export interface CupClock {
   mailer: Mailer;
   webUrl: string;
   devRoomWsUrl?: string | undefined;
+  /** região das salas da OutCup (`DEFAULT_REGION`, OG-545) */
+  region?: string | undefined;
   log?: (err: unknown, msg: string) => void;
 }
 
@@ -554,7 +557,7 @@ export async function cupTick(c: CupClock, now = new Date()): Promise<void> {
         }
         // sala na hora
         if (fresh.status === 'scheduled' && fresh.scheduledAt && fresh.scheduledAt.getTime() - CUP_ROOM_LEAD_MS <= now.getTime() && !fresh.roomId) {
-          await openRoom(tx, freshCup, fresh, c.devRoomWsUrl, outbox);
+          await openRoom(tx, freshCup, fresh, c.devRoomWsUrl, outbox, c.region);
           return;
         }
         // atraso: 15 min depois do horário, quem não está completo na sala perde (RN-CUP-10)

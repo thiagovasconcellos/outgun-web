@@ -1024,7 +1024,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-542](cards/OG-542-musica-mesmo-mutando-volta-a-tocar.md) | Musica mesmo mutando volta a tocar quando entra na partida casual (issue #31) | E11 | 1 | Must | S58 | — | Concluído |
 | [OG-543](cards/OG-543-estatisticas-nao-aparecem-sao-atualizadas-durante.md) | Estatísticas não aparecem/são atualizadas durante  a partida (issue #32) | E11 | 2 | Should | S58 | — | Concluído |
 | [OG-544](cards/OG-544-saltos-da-predicao-com-perda.md) | Predição: saltos de ~50 px com 150 ms de RTT e 2% de perda | E11 | 3 | Could | — | OG-064, OG-543 | Backlog |
-| [OG-545](cards/OG-545-regiao-sempre-informada-e-estrita.md) | Região sempre informada e estrita ao abrir salas | E16 | 3 | Must | S59 | — | Pronto |
+| [OG-545](cards/OG-545-regiao-sempre-informada-e-estrita.md) | Região sempre informada e estrita ao abrir salas | E16 | 3 | Must | S59 | — | Em revisão |
 | [OG-546](cards/OG-546-salas-fixas-por-regiao.md) | Salas fixas da plataforma por região | E16 | 3 | Must | S59 | OG-545 | Pronto |
 | [OG-547](cards/OG-547-pais-e-bandeira-da-regiao.md) | País e bandeira da região na lista de salas | E16 | 3 | Must | S59 | — | Pronto |
 | [OG-548](cards/OG-548-deploy-de-servidor-satelite.md) | Deploy de servidor satélite (só game-server) e atualização de todas as máquinas | E16 | 5 | Must | S59 | OG-547 | Pronto |

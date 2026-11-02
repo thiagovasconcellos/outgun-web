@@ -149,7 +149,7 @@ export async function buildApp(deps: AppDeps): Promise<App> {
   };
   app.decorate('security', services.security);
   // relógio da OutCup (OG-520): o main chama a cada minuto
-  app.decorate('cupTick', (now?: Date) => cupTick({ db: deps.database.db, mailer: services.mailer, webUrl: deps.config.webUrl, devRoomWsUrl: deps.config.devRoomWsUrl, log: (err, msg) => app.log.error({ err }, msg) }, now));
+  app.decorate('cupTick', (now?: Date) => cupTick({ db: deps.database.db, mailer: services.mailer, webUrl: deps.config.webUrl, devRoomWsUrl: deps.config.devRoomWsUrl, region: deps.config.defaultRegion, log: (err, msg) => app.log.error({ err }, msg) }, now));
 
   observe(app, deps);
   await app.register(cookie);

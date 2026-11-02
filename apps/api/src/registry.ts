@@ -34,13 +34,19 @@ export async function onlineServers(db: Db, now = Date.now()): Promise<ServerRow
 }
 
 /**
- * Servidor menos carregado (menos jogadores por sala livre) com vaga para mais uma sala; a região
- * pedida tem preferência.
+ * Servidor menos carregado (menos jogadores por sala livre) com vaga para mais uma sala. Com região
+ * pedida, só os dessa região; outra região só quando ela não tem servidor com vaga (RN-REG-02, OG-545;
+ * quem chama registra o desvio com `regionFallback`).
  */
 export function pickServer(servers: readonly ServerRow[], region?: string): ServerRow | undefined {
   const free = servers.filter((s) => s.rooms < s.maxRooms);
   const pool = region && free.some((s) => s.region === region) ? free.filter((s) => s.region === region) : free;
   return [...pool].sort((a, b) => a.players - b.players || a.rooms - b.rooms || a.id.localeCompare(b.id))[0];
+}
+
+/** O servidor escolhido é de outra região que a pedida (sem vaga na pedida): vai para o log. */
+export function regionFallback(server: Pick<ServerRow, 'region'> | undefined, region: string | undefined): boolean {
+  return region !== undefined && server !== undefined && server.region !== region;
 }
 
 export function roomSpawn(room: RoomRow): RoomSpawn {
@@ -58,7 +64,7 @@ export function roomSpawn(room: RoomRow): RoomSpawn {
   };
 }
 
-export type Placement = { ok: true; wsUrl: string; spawn?: RoomSpawn } | { ok: false };
+export type Placement = { ok: true; wsUrl: string; spawn?: RoomSpawn; /** região do servidor escolhido agora (sala que ainda não estava no ar) */ region?: string } | { ok: false };
 
 /**
  * Onde o jogador conecta: no servidor que hospeda a sala; se ela não está no ar, no servidor ao
@@ -75,7 +81,7 @@ export async function placeRoom(db: Db, room: RoomRow, devRoomWsUrl: string | un
     if (server.id !== room.serverId || wsUrl !== room.wsUrl) {
       await db.update(rooms).set({ serverId: server.id, wsUrl }).where(eq(rooms.id, room.id));
     }
-    return { ok: true, wsUrl, spawn: roomSpawn(room) };
+    return { ok: true, wsUrl, spawn: roomSpawn(room), region: server.region };
   }
   const dev = devRoomWsUrl?.replace('{id}', room.id);
   return dev ? { ok: true, wsUrl: dev, spawn: roomSpawn(room) } : { ok: false };
