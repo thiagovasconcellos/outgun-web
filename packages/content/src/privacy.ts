@@ -53,6 +53,7 @@ export const TABLES: Readonly<Record<string, 'personal' | 'none'>> = {
   beta_invites: 'none',
   beta_invite_uses: 'personal',
   feedback: 'personal',
+  feedback_images: 'personal',
   net_reports: 'none',
   seasons: 'none',
   rooms: 'personal',
@@ -127,8 +128,11 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     retention: b('Bans até vencerem; denúncias e auditoria enquanto o serviço existir', 'Bans until they expire; reports and audit log while the service exists'),
   },
   {
-    what: b('Beta: convite usado e feedback (nome, notas, texto, sala, mapa, versão, tela e navegador)', 'Beta: invite used and feedback (name, ratings, text, room, map, version, screen and browser)'),
-    where: ['beta_invite_uses', 'feedback'],
+    what: b(
+      'Beta: convite usado e feedback (nome, notas, texto, sala, mapa, versão, tela e navegador); imagens anexadas a relatos de bug, públicas pelo endereço que vai na issue do GitHub',
+      'Beta: invite used and feedback (name, ratings, text, room, map, version, screen and browser); images attached to bug reports, public through the address that goes in the GitHub issue',
+    ),
+    where: ['beta_invite_uses', 'feedback', 'feedback_images'],
     why: b('Controlar quem entra no beta e melhorar o jogo', 'Controlling beta access and improving the game'),
     retention: b('Até o fim do beta ou até você excluir a conta (o nome sai do feedback)', 'Until the end of the beta or until you delete the account (your name is removed from feedback)'),
   },
