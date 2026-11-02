@@ -44,6 +44,7 @@ import { WorldRenderer } from './render/world-renderer.js';
 import { baseSpots, emblemTexture } from './render/emblem-decal.js';
 import { entityFrameFromWorld } from './render/world-view.js';
 import { loadNumberFonts } from './render/number-styles.js';
+import { watchContextLoss, type VideoState } from './render/context-loss.js';
 
 export { GENERATED_MAP, loadMap } from './map-loader.js';
 
@@ -180,6 +181,8 @@ export interface GameOptions {
   readonly onScreen?: (screen: ScreenLayout) => void;
   /** Modo da sala, ao ser aceito nela (a trilha toca só no Casual, D-37). */
   readonly onRoomMode?: (mode: 'casual' | 'ranked') => void;
+  /** Perda do contexto WebGL (OG-539): aviso, volta sozinha ou oferta de recarregar. */
+  readonly onVideo?: (state: VideoState) => void;
 }
 
 export type GameStatus =
@@ -241,6 +244,7 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
   /** Acompanha o tamanho do contêiner do canvas (ver o `init`). */
   let containerSize: ResizeObserver | undefined;
   let world: WorldRenderer | undefined;
+  let stopContextWatch: (() => void) | undefined;
   let worldMap: GameMap | undefined;
   let entities: EntityRenderer | undefined;
   let demo: LocalDemo | undefined;
@@ -630,6 +634,17 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
       app.canvas.className = 'game-canvas';
       app.canvas.setAttribute('aria-label', 'Outgun');
       container.append(app.canvas);
+      // GPU falhou (driver, processo da GPU do app): o canvas ficaria preto até recarregar (OG-539)
+      stopContextWatch = watchContextLoss(app.canvas, {
+        onChange: (state) => opts.onVideo?.(state),
+        // as salas desenhadas em cache saem da GPU com o contexto: refaz
+        onRestored: () => world?.invalidate(),
+        onEvent: (event) => {
+          console.warn(`contexto WebGL: ${event}`);
+          if (event !== 'restored') captureError(new Error(`webgl context ${event}`), { tags: { area: 'webgl', mode: opts.online ? 'online' : 'demo' } });
+        },
+        loseContext: () => (app.renderer as { gl?: WebGLRenderingContext }).gl?.getExtension('WEBGL_lose_context') ?? null,
+      });
       // o `resizeTo` só segue a janela: o contêiner também muda sozinho (a faixa dos controles de toque
       // entra quando a sala se mostra Casual, ou ao virar o aparelho), e o canvas tem de acompanhar
       containerSize = new ResizeObserver(() => app.resize());
@@ -889,6 +904,7 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
       telemetry?.stop();
       latencyBox.remove();
       containerSize?.disconnect();
+      stopContextWatch?.();
       clearTimeout(reconnectTimer);
       if (sendTimer !== null) clearTimeout(sendTimer);
       connection?.close();

@@ -7,6 +7,7 @@ import type { BotNameEntry, RotationKey, TrainingOptions } from '@outgun/setting
 import {
   bigserial,
   boolean,
+  customType,
   date,
   doublePrecision,
   index,
@@ -28,6 +29,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 const tstz = (name: string) => timestamp(name, { withTimezone: true });
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
 
 export const gameMode = pgEnum('game_mode', ['casual', 'ranked']);
 export type GameMode = (typeof gameMode.enumValues)[number];
@@ -793,6 +795,8 @@ export interface BugReport {
   frequency: 'always' | 'sometimes' | 'once';
   severity: 'critical' | 'high' | 'medium' | 'low';
   evidence: string;
+  /** Imagens das evidências (OG-540): ids de `feedback_images`. */
+  images?: string[];
   workaround: string;
 }
 
@@ -822,6 +826,19 @@ export const feedback = pgTable('feedback', {
   handledAt: tstz('handled_at'),
   createdAt: tstz('created_at').notNull().defaultNow(),
 });
+
+/** Imagens das evidências dos relatos de bug (OG-540), servidas em `/feedback/images/:id`. */
+export const feedbackImages = pgTable(
+  'feedback_images',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    contentType: text('content_type').notNull(),
+    data: bytea('data').notNull(),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+  },
+  (t) => [index('feedback_images_user_idx').on(t.userId, t.createdAt)],
+);
 
 /** Resumos anônimos da rede dos clientes (OG-108). */
 export const netReports = pgTable('net_reports', {
@@ -977,6 +994,7 @@ export const allTables = {
   beta_invites: betaInvites,
   beta_invite_uses: betaInviteUses,
   feedback,
+  feedback_images: feedbackImages,
   net_reports: netReports,
   password_resets: passwordResets,
   reserved_names: reservedNames,

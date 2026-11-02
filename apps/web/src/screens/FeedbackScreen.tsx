@@ -7,6 +7,7 @@ import { Navigate, useNavigate, useSearchParams } from 'react-router';
 import { useAccount } from '../app/account.js';
 import { api, ApiError } from '../app/api.js';
 import { areaLabels, autoContext, BUG_AREAS, EMPTY_BUG, frequencyLabels, severityLabels, type BugReport } from '../app/bug-report.js';
+import { useEvidenceImages } from '../app/EvidenceImages.js';
 import { usePrefs } from '../app/prefs.js';
 import { Button } from '../ui/Button.js';
 import { ChoiceField, TextAreaField, TextField, ToggleField } from '../ui/Field.js';
@@ -30,11 +31,16 @@ export default function FeedbackScreen() {
   // enviando: o botão espera a resposta; `sent` conta os envios (atualiza "Meus relatos", OG-465)
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(0);
+  const images = useEvidenceImages(bug.images ?? [], (ids) => setBug((b) => ({ ...b, images: ids })));
   if (user === null) return <Navigate to="/login" replace />;
   const isBug = kind === 'bug';
   const set = <K extends keyof BugReport>(key: K) => (value: BugReport[K]) => setBug((b) => ({ ...b, [key]: value }));
 
   const submit = () => {
+    if (isBug && images.busy) {
+      setStatus({ text: t('Sending image...'), error: true });
+      return;
+    }
     if (isBug && (!bug.summary.trim() || !bug.actual.trim())) {
       setStatus({ text: t('Fill in the summary and what happened.'), error: true });
       return;
@@ -117,7 +123,10 @@ export default function FeedbackScreen() {
               rows={2}
               maxLength={1000}
               onChange={set('evidence')}
-            />
+              onPaste={images.onPaste}
+            >
+              {images.view}
+            </TextAreaField>
             <TextAreaField label={t('Known workaround')} value={bug.workaround} rows={2} maxLength={1000} onChange={set('workaround')} />
           </>
         ) : (

@@ -2,7 +2,7 @@
 // Campos do design system v2 (OG-200): texto/senha, escolha, alternador e deslizante, sempre com
 // rótulo visível. Num `FieldGroup`, ↑/↓ passam de um campo a outro (gamepad e teclado) e ←/→ mudam o
 // valor; as teclas dos campos estão em keys.ts.
-import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { choiceKey, rovingKey, sliderKey, toggleKey } from './keys.js';
 
 /** Marca os controles que o `FieldGroup` percorre com ↑/↓. */
@@ -90,11 +90,32 @@ export function TextField({ label, value, onChange, type = 'text', autoComplete 
 }
 
 /** Texto de várias linhas (OG-203): Enter quebra a linha; fora do percurso ↑/↓ do `FieldGroup`. */
-export function TextAreaField({ label, value, onChange, maxLength, rows = 6, hint }: { readonly label: ReactNode; readonly value: string; readonly onChange: (value: string) => void; readonly maxLength?: number; readonly rows?: number; readonly hint?: ReactNode }) {
+export function TextAreaField({
+  label,
+  value,
+  onChange,
+  maxLength,
+  rows = 6,
+  hint,
+  onPaste,
+  children,
+}: {
+  readonly label: ReactNode;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly maxLength?: number;
+  readonly rows?: number;
+  readonly hint?: ReactNode;
+  /** Colar algo além de texto (ex.: imagem nas evidências do bug, OG-540). */
+  readonly onPaste?: (ev: ClipboardEvent<HTMLTextAreaElement>) => void;
+  /** Abaixo do campo, dentro do mesmo rótulo (ex.: as imagens anexadas). */
+  readonly children?: ReactNode;
+}) {
   const id = useId();
   return (
     <FieldFrame id={id} label={label} hint={hint}>
-      <textarea id={id} className="ui-input ui-textarea" value={value} rows={rows} maxLength={maxLength} aria-describedby={hint ? `${id}-msg` : undefined} onChange={(ev) => onChange(ev.target.value)} />
+      <textarea id={id} className="ui-input ui-textarea" value={value} rows={rows} maxLength={maxLength} aria-describedby={hint ? `${id}-msg` : undefined} onChange={(ev) => onChange(ev.target.value)} onPaste={onPaste} />
+      {children}
     </FieldFrame>
   );
 }

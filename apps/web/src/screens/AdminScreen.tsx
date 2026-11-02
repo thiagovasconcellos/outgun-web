@@ -1516,6 +1516,17 @@ function BugDetails({ bug, context }: { readonly bug: BugReport; readonly contex
   return (
     <details className="admin-wrap admin-bug">
       <summary>{bug.summary}</summary>
+      {bug.images?.length ? (
+        <ul className="evidence-images-list">
+          {bug.images.map((id, i) => (
+            <li key={id}>
+              <a href={`${API_URL}/feedback/images/${id}`} target="_blank" rel="noreferrer">
+                <img src={`${API_URL}/feedback/images/${id}`} alt={t('Image $1', String(i + 1))} />
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <dl>
         {rows
           .filter(([, v]) => v)

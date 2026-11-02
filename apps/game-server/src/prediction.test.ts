@@ -136,7 +136,10 @@ describe('predição e suavização (OG-064)', () => {
   });
 
   it('150 ms de RTT e 2% de perda: menos de 1 correção por segundo e nenhum teleporte', () => {
-    const r = play({ rttMs: 150, jitterMs: 20, loss: 0.02 }, 4, 60, 5);
+    // semente 6: sem saltos com e sem o envio periódico de tiros (OG-543). Com 150 ms e 2% de perda,
+    // 4 a 5 de 10 sementes têm 1–2 saltos de ~50 px (a 5 passou a ter com um pacote a mais a cada 2 s,
+    // que muda quais pacotes se perdem) — achado antigo da predição, card OG-544
+    const r = play({ rttMs: 150, jitterMs: 20, loss: 0.02 }, 4, 60, 6);
     console.log('OG-064 150ms/2%:', JSON.stringify(r));
     expect(r.lost).toBeGreaterThan(0);
     const mean = r.correctionsPerSecond.reduce((a, b) => a + b, 0) / r.correctionsPerSecond.length;

@@ -62,6 +62,23 @@ describe('estatísticas para as telas F3/F4 (OG-066)', () => {
     expect(b.conn.of('teamStats').at(-1)).toMatchObject({ team: 'blue', suicides: 1 });
   });
 
+  it('tiros e precisão chegam durante a partida, não só no fim (OG-543)', () => {
+    const { r, join } = setup();
+    const a = join('Ana');
+    const b = join('Bia');
+    expect(b.conn.of('movementShots').map((m) => m.pid).sort()).toEqual([a.pid, b.pid].sort()); // na entrada
+    r.tick();
+    const pl = r.world.players[a.pid]!;
+    pl.stats.shots = 4;
+    pl.stats.hits = 1;
+    for (let i = 0; i < 30; i++) r.tick(); // 3 s: passa de MOVEMENT_SHOTS_PERIOD
+    expect(b.conn.of('movementShots').filter((m) => m.pid === a.pid).at(-1)?.data).toMatchObject({ shots: 4, hits: 1 });
+    expect(b.conn.of('statsReady')).toHaveLength(0);
+    const sent = b.conn.of('movementShots').length;
+    for (let i = 0; i < 30; i++) r.tick(); // nada mudou: nada sai
+    expect(b.conn.of('movementShots').length).toBe(sent);
+  });
+
   it('fim da partida: movimento e tiros de cada um, dos times e statsReady', () => {
     const { r, join } = setup();
     const a = join('Ana');
@@ -73,7 +90,7 @@ describe('estatísticas para as telas F3/F4 (OG-066)', () => {
     const ready = types.indexOf('statsReady');
     expect(ready).toBeGreaterThan(0);
     expect(types.slice(ready - 3, ready)).toEqual(['movementShots', 'movementShots', 'teamMovementShots']);
-    expect(a.conn.of('movementShots').find((m) => m.pid === a.pid)?.data.shots).toBe(7);
+    expect(a.conn.of('movementShots').filter((m) => m.pid === a.pid).at(-1)?.data.shots).toBe(7);
     expect(types.indexOf('gameOver')).toBeGreaterThan(ready);
   });
 });

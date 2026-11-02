@@ -115,6 +115,16 @@ describe('tocador da trilha', () => {
     expect(audioOf(player.playing as string).paused).toBe(false);
   });
 
+  it('a pausa sobrevive à tela da partida em off antes da sala responder (OG-542)', () => {
+    const player = started();
+    player.pause();
+    player.setMode('off');
+    expect(player.playing).toBeNull();
+    player.setMode('match');
+    expect(audioOf(player.playing as string).paused).toBe(true);
+    expect(player.getState().status).toBe('paused');
+  });
+
   it('mudo zera o volume sem parar a faixa; avisa quem observa', () => {
     const player = started();
     const listener = vi.fn();
