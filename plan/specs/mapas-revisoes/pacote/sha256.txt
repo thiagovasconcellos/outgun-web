@@ -1,0 +1,6 @@
+SHA-256 dos quatro arquivos principais (exclui o próprio sha256.txt):
+
+7dce9c148987dac7d4d91a3e005a60a392821a9489ea59324d262fc4f464338c  00_LEIA_PRIMEIRO.md
+bb6e81c0d33b15ae0b3b755061f63a9fc88a160a76471dd02dd313f8a6438cb3  proposta_gerenciamento_mapas_v2.md
+04828bc8de15c019e72ddf2c18283489831c2d664fe8e04967d3491d0a5e1bb5  inventario_mapas.csv
+2af6822c64cdda7141a05847593a55cebd7a22194a0b6b15594f4d0d342a01fe  mapas_revisados.zip

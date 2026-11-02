@@ -565,6 +565,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | E14 | **v2** — Segurança da operação | Servidor, backups, banco, containers, GitHub, contas dos provedores e monitoramento, guiados pelo OWASP Cheat Sheet Series |
 | E15 | **v2** — OutCup | Copa mensal 2x2 em mata-mata: inscrição, duplas sorteadas, chave, jogos marcados no portal, salas automáticas, W.O. e títulos |
 | E16 | **v2** — Servidores em vários países | Game-servers oficiais em outras regiões ligados à API central (Madrid primeiro), região e país nas salas; depois jogadores com país e servidores da comunidade |
+| E17 | **v2** — Mapas com revisões | Identidade estável de cada mapa com revisões imutáveis, partidas e replays presos à revisão jogada, revisão de qualquer mapa pelo painel, pacote revisado de Nosferatu |
 
 ### 9.2 Roadmap por sprint
 | Sprint | Tema | Cards | Marco |
@@ -629,6 +630,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | S57 | v2: espectador para a transmissão da OutCup (D-89) — assistir até o fim, 15 s de atraso, som do jogo, modo transmissão | OG-533, OG-534, OG-535, OG-536 | |
 | S58 | v2: rodada de correções — tela preta no app da Steam (OG-539) e issues #29–#32 do GitHub | OG-539, OG-540, OG-541, OG-542, OG-543 | |
 | S59 | v2: servidor oficial em Madrid (D-90) — região sempre informada e estrita, salas fixas por região, país e bandeira nas salas, deploy satélite, replays e observabilidade com vários servidores (a VM de Madrid, OG-551, voltou ao Backlog: sem capacidade na Oracle) | OG-545, OG-546, OG-547, OG-548, OG-549, OG-550 | |
+| S60 | v2: mapas com revisões (D-91, proposta de Nosferatu) — identidade e revisões imutáveis, partida presa à revisão, replays e relatórios com o mapa exato, estatísticas pela família, painel de revisões, importação das 23 revisões, rascunho testável em sala privada e implantação com backup | OG-552, OG-553, OG-554, OG-555, OG-556, OG-557, OG-558, OG-559, OG-560, OG-561, OG-562 | |
 
 > Duração total estimada: **13 sprints (~26 semanas)**. Replanejar após S2 com a velocidade real.
 
@@ -1031,8 +1033,19 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-549](cards/OG-549-replays-de-outro-servidor.md) | Replays e espectador de partidas em outro servidor | E16 | 2 | Should | S59 | OG-548 | Concluído |
 | [OG-550](cards/OG-550-observabilidade-por-regiao.md) | Observabilidade com vários servidores | E16 | 3 | Should | S59 | OG-548 | Concluído |
 | [OG-551](cards/OG-551-servidor-oficial-em-madrid.md) | Servidor oficial em Madrid (Oracle Always Free do PO) | E16 | 3 | Must | — | OG-545, OG-546, OG-547, OG-548 | Backlog |
+| [OG-552](cards/OG-552-identidade-de-mapa-e-revisoes.md) | Identidade de mapa e revisões imutáveis | E17 | 5 | Must | S60 | — | Backlog |
+| [OG-553](cards/OG-553-partida-presa-a-revisao.md) | Partidas presas à revisão: servidores e cliente carregam por revisão | E17 | 5 | Must | S60 | OG-552 | Backlog |
+| [OG-554](cards/OG-554-replays-com-o-mapa-exato.md) | Replays com o mapa exato da partida (inclusive nativos) | E17 | 3 | Must | S60 | OG-552, OG-553 | Backlog |
+| [OG-555](cards/OG-555-partida-ligada-a-revisao.md) | Partida ligada à revisão: relatório e miniatura históricos | E17 | 3 | Must | S60 | OG-552, OG-553 | Backlog |
+| [OG-556](cards/OG-556-estatisticas-pela-identidade-do-mapa.md) | Estatísticas, filtros e marcos pela identidade do mapa | E17 | 3 | Should | S60 | OG-555 | Backlog |
+| [OG-557](cards/OG-557-painel-novo-mapa-ou-revisao.md) | Painel: novo mapa ou nova revisão, sem campo de nome | E17 | 3 | Must | S60 | OG-552 | Backlog |
+| [OG-558](cards/OG-558-painel-catalogo-historico-comparar.md) | Painel: catálogo único, histórico, baixar, comparar e restaurar | E17 | 3 | Must | S60 | OG-557 | Backlog |
+| [OG-559](cards/OG-559-importacao-pacote-nosferatu.md) | Importação do pacote de Nosferatu (14 revisões + 9 mapas novos) | E17 | 3 | Must | S60 | OG-552, OG-557 | Backlog |
+| [OG-560](cards/OG-560-conciliar-duplicatas-de-mapas.md) | Conciliar duplicatas já existentes (mooca × Mooca, Pari2) | E17 | 1 | Should | S60 | OG-552 | Backlog |
+| [OG-561](cards/OG-561-backup-ensaio-implantacao-mapas.md) | Backup, ensaio da migração e implantação recuperável dos mapas | E17 | 3 | Must | S60 | OG-552, OG-553, OG-554, OG-555, OG-559 | Backlog |
+| [OG-562](cards/OG-562-rascunho-testavel-em-sala-privada.md) | Rascunho testável: revisão jogável só em sala privada antes de ativar | E17 | 3 | Should | S60 | OG-553, OG-557 | Backlog |
 
-**Total:** 388 cards, 1226 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 319 cards, 931 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
+**Total:** 399 cards, 1261 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 330 cards, 966 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
 ---
 
@@ -1143,6 +1156,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | D-88 | **v2** — 2x2 oficial e OutCup (OG-516 a OG-528) | Formato 2x2; rating; duração; duplas da copa; calendário; agendamento; W.O.; quedas; prêmios; nome | ✅ **Decidido pelo PO com a comunidade em 2026-10-29** (proposta https://claude.ai/artifact/CUCHmHonx7Ss4NfXqUv5xf, cópia em `plan/specs/copa-2x2/proposta.html`): P1 a sala Casual oficial não muda (sempre aberta, rotativa, setup e voto livres); o 2x2 vira opção na criação de salas. P2 Ranked 2x2 é um formato novo e conta no rating único (D-65), com a visão por formato. P3 mapas 2x2: 2 versus 2 (Duel), 3x3 (Duel), Cebs Park, Pari2, The Cover 4. P4 2x2 com 15 min. P5 nas primeiras edições as duplas são sorteadas entre os inscritos. P6 inscrição livre. P7 mata-mata md3, final md5. P8 uma fase por semana; a copa nunca passa do mês e a final termina até o último dia. P9 horário marcado pelo portal; sala criada sozinha só para os 4, espectadores liberados. P10 quem não comparece ao horário confirmado toma W.O.; as duas ausentes → as duas eliminadas. P11 queda: pausa de 120 s e bot, garantindo a volta de quem caiu. P12 jogos da copa são ranqueadas sem itens e valem para tudo. P13 selos, marcos novos da copa e conquistas da Steam. P14 mínimo de 4 duplas. P15 nome oficial **OutCup**. Interpretações a confirmar na revisão: prorrogação de 5 min também no 2x2 e 1 bot por lado (OG-518); inscrições do dia 20 ao último dia do mês anterior, sorteio às 20h (OG-520); ímpar deixa de fora o último inscrito (OG-521); duas duplas com horários sem cruzamento → admin (OG-526). RN-RKL-01/19/25 revistas, RN-CUP-01..13. **Na S56 (decisão técnica):** série da OutCup empatada (empates nos jogos) é desempatada pelas capturas somadas na série e depois pela cabeça de chave; remarcar é uma nova proposta (a hora precisa ter sido marcada pelos 4 e a outra dupla aceita) | PO |
 | D-89 | **v2** — Espectador para transmissão da OutCup | Atraso; fim da partida; som | ✅ **Decidido pelo PO em 2026-11-01:** a OutCup será transmitida; o `spectating_delay` padrão passa de 30 s para **15 s** em todos os presets (revê D-56; o atraso continua para ninguém passar posições), o espectador assiste até o fim da última partida mesmo com a sala encerrada, e o espectador toca o som do jogo da sala mostrada. OG-533 a OG-536 | PO |
 | D-90 | **v2** — Servidor oficial em Madrid (OG-545 a OG-551) | Servidor fora do Brasil; o que muda no jogo; para onde vai o "Jogar agora" | ✅ **Decidido pelo PO em 2026-11-02:** um segundo servidor **oficial** em Madrid (conta Oracle Always Free do PO), só game-server ligado à API e ao banco de SP; o jogo é o mesmo (versão, contas, ranking, estatísticas). Toda entrada vai para a região de menor ping e não cai em outra região em silêncio. Em aberto: Ranked e OutCup em Madrid; país dos jogadores e servidores da comunidade ficam para depois (E16). | PO |
+| D-91 | **v2** — Mapas com revisões (proposta de Nosferatu, OG-552 a OG-562) | Revisão vira mapa novo / uma identidade com revisões imutáveis; troca de nativo no lugar / nativo preservado como revisão 1 | ✅ **Decidido pelo PO com a comunidade em 2026-11-02:** S60 dedicada à proposta. Técnico (delegado): identidade estável + revisões imutáveis para nativos e mapas do painel; partida e replay presos à revisão jogada; nativos viram revisão 1 (os arquivos de `_legacy/maps/` nunca mudaram, então todo replay antigo é comprovável pelo CRC); importação das 23 revisões por script com `--dry-run`. Respostas da comunidade (artifact `plan/specs/mapas-revisoes/proposta.html`): P1 qualquer moderador publica revisão; P2 vale o `P title` da revisão ativa em todo o jogo; P3 os 9 mapas novos entram na rotação Casual já na S60 (Ranked não); P4 as 14 revisões entram de uma vez no Casual e no Ranked; P5 estatísticas por mapa (revisões juntas) com filtro opcional por revisão; P6 marcos contam o mapa uma vez; P7 baixar TXT só para moderadores, no painel; P8 rascunho testável em sala privada já na S60 (OG-562; só o moderador que cria a sala precisa do papel). PO: duplicatas já existentes de mapas do pacote são absorvidas pela família existente, com a revisão de Nosferatu ativa e o histórico preservado (OG-560); as revisões importadas saem publicadas pela conta de admin de Nosferatu (OG-559). | PO + comunidade |
 
 ---
 
@@ -1323,3 +1337,14 @@ Em 2026-10-14 o port ficou completo (S0–S12) e o beta com veteranos está no a
 | RN-REG-03 | **v2:** Cada região com servidor oficial tem suas salas fixas; uma sala fixa só abre em servidor da região dela. |
 | RN-REG-04 | **v2:** A região é um código de país ISO 3166-1 (`br`, `es`), mostrado com bandeira SVG e nome do país. |
 | RN-REG-05 | **v2:** Todos os servidores oficiais rodam a mesma versão e a mesma configuração de partida; contas, ranking, estatísticas e moderação são únicos (API e banco centrais). |
+| RN-MRV-01 | **v2:** Todo mapa (nativo, da moderação ou importado) tem uma identidade estável, independente do título e do nome do arquivo; o título exibido é o `P title` da revisão ativa (D-91). |
+| RN-MRV-02 | **v2:** Revisões são imutáveis e nunca apagadas: publicar, restaurar ou desativar cria registro novo ou muda só a disponibilidade para novas partidas. |
+| RN-MRV-03 | **v2:** Dois mapas só são ligados por escolha explícita (formulário ou tabela de importação), nunca por título, maiúsculas ou sufixo numérico; nomes legados continuam resolvendo como alias. |
+| RN-MRV-04 | **v2:** A partida usa a revisão ativa no momento da troca de mapa; publicação ou troca de rotação só valem na troca seguinte. |
+| RN-MRV-05 | **v2:** Replay, relatório e miniatura de uma partida mostram a revisão jogada; sem revisão comprovável, avisam na tela que a geometria pode ser outra. |
+| RN-MRV-06 | **v2:** Estatísticas, filtros e marcos agrupam pela identidade do mapa, com filtro opcional por revisão; nenhuma migração de mapas recalcula rating, placar ou retira marco. |
+| RN-MRV-07 | **v2:** Qualquer moderador publica revisão de qualquer mapa, sem aprovação obrigatória (D-70); a autoria (`P author`) é a do arquivo e o publicador fica registrado. |
+| RN-MRV-08 | **v2:** Publicar revisão exige a revisão-base; se outra foi publicada depois dela, o painel avisa e pede confirmação. |
+| RN-MRV-09 | **v2:** Importação em lote de mapas só por script com conferência (`--dry-run`), transação e execução idempotente, depois de backup testado. |
+| RN-MRV-10 | **v2:** Revisão publicada como rascunho não entra em rotação nem em sala pública; só um moderador a escolhe numa sala privada Casual, e as partidas nela ficam fora de estatísticas, marcos e ranking até a ativação. |
+| RN-MRV-11 | **v2:** O TXT de uma revisão só é baixável por moderadores, no painel; o cliente continua recebendo o mapa que precisa para jogar e assistir. |
