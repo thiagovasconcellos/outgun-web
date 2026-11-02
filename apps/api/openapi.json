@@ -6618,6 +6618,16 @@
                           }
                         }
                       }
+                    },
+                    "region": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     }
                   }
                 }
@@ -22037,6 +22047,10 @@
                         "type": "string",
                         "pattern": "^[a-z0-9-]{1,32}$"
                       },
+                      "release": {
+                        "type": "string",
+                        "maxLength": 64
+                      },
                       "maxRooms": {
                         "type": "integer",
                         "minimum": 0,
@@ -25371,6 +25385,19 @@
             "name": "days",
             "required": false
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/servers": {
+      "get": {
+        "summary": "Game servers vistos nos últimos 7 dias: região, versão, salas, jogadores e último heartbeat",
+        "tags": [
+          "admin"
         ],
         "responses": {
           "200": {

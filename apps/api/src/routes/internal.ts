@@ -311,8 +311,13 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
   const seen = new Map<string, { region: string; at: number }>();
   return async (app) => {
     // servidores vistos nos últimos 7 dias: um que caiu antes de a API reiniciar continua no alerta
-    const known = await database.db.select({ id: gameServers.id, region: gameServers.region, at: gameServers.lastHeartbeatAt }).from(gameServers).where(gt(gameServers.lastHeartbeatAt, new Date(Date.now() - 7 * 86_400_000)));
-    for (const s of known) seen.set(s.id, { region: s.region, at: s.at.getTime() });
+    // (sem banco na partida, começa vazio: a API sobe do mesmo jeito e os heartbeats preenchem)
+    try {
+      const known = await database.db.select({ id: gameServers.id, region: gameServers.region, at: gameServers.lastHeartbeatAt }).from(gameServers).where(gt(gameServers.lastHeartbeatAt, new Date(Date.now() - 7 * 86_400_000)));
+      for (const s of known) seen.set(s.id, { region: s.region, at: s.at.getTime() });
+    } catch (err) {
+      app.log.warn({ err }, 'servidores conhecidos não carregados; a métrica de heartbeat começa vazia');
+    }
     app.metrics.gauge('outgun_game_server_heartbeat_age_seconds', 'Segundos desde o último heartbeat de cada game server (OG-550).', () =>
       [...seen].map(([server, s]) => [{ server, region: s.region }, Math.round((Date.now() - s.at) / 1000)] as const),
     );
