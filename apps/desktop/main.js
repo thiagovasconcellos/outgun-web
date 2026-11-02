@@ -84,6 +84,9 @@ function syncDisplay() {
   const active =
     onPrimary && win.isFullScreen() && win.isFocused() && !win.isMinimized() ? wantedMode() : null;
   if (active === appliedMode) return;
+  // a troca de modo rearruma os monitores e o Windows pode largar a janela no outro (issue #30): guarda
+  // o monitor de agora para devolvê-la a ele quando a troca assentar (`returnHome`)
+  if (win && !win.isDestroyed()) homeDisplayId = screen.getDisplayMatching(win.getBounds()).id;
   if (active) {
     const mode = parseMode(active);
     appliedMode = mode && applyMode(mode) ? active : null;
@@ -91,6 +94,33 @@ function syncDisplay() {
     restoreMode();
     appliedMode = null;
   }
+}
+/** Monitor em que a janela estava na última troca de modo (OG-541). */
+/** @type {number | null} */
+let homeDisplayId = null;
+/** Depois de uma troca de modo: a janela volta para o monitor de onde saiu, em tela cheia ou não. */
+function returnHome() {
+  if (!win || win.isDestroyed() || homeDisplayId === null) return;
+  const home = screen.getAllDisplays().find((d) => d.id === homeDisplayId);
+  if (!home) return;
+  if (win.isFullScreen()) {
+    const b = win.getBounds();
+    const h = home.bounds;
+    if (b.x !== h.x || b.y !== h.y || b.width !== h.width || b.height !== h.height) win.setBounds(h);
+    return;
+  }
+  // em janela: já de volta ao sistema, a troca acabou; recentra só se ela foi parar em outro monitor
+  homeDisplayId = null;
+  if (screen.getDisplayMatching(win.getBounds()).id === home.id) return;
+  const area = home.workArea;
+  const width = Math.min(win.getBounds().width, area.width);
+  const height = Math.min(win.getBounds().height, area.height);
+  win.setBounds({
+    x: area.x + Math.round((area.width - width) / 2),
+    y: area.y + Math.round((area.height - height) / 2),
+    width,
+    height,
+  });
 }
 // a troca de modo também mexe no foco e no tamanho da janela: espera os eventos assentarem
 /** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -269,12 +299,9 @@ else {
       (_wc, permission) => permission === 'fullscreen',
     );
     createWindow();
-    // modo novo do monitor: a janela em tela cheia acompanha o tamanho da tela (OG-401)
-    screen.on('display-metrics-changed', (_event, display) => {
-      if (appliedMode && win?.isFullScreen() && display.id === screen.getPrimaryDisplay().id) {
-        win.setBounds(display.bounds);
-      }
-    });
+    // modo novo do monitor: a janela em tela cheia acompanha o tamanho da tela (OG-401) e fica no
+    // monitor em que estava, mesmo se o Windows a mandou para o outro na troca (OG-541, issue #30)
+    screen.on('display-metrics-changed', returnHome);
   });
   app.on('web-contents-created', (_event, contents) => {
     contents.on('will-attach-webview', (event) => event.preventDefault());

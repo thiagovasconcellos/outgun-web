@@ -5,9 +5,9 @@
 | Épico | E11 |
 | Tipo | Bug |
 | Prioridade | Could |
-| Estimativa | 2 pts (provisória, estimar no refinamento) |
+| Estimativa | 2 pts |
 | Sprint | S58 |
-| Status | Backlog |
+| Status | Em revisão |
 | Dependências | — |
 | Issue | [#30](https://github.com/thiagovasconcellos/outgun-web/issues/30) |
 | Regras de negócio | — |
@@ -29,8 +29,9 @@ Como jogador, quero que isto deixe de acontecer: Mudança de resolução jogo va
 - Corrigir a causa; teste que reproduz o caso.
 
 ## Critérios de aceite
-- [ ] O caso da issue não acontece mais (teste).
+- [ ] O caso da issue não acontece mais (sem teste automático: depende de dois monitores no Windows; PO confere).
 - [ ] PO confere.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- Causa provável: a troca do modo do monitor principal (OG-401, `ChangeDisplaySettingsEx`) rearruma os monitores e o Windows leva a janela para o outro; o ajuste existente só agia se o evento viesse do principal.
+- Agora o app guarda o monitor da janela a cada troca (aplicar ou devolver o modo) e, a cada `display-metrics-changed`, a devolve a ele: em tela cheia ocupa a tela toda; em janela, recentra se tiver saído.
