@@ -179,8 +179,9 @@ export class MusicPlayer {
     const next = this.wanted();
     if (!(next && next.id === this.current?.track.id && !this.current.ending)) {
       if (this.current) this.fadeOut(this.current);
+      // a pausa sobrevive a um trecho sem música (a tela da partida fica em `off` até a sala responder,
+      // OG-542); só desligar a trilha nas opções a zera (`configure`)
       this.current = next ? this.start(next) : null;
-      if (!this.current) this.paused = false;
     }
     this.emit();
   }

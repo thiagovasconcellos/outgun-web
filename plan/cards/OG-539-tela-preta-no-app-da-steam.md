@@ -6,7 +6,7 @@
 | Tipo | Bug |
 | Prioridade | Must |
 | Estimativa | 3 pts |
-| Sprint | — |
+| Sprint | S58 |
 | Status | Backlog |
 | Dependências | OG-324, OG-401, OG-538 |
 | Regras de negócio | D-58 |

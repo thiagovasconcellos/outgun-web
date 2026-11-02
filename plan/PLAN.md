@@ -626,6 +626,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | S55 | v2: modos de treino (D-86, D-87) — sala de treino e ciclo da tentativa, bots do treino separados dos do Casual (papéis e garantia), presets na sala privada, Ataque, Defesa, Fuga e Captura, convidados, fora das estatísticas, dificuldade progressiva e início variado | OG-490, OG-513, OG-491, OG-492, OG-493, OG-494, OG-495, OG-496, OG-497, OG-498, OG-499, OG-500 | |
 | S56 | v2: 2x2 oficial e OutCup (D-88) — formato 2x2 no Ranked, rotação 2x2, 15 min e bot por lado, atalho 2x2 no Casual; OutCup: calendário, inscrição e sorteio de duplas, chave, página, horário marcado, sala automática, W.O., avisos e títulos | OG-516, OG-517, OG-518, OG-519, OG-520, OG-521, OG-522, OG-523, OG-524, OG-525, OG-526, OG-527, OG-528 | |
 | S57 | v2: espectador para a transmissão da OutCup (D-89) — assistir até o fim, 15 s de atraso, som do jogo, modo transmissão | OG-533, OG-534, OG-535, OG-536 | |
+| S58 | v2: rodada de correções — tela preta no app da Steam (OG-539) e issues #29–#32 do GitHub | OG-539, OG-540, OG-541, OG-542, OG-543 | |
 
 > Duração total estimada: **13 sprints (~26 semanas)**. Replanejar após S2 com a velocidade real.
 
@@ -1015,7 +1016,11 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-536](cards/OG-536-espectador-modo-transmissao.md) | Espectador em modo transmissão (tela limpa para OBS) | E6 | 2 | Should | S57 | OG-533, OG-535 | Concluído |
 | [OG-537](cards/OG-537-partida-casual-no-celular.md) | Partida Casual no celular e no tablet com controles de toque (PR #27, experimental) | E8 | 5 | Should | — | OG-417 | Concluído |
 | [OG-538](cards/OG-538-lista-ranked-bot-substituto.md) | Lista Ranked: o bot substituto não fecha a sala para quem foi substituído (incidente da semifinal da OutCup, v2.57.3) | E8 | 1 | Must | — | OG-262, OG-525 | Concluído |
-| [OG-539](cards/OG-539-tela-preta-no-app-da-steam.md) | Tela preta no app da Steam: recuperar o WebGL, console no app e erros do cliente | E7 | 3 | Must | — | OG-324, OG-401, OG-538 | Backlog |
+| [OG-539](cards/OG-539-tela-preta-no-app-da-steam.md) | Tela preta no app da Steam: recuperar o WebGL, console no app e erros do cliente | E7 | 3 | Must | S58 | OG-324, OG-401, OG-538 | Backlog |
+| [OG-540](cards/OG-540-campo-evidencia-permitir-colar-images-com.md) | Campo evidencia permitir colar images com o ctrl v ou subir (issue #29) | E9 | 2 | Could | S58 | — | Backlog |
+| [OG-541](cards/OG-541-mudanca-de-resolucao-jogo-vai-pra.md) | Mudança de resolução jogo vai pra outra tela (issue #30) | E11 | 2 | Could | S58 | — | Backlog |
+| [OG-542](cards/OG-542-musica-mesmo-mutando-volta-a-tocar.md) | Musica mesmo mutando volta a tocar quando entra na partida casual (issue #31) | E11 | 1 | Must | S58 | — | Em revisão |
+| [OG-543](cards/OG-543-estatisticas-nao-aparecem-sao-atualizadas-durante.md) | Estatísticas não aparecem/são atualizadas durante  a partida (issue #32) | E11 | 2 | Should | S58 | — | Em revisão |
 
 **Total:** 376 cards, 1193 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 307 cards, 898 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
