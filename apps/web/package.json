@@ -25,6 +25,7 @@
     "@outgun/protocol": "workspace:*",
     "@outgun/settings": "workspace:*",
     "@outgun/sim": "workspace:*",
+    "flag-icons": "^7.6.0",
     "jspdf": "4.2.1",
     "jspdf-autotable": "5.0.8",
     "pixi.js": "^8.22.0",

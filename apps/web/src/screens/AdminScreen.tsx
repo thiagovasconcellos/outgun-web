@@ -15,6 +15,7 @@ import { CupTab } from './admin-cup.js';
 import { TextAreaField, TextField } from '../ui/Field.js';
 import { Dialog } from '../ui/Dialog.js';
 import { Page } from '../ui/Page.js';
+import { RegionCell } from '../ui/Flag.js';
 import { Table } from '../ui/Table.js';
 import { decodeMapFile, parseMapFile } from '@outgun/content';
 import {
@@ -1883,7 +1884,7 @@ function NetworkTab() {
         rowKey={(r) => r.region}
         empty={t('No reports yet.')}
         columns={[
-          { key: 'region', header: t('Region'), cell: (r) => <strong>{r.region}</strong> },
+          { key: 'region', header: t('Region'), cell: (r) => <RegionCell region={r.region}><strong>{r.region}</strong></RegionCell> },
           { key: 'matches', header: t('Matches'), cell: (r) => r.reports, align: 'end' },
           { key: 'minutes', header: t('Minutes'), cell: (r) => Math.round(r.seconds / 60), align: 'end' },
           { key: 'ping', header: t('Ping p50 / p95 (ms)'), cell: (r) => `${r.ping_p50 ?? '—'} / ${r.ping_p95 ?? '—'}`, align: 'end' },

@@ -75,6 +75,8 @@ services:
       WEB_URL: https://${DOMAIN}
       TRUST_PROXY: '1'
       MAILER: ${MAILER:-log}
+      # região das salas quando o cliente não diz qual (cliente antigo, OutCup; OG-545)
+      DEFAULT_REGION: ${DEFAULT_REGION:-br}
       RELEASE: ${RELEASE:-${TAG}}
       # vigia (OG-313): disco e hora do último backup bom; alertas para ALERT_EMAIL (no .env)
       BACKUP_STATUS_DIR: /backup-status
@@ -92,7 +94,8 @@ services:
       TICKET_JWKS_URL: http://api:7800/.well-known/jwks.json
       PUBLIC_WS_URL: wss://${DOMAIN}/gs
       ALLOWED_ORIGINS: https://${DOMAIN}
-      REGION: ${REGION:-beta}
+      # país do servidor (ISO 3166-1, OG-547): o da VPS principal é São Paulo
+      REGION: ${REGION:-br}
       TRUST_PROXY: '1'
       GS_ID: vps
       RELEASE: ${RELEASE:-${TAG}}

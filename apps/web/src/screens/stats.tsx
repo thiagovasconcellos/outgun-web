@@ -106,6 +106,8 @@ export interface MatchPage {
   details: MatchDetails;
   players: PlayerLine[];
   replayUrl: string | null;
+  /** País do servidor da partida (OG-547). */
+  region?: string | null;
   milestones?: { username: string; milestone: string; secretName?: Bilingual }[];
   /** Sala com formato (OG-257): formato, número do jogo e a série. */
   format?: string | null;

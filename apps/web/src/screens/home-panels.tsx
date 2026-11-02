@@ -12,6 +12,7 @@ import { isPhone } from '../app/phone.js';
 import { usePrefs } from '../app/prefs.js';
 import { Badge, Button } from '../ui/Button.js';
 import { Panel } from '../ui/Panel.js';
+import { RegionCell } from '../ui/Flag.js';
 import { Table } from '../ui/Table.js';
 import type { RoomSummary } from './lobby.js';
 import { OVERALL, STAT_LABELS, statValue, type StatOverview } from './leaderboard.js';
@@ -95,7 +96,7 @@ export function NowPlaying({ readOnly = false }: { readonly readOnly?: boolean }
               {...(readOnly ? {} : { onRowActivate: (r: RoomSummary) => void navigate(`/rooms/${encodeURIComponent(r.id)}`) })}
               empty=""
               columns={[
-                { key: 'name', header: t('Room'), cell: (r) => r.name },
+                { key: 'name', header: t('Room'), cell: (r) => <RegionCell region={r.region}>{r.name}</RegionCell> },
                 { key: 'mode', header: t('Mode'), cell: (r) => <Badge tone={r.mode === 'ranked' ? 'accent' : 'neutral'}>{r.mode === 'ranked' ? t('Ranked') : t('Casual')}</Badge> },
                 { key: 'map', header: t('Map'), cell: (r) => r.map ?? '—' },
                 { key: 'players', header: t('Players'), cell: (r) => `${r.players}/${r.maxPlayers}`, align: 'end' },

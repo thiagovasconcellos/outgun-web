@@ -604,6 +604,7 @@ export const WEB_TEXTS: Partial<Record<Locale, Readonly<Record<string, string>>>
     'players online': 'jogadores online',
     'Nobody is playing right now. Start a match with "Play now" and others will join.': 'Ninguém está jogando agora. Comece uma partida em "Jogar agora" e os outros chegam.',
     'Rooms with players': 'Salas com jogadores',
+    'Played in $1': 'Jogado em: $1',
     'Ranking: $1': 'Ranking: $1',
     'Full ranking': 'Ranking completo',
     'No active season right now.': 'Nenhuma temporada ativa agora.',
