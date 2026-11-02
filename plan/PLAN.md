@@ -1021,8 +1021,9 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-541](cards/OG-541-mudanca-de-resolucao-jogo-vai-pra.md) | Mudança de resolução jogo vai pra outra tela (issue #30) | E11 | 2 | Could | S58 | — | Em revisão |
 | [OG-542](cards/OG-542-musica-mesmo-mutando-volta-a-tocar.md) | Musica mesmo mutando volta a tocar quando entra na partida casual (issue #31) | E11 | 1 | Must | S58 | — | Em revisão |
 | [OG-543](cards/OG-543-estatisticas-nao-aparecem-sao-atualizadas-durante.md) | Estatísticas não aparecem/são atualizadas durante  a partida (issue #32) | E11 | 2 | Should | S58 | — | Em revisão |
+| [OG-544](cards/OG-544-saltos-da-predicao-com-perda.md) | Predição: saltos de ~50 px com 150 ms de RTT e 2% de perda | E11 | 3 | Could | — | OG-064, OG-543 | Backlog |
 
-**Total:** 380 cards, 1201 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 311 cards, 906 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
+**Total:** 381 cards, 1204 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 312 cards, 909 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
 ---
 
