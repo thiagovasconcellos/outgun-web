@@ -2,7 +2,7 @@
 // Cliente para Windows (OG-324, D-58): uma janela que carrega o site do jogo. Nada do jogo vem no
 // instalador, então a versão é sempre a do site. Segurança pelo checklist do Electron: sem Node na
 // página, sandbox, navegação só no domínio do jogo e links externos no navegador do sistema.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,12 +21,47 @@ const GAME_URL = new URL(process.env.OUTGUN_URL ?? 'https://outgunweb.com.br/');
 // a trilha começa sem esperar o primeiro clique ou tecla (no navegador, a política de autoplay pede)
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
+// Diagnóstico da tela preta (OG-539): opções de inicialização da Steam para isolar o gatilho com o
+// jogador. `--outgun-vsync` não solta o FPS (sem as duas chaves abaixo); `--outgun-windowed` abre em
+// janela; `--outgun-no-gpu` desenha sem a placa de vídeo (lento, só para confirmar que é a GPU).
+const vsync = app.commandLine.hasSwitch('outgun-vsync');
+const windowed = app.commandLine.hasSwitch('outgun-windowed');
+if (app.commandLine.hasSwitch('outgun-no-gpu')) app.disableHardwareAcceleration();
+
 // FPS livre (OG-373, OG-400): o Chromium prende o requestAnimationFrame à taxa do monitor; sem VSync
-// e sem o limite de quadros, quem limita é o jogo (no mínimo 240). Sempre ligado, sem opção: um
-// VSync gravado pelos clientes antigos (`outgun-desktop.json`) não vale mais. As pontes de VSync
-// ficam para o site novo falar com o mesmo preload: o modo é sempre 'unlocked'.
-app.commandLine.appendSwitch('disable-frame-rate-limit');
-app.commandLine.appendSwitch('disable-gpu-vsync');
+// e sem o limite de quadros, quem limita é o jogo (no mínimo 240). Sempre ligado (fora o diagnóstico
+// acima): um VSync gravado pelos clientes antigos (`outgun-desktop.json`) não vale mais. As pontes de
+// VSync ficam para o site novo falar com o mesmo preload: o modo é sempre 'unlocked'.
+if (!vsync) {
+  app.commandLine.appendSwitch('disable-frame-rate-limit');
+  app.commandLine.appendSwitch('disable-gpu-vsync');
+}
+
+// Log do app (OG-539) em `outgun-desktop.log`, na pasta de dados do app (ao lado do
+// `outgun-desktop.json`, em %APPDATA% no Windows): versão, chaves, estado da GPU, quedas dos
+// processos e avisos/erros da página. O jogador manda o arquivo junto com o relato; passa de 1 MB,
+// recomeça.
+const logFile = join(app.getPath('userData'), 'outgun-desktop.log');
+try {
+  if (statSync(logFile).size > 1024 * 1024) writeFileSync(logFile, '');
+} catch {
+  // ainda não existe
+}
+/** @param {string} line */
+function log(line) {
+  try {
+    appendFileSync(logFile, `${new Date().toISOString()} ${line}\n`);
+  } catch {
+    // sem disco gravável, sem log
+  }
+}
+log(
+  `início: app ${app.getVersion()}, electron ${process.versions.electron}, chrome ${process.versions.chrome}, ${process.platform} ${process.getSystemVersion()}; vsync=${vsync} windowed=${windowed} noGpu=${app.commandLine.hasSwitch('outgun-no-gpu')}`,
+);
+app.on('child-process-gone', (_event, details) => {
+  log(`processo ${details.type} caiu: ${details.reason} (código ${details.exitCode}${details.name ? `, ${details.name}` : ''})`);
+});
+app.on('gpu-info-update', () => log(`GPU: ${JSON.stringify(app.getGPUFeatureStatus())}`));
 ipcMain.on('outgun:frame-rate', (event) => {
   event.returnValue = 'unlocked';
 });
@@ -49,6 +84,8 @@ const openOutside = (url) => {
 
 /** @type {BrowserWindow | null} */
 let win = null;
+/** Recargas automáticas depois de a página cair (OG-539). @type {number[]} */
+let reloads = [];
 
 // Resolução do monitor (OG-401, só Windows): o modo escolhido em Opções (gravado em userData) ou o da
 // opção de inicialização `--resolution=1920x1080@144` (vale por cima; `--resolution=system` desliga).
@@ -169,7 +206,7 @@ function createWindow() {
     title: 'Outgun',
     autoHideMenuBar: true,
     // no Windows abre em tela cheia, como o jogo antigo (OG-337); F11 volta para a janela
-    fullscreen: process.platform === 'win32',
+    fullscreen: process.platform === 'win32' && !windowed,
     webPreferences: {
       contextIsolation: true,
       sandbox: true,
@@ -200,7 +237,11 @@ function createWindow() {
     if (input.type !== 'keyDown') return;
     const key = input.key.toLowerCase();
     // Ctrl+W/Ctrl+R/F5 no meio da partida fechariam ou recarregariam o jogo; F11 alterna a tela cheia
-    if ((input.control || input.meta) && (key === 'w' || key === 'r')) event.preventDefault();
+    // Ctrl+Shift+I ou F12: ferramentas do desenvolvedor, para diagnosticar com o jogador (OG-539)
+    if ((input.control && input.shift && key === 'i') || key === 'f12') {
+      event.preventDefault();
+      win?.webContents.toggleDevTools();
+    } else if ((input.control || input.meta) && (key === 'w' || key === 'r')) event.preventDefault();
     else if (key === 'f5') event.preventDefault();
     else if (key === 'f11') {
       event.preventDefault();
@@ -218,6 +259,23 @@ function createWindow() {
   ]) {
     win.on(/** @type {any} */ (event), scheduleSync);
   }
+  // a página morreu (o canvas ficaria preto ou branco para sempre): registra e recarrega o jogo; a
+  // conta volta para a mesma vaga (OG-262). Avisos e erros da página também vão para o log (OG-539).
+  win.webContents.on('render-process-gone', (_event, details) => {
+    log(`página caiu: ${details.reason} (código ${details.exitCode})`);
+    // no máximo 3 recargas por minuto: uma página que cai sempre não vira um laço
+    const now = Date.now();
+    reloads = reloads.filter((t) => now - t < 60_000);
+    if (details.reason === 'clean-exit' || reloads.length >= 3 || !win || win.isDestroyed()) return;
+    reloads.push(now);
+    win.webContents.reload();
+  });
+  win.webContents.on('unresponsive', () => log('página sem resposta'));
+  win.webContents.on('responsive', () => log('página respondendo de novo'));
+  win.webContents.on('console-message', (event) => {
+    const { level, message } = /** @type {any} */ (event);
+    if (level === 'warning' || level === 'error') log(`console ${level}: ${String(message).slice(0, 500)}`);
+  });
   win.on('closed', () => {
     win = null;
     releaseDisplay();

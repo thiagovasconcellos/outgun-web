@@ -12,6 +12,7 @@ import { joinName, useAccount } from '../app/account.js';
 import { isPhone, isTouchGame } from '../app/phone.js';
 import { BOT_LEVEL_CHOICES, usePrefs } from '../app/prefs.js';
 import { DEFAULT_MAP, mountGame, type ClientOptions, type GameHost, type GameStatus, type OnlineOptions } from '../game/host.js';
+import type { VideoState } from '../game/render/context-loss.js';
 import type { Prefs } from '../app/prefs.js';
 import { defaultServerUrl } from '../game/net/connection.js';
 import { ACTION_LABELS } from '../game/input/bindings.js';
@@ -96,6 +97,8 @@ export default function GameScreen() {
   const [status, setStatus] = useState<GameStatus | null>(null);
   // trilha (OG-221, D-37): playlist no Casual e no Ranked (OG-334); até o servidor dizer o modo, silêncio
   const [roomMode, setRoomMode] = useState<'casual' | 'ranked' | null>(null);
+  // perda do contexto WebGL (OG-539): aviso por cima do jogo; sem volta no prazo, recarregar
+  const [video, setVideo] = useState<VideoState>(null);
   useMusicMode(roomMode !== null ? 'match' : 'off');
   const [toast, setToast] = useState<string | null>(null);
   /** Tela F1–F5 aberta (OG-066); `auto` = aberta sozinha no fim da partida (`stats_autoshowing`). */
@@ -160,6 +163,7 @@ export default function GameScreen() {
       onStatus: setStatus,
       onScreen: setScreen,
       onRoomMode: setRoomMode,
+      onVideo: setVideo,
       onAction: (action) => {
         const t = tRef.current;
         if (action === 'menu') setMenuOpen(true);
@@ -421,6 +425,16 @@ export default function GameScreen() {
         </>
       )}
       <div className="game-overlay">
+        {video && (
+          <div className="game-video" role="alert">
+            <p>{video === 'lost' ? t('Recovering the video...') : t('The video did not come back. Reload the game to return to the match.')}</p>
+            {video === 'stuck' && (
+              <Button variant="primary" onClick={() => location.reload()}>
+                {t('Reload')}
+              </Button>
+            )}
+          </div>
+        )}
         {toast && !menuOpen && (
           <p className="game-toast" role="status">
             <BitmapText text={toast} />

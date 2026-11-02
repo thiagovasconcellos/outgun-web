@@ -2560,6 +2560,28 @@
   grid-template-columns: 1fr;
 }
 
+/* perda do contexto WebGL (OG-539): aviso no meio da tela, por cima do jogo */
+.game-video {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  max-width: min(90%, 32rem);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: var(--text);
+  text-align: center;
+  pointer-events: auto;
+  z-index: 5;
+}
+.game-video p {
+  margin: 0;
+}
+
 /* imagens das evidências do relato de bug (OG-540) */
 .evidence-images {
   display: grid;

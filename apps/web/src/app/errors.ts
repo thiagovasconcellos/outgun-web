@@ -8,11 +8,16 @@ import { isDesktopClient } from './install.js';
 
 let reporter: ErrorReporter | null = null;
 
-const tags = (): Record<string, string> => ({
-  route: location.pathname,
-  client: isDesktopClient() ? 'desktop' : 'browser',
-  browser: browserName(navigator.userAgent),
-});
+const tags = (): Record<string, string> => {
+  // versão do app desktop/Steam (OG-539): o site é o mesmo, o Electron por baixo muda com o instalador
+  const app = /OutgunDesktop\/([\w.-]+)/.exec(navigator.userAgent)?.[1];
+  return {
+    route: location.pathname,
+    client: isDesktopClient() ? 'desktop' : 'browser',
+    browser: browserName(navigator.userAgent),
+    ...(app ? { desktopVersion: app } : {}),
+  };
+};
 
 /**
  * O erro tem pilha e nenhum quadro é nosso (`/assets/` do build, `/src/` ou `/@` do Vite em dev)?

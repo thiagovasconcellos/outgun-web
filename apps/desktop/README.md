@@ -22,7 +22,14 @@ npm run dist:win                            # dist/Outgun-Setup-<versão>.exe (W
 `disable-gpu-vsync` (sem opção de VSync; quem limita é o jogo, no mínimo 240 FPS). O `preload.cjs`
 expõe ao site só `window.outgunDesktop` (modo de quadros e conquistas da Steam). **Resolução do monitor (OG-401, só Windows):** `display-win.js` troca o modo do monitor principal
 pelo user32 (koffi) em tela cheia e devolve o do sistema ao perder o foco ou fechar; escolha em
-Opções → Gráficos ou `--resolution=1920x1080@144` na inicialização. Mudou `main.js`, `display-win.js` ou `preload.cjs`: gere instaladores e build da Steam novos.
+Opções → Gráficos ou `--resolution=1920x1080@144` na inicialização.
+
+**Diagnóstico da tela preta (OG-539):** Ctrl+Shift+I ou F12 abrem as ferramentas do desenvolvedor.
+O app grava `outgun-desktop.log` na pasta de dados, ao lado do `outgun-desktop.json` (no Windows, em `%APPDATA%`): versão, chaves,
+estado da GPU (`gpu-info-update`), quedas do processo da GPU e da página (que recarrega sozinha, até
+3 vezes por minuto) e avisos/erros do console. Opções de inicialização na Steam para isolar o gatilho:
+`--outgun-vsync` (sem o FPS livre), `--outgun-windowed` (abre em janela) e `--outgun-no-gpu` (sem a
+placa de vídeo). Mudou `main.js`, `display-win.js` ou `preload.cjs`: gere instaladores e build da Steam novos.
 
 Os instaladores oficiais saem do GitHub Actions (workflow "Cliente desktop", que roda a cada push
 que muda esta pasta, um job por sistema). Baixe os artefatos e envie ao servidor:
