@@ -59,7 +59,9 @@ log(
   `início: app ${app.getVersion()}, electron ${process.versions.electron}, chrome ${process.versions.chrome}, ${process.platform} ${process.getSystemVersion()}; vsync=${vsync} windowed=${windowed} noGpu=${app.commandLine.hasSwitch('outgun-no-gpu')}`,
 );
 app.on('child-process-gone', (_event, details) => {
-  log(`processo ${details.type} caiu: ${details.reason} (código ${details.exitCode}${details.name ? `, ${details.name}` : ''})`);
+  log(
+    `processo ${details.type} caiu: ${details.reason} (código ${details.exitCode}${details.name ? `, ${details.name}` : ''})`,
+  );
 });
 app.on('gpu-info-update', () => log(`GPU: ${JSON.stringify(app.getGPUFeatureStatus())}`));
 ipcMain.on('outgun:frame-rate', (event) => {
@@ -143,7 +145,8 @@ function returnHome() {
   if (win.isFullScreen()) {
     const b = win.getBounds();
     const h = home.bounds;
-    if (b.x !== h.x || b.y !== h.y || b.width !== h.width || b.height !== h.height) win.setBounds(h);
+    if (b.x !== h.x || b.y !== h.y || b.width !== h.width || b.height !== h.height)
+      win.setBounds(h);
     return;
   }
   // em janela: já de volta ao sistema, a troca acabou; recentra só se ela foi parar em outro monitor
@@ -241,7 +244,8 @@ function createWindow() {
     if ((input.control && input.shift && key === 'i') || key === 'f12') {
       event.preventDefault();
       win?.webContents.toggleDevTools();
-    } else if ((input.control || input.meta) && (key === 'w' || key === 'r')) event.preventDefault();
+    } else if ((input.control || input.meta) && (key === 'w' || key === 'r'))
+      event.preventDefault();
     else if (key === 'f5') event.preventDefault();
     else if (key === 'f11') {
       event.preventDefault();
@@ -274,7 +278,8 @@ function createWindow() {
   win.webContents.on('responsive', () => log('página respondendo de novo'));
   win.webContents.on('console-message', (event) => {
     const { level, message } = /** @type {any} */ (event);
-    if (level === 'warning' || level === 'error') log(`console ${level}: ${String(message).slice(0, 500)}`);
+    if (level === 'warning' || level === 'error')
+      log(`console ${level}: ${String(message).slice(0, 500)}`);
   });
   win.on('closed', () => {
     win = null;
