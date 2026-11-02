@@ -25,6 +25,8 @@ const Heartbeat = Type.Object({
     /** Endereço público do servidor; as salas ficam em `<wsBaseUrl>/rooms/<id>`. */
     wsBaseUrl: Type.String({ pattern: '^wss?://', maxLength: 200 }),
     region: Type.String({ pattern: '^[a-z0-9-]{1,32}$' }),
+    /** Versão do servidor (RELEASE), para o painel (OG-550). */
+    release: Type.Optional(Type.String({ maxLength: 64 })),
     /** Quantas salas o servidor aceita hospedar (as abertas sob demanda contam). */
     maxRooms: Type.Integer({ minimum: 0, maximum: 1000 }),
     /** Mapas da pasta do servidor, para o painel conferir as rotações (OG-251). */
@@ -305,7 +307,15 @@ const ABANDONED_MS = 60 * 60_000;
 export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<Services, 'mailer'>): FastifyPluginAsyncTypebox {
   /** Retrato das salas de cada servidor no último heartbeat: mudou, avisa o portal ao vivo (OG-284). */
   const roomSignatures = new Map<string, string>();
+  /** Último heartbeat de cada servidor (OG-550): a métrica abaixo, para o alerta de servidor caído. */
+  const seen = new Map<string, { region: string; at: number }>();
   return async (app) => {
+    // servidores vistos nos últimos 7 dias: um que caiu antes de a API reiniciar continua no alerta
+    const known = await database.db.select({ id: gameServers.id, region: gameServers.region, at: gameServers.lastHeartbeatAt }).from(gameServers).where(gt(gameServers.lastHeartbeatAt, new Date(Date.now() - 7 * 86_400_000)));
+    for (const s of known) seen.set(s.id, { region: s.region, at: s.at.getTime() });
+    app.metrics.gauge('outgun_game_server_heartbeat_age_seconds', 'Segundos desde o último heartbeat de cada game server (OG-550).', () =>
+      [...seen].map(([server, s]) => [{ server, region: s.region }, Math.round((Date.now() - s.at) / 1000)] as const),
+    );
     app.addHook('preHandler', async (request, reply) => {
       const result = verifyInternalRequest(
         request.headers,
@@ -348,7 +358,8 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
         const { server, rooms: hosted } = request.body;
         await database.db.transaction(async (tx) => {
           const players = hosted.reduce((n, r) => n + r.players, 0);
-          const status = { wsBaseUrl: server.wsBaseUrl, region: server.region, maxRooms: server.maxRooms, rooms: hosted.length, players, lastHeartbeatAt: now, ...(server.maps ? { maps: server.maps } : {}), ...(server.rotations ? { rotations: server.rotations } : {}) };
+          const status = { wsBaseUrl: server.wsBaseUrl, region: server.region, maxRooms: server.maxRooms, rooms: hosted.length, players, lastHeartbeatAt: now, release: server.release ?? null, ...(server.maps ? { maps: server.maps } : {}), ...(server.rotations ? { rotations: server.rotations } : {}) };
+          seen.set(serverId, { region: server.region, at: now.getTime() });
           await tx.insert(gameServers).values({ id: serverId, ...status }).onConflictDoUpdate({ target: gameServers.id, set: status });
           // Sala no ar em outro servidor com o mesmo id (dois servidores com a mesma `main`, OG-546):
           // fica com o primeiro, sem trocar de servidor a cada heartbeat; o operador vê no log.

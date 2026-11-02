@@ -10,6 +10,8 @@ export interface ErrorReporterConfig {
   service: string;
   environment?: string | undefined;
   release?: string | undefined;
+  /** Rótulos fixos de todos os erros (ex.: a região do game server, OG-550). */
+  tags?: Record<string, string>;
   platform?: 'node' | 'javascript';
   /** Máximo de envios por minuto (o resto é descartado). */
   perMinute?: number;
@@ -119,7 +121,7 @@ export class ErrorReporter {
       logger: this.config.service,
       ...(this.config.environment ? { environment: this.config.environment } : {}),
       ...(this.config.release ? { release: this.config.release } : {}),
-      tags: { service: this.config.service, ...context.tags },
+      tags: { service: this.config.service, ...this.config.tags, ...context.tags },
       ...(context.extra ? { extra: context.extra } : {}),
       exception: { values: exceptionChain(err) },
     };

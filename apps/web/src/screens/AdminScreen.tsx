@@ -1836,6 +1836,54 @@ interface RegionNet {
   stall_pct: number;
 }
 
+interface GameServerRow {
+  id: string;
+  region: string;
+  release: string | null;
+  online: boolean;
+  draining: boolean;
+  rooms: number;
+  maxRooms: number;
+  players: number;
+  lastHeartbeatAt: string;
+}
+
+/** Game servers por região (OG-550): no ar, versão (destacada se diferente da API), salas e jogadores. */
+function ServersTable() {
+  const { t, prefs } = usePrefs();
+  const list = useLoad<{ release: string | null; servers: GameServerRow[] }>('/admin/servers', 15_000);
+  const apiRelease = list.data?.release ?? null;
+  return (
+    <>
+      <Status error={list.error} />
+      <Table
+        phoneCards
+        caption={t('Game servers')}
+        rows={list.data?.servers ?? []}
+        rowKey={(s) => s.id}
+        empty={t('No game server yet.')}
+        columns={[
+          { key: 'region', header: t('Region'), cell: (s) => <RegionCell region={s.region}><strong>{s.region}</strong></RegionCell> },
+          { key: 'id', header: t('Server'), cell: (s) => s.id },
+          {
+            key: 'state',
+            header: t('Status'),
+            cell: (s) => <Badge tone={!s.online ? 'warning' : s.draining ? 'neutral' : 'success'}>{t(!s.online ? 'Offline' : s.draining ? 'Draining' : 'Online')}</Badge>,
+          },
+          {
+            key: 'release',
+            header: t('Version'),
+            cell: (s) => (apiRelease && s.release && s.release !== apiRelease ? <Badge tone="warning">{s.release}</Badge> : (s.release ?? '—')),
+          },
+          { key: 'rooms', header: t('Rooms'), cell: (s) => `${s.rooms}/${s.maxRooms}`, align: 'end' },
+          { key: 'players', header: t('Players'), cell: (s) => s.players, align: 'end' },
+          { key: 'seen', header: t('Last heartbeat'), cell: (s) => new Date(s.lastHeartbeatAt).toLocaleString(prefs.locale), align: 'end' },
+        ]}
+      />
+    </>
+  );
+}
+
 /** Rede dos jogadores por região (telemetria anônima, OG-108): para ajustar rede e predição. */
 function NetworkTab() {
   const { t } = usePrefs();
@@ -1876,6 +1924,7 @@ function NetworkTab() {
           <strong>{ping ?? '—'}</strong>
         </div>
       </div>
+      <ServersTable />
       <Status error={net.error} />
       <Table
         phoneCards

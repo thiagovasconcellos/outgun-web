@@ -45,7 +45,31 @@ services:
     stop_grace_period: 300s
     volumes: [replays:/data/replays]
 
+  # métricas e logs no Grafana Cloud (OG-550): só com as credenciais (deploy/vps/grafana-cloud.sh)
+  fluent-bit:
+    <<: *restart
+    image: fluent/fluent-bit:5.1.4
+    profiles: [observabilidade]
+    command: ['-c', '/fluent-bit/etc/outgun/fluent-bit.yaml']
+    environment:
+      GRAFANA_CLOUD_PROM_HOST: ${GRAFANA_CLOUD_PROM_HOST:-}
+      GRAFANA_CLOUD_PROM_USER: ${GRAFANA_CLOUD_PROM_USER:-}
+      GRAFANA_CLOUD_LOKI_HOST: ${GRAFANA_CLOUD_LOKI_HOST:-}
+      GRAFANA_CLOUD_LOKI_USER: ${GRAFANA_CLOUD_LOKI_USER:-}
+      GRAFANA_CLOUD_TOKEN: ${GRAFANA_CLOUD_TOKEN:-}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      OUTGUN_HOST_LABEL: ${REGION}
+      OUTGUN_INSTANCE: ${GS_ID}
+    mem_limit: 64m
+    volumes:
+      - ./fluent-bit:/fluent-bit/etc/outgun:ro
+      - fluent-bit-data:/data
+      - /:/rootfs:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on: [game-server]
+
 volumes:
   caddy-data:
   caddy-config:
   replays:
+  fluent-bit-data:

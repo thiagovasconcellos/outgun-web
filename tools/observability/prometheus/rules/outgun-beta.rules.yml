@@ -18,6 +18,15 @@ groups:
         labels: { severity: page }
         annotations:
           summary: 'Nenhuma métrica do game server há 5 minutos: o servidor ou o coletor caiu'
+      # vários servidores (OG-550): a API conta a idade do último heartbeat de cada um; vale mesmo se
+      # o coletor do satélite cair junto com ele
+      - alert: OutgunServidorSemHeartbeat
+        expr: max by (server, region) (outgun_game_server_heartbeat_age_seconds) > 120
+        for: 1m
+        labels: { severity: page }
+        annotations:
+          summary: 'Game server {{ $labels.server }} ({{ $labels.region }}) sem heartbeat há {{ $value | humanizeDuration }}'
+          description: 'A API não recebe o heartbeat dele: o servidor caiu, perdeu a rede ou o segredo (INTERNAL_SECRETS) não confere. As salas dele somem do lobby.'
 
   - name: outgun-maquina
     rules:

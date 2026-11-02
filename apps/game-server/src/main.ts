@@ -46,7 +46,8 @@ const panelMaps = new PanelMaps(async (name) => {
 });
 const production = env.NODE_ENV === 'production';
 const logger = createLogger({ service: 'game-server', level: env.LOG_LEVEL ?? 'info', ...(env.RELEASE ? { version: env.RELEASE } : {}) });
-const reporter = new ErrorReporter({ dsn: env.SENTRY_DSN, service: 'game-server', environment: env.SENTRY_ENVIRONMENT ?? env.NODE_ENV, release: env.RELEASE });
+// região e id do servidor nos erros: com satélites, diz de qual máquina veio (OG-550)
+const reporter = new ErrorReporter({ dsn: env.SENTRY_DSN, service: 'game-server', environment: env.SENTRY_ENVIRONMENT ?? env.NODE_ENV, release: env.RELEASE, tags: { region: env.REGION ?? 'local', server: env.GS_ID ?? 'dev' } });
 process.on('uncaughtException', (error) => {
   logger.fatal({ err: error }, 'exceção não tratada');
   reporter.capture(error, { level: 'fatal' });
@@ -183,7 +184,7 @@ const server = await startServer({
 if (production && !env.METRICS_TOKEN) logger.warn('METRICS_TOKEN vazio: /metrics aberto; deixe a porta só na rede interna ou defina o token');
 logger.info({ port: server.port }, `game-server na porta ${server.port}; depuração em http://localhost:${server.port}/dev`);
 // o heartbeat lê este objeto a cada envio: na drenagem, maxRooms 0 tira o servidor da escolha da API
-const serverInfo = { wsBaseUrl: publicWsUrl, region: env.REGION ?? env.FLY_REGION ?? 'local', maxRooms: manager.maxRooms, maps: listMaps(mapsDir), rotations: { casual: [...rotations.casual], ranked: [...rotations.ranked] } };
+const serverInfo = { wsBaseUrl: publicWsUrl, region: env.REGION ?? env.FLY_REGION ?? 'local', ...(env.RELEASE ? { release: env.RELEASE.slice(0, 64) } : {}), maxRooms: manager.maxRooms, maps: listMaps(mapsDir), rotations: { casual: [...rotations.casual], ranked: [...rotations.ranked] } };
 const panel = new AdminPanelLink({ manager, rotations, map: mapFile, generatedMaps, panelMaps, log: (msg, fields) => logger.info({ component: 'painel', ...fields }, msg) });
 if (env.HEARTBEAT !== '0') platform.startHeartbeat(serverInfo, () => manager.hosted(), 3000, panel);
 

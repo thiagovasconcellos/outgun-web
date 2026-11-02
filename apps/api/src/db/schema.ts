@@ -208,6 +208,8 @@ export const gameServers = pgTable('game_servers', {
   maps: text('maps').array().notNull().default(sql`'{}'::text[]`),
   /** Rotações padrão do servidor (ROTATION/RANKED_ROTATION, OG-378): o painel parte delas sem rotação salva. */
   rotations: jsonb('rotations').$type<Partial<Record<RotationKey, string[]>>>().notNull().default({}),
+  /** Versão do game server (RELEASE), do heartbeat (OG-550); nula nos servidores antigos. */
+  release: text('release'),
 });
 
 /** Lado que virou o clã na partida (OG-409). */

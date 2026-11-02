@@ -43,8 +43,11 @@ while IFS= read -r line; do
   mv .env.tmp .env
 done
 chmod 600 .env
-# --no-deps: o .env mudou, e sem isso o compose recriaria a API e o game server
-docker compose up -d --no-deps postgres-exporter fluent-bit
+# --no-deps: o .env mudou, e sem isso o compose recriaria a API e o game server. Num satélite
+# (OG-550) não há banco: só o Fluent Bit
+svcs="fluent-bit"
+docker compose --profile observabilidade config --services | grep -qx postgres-exporter && svcs="postgres-exporter fluent-bit"
+docker compose up -d --no-deps $svcs
 sleep 5
-docker compose ps postgres-exporter fluent-bit --format "{{.Service}}: {{.Status}}"
+docker compose ps $svcs --format "{{.Service}}: {{.Status}}"
 docker compose logs --no-color --since 1m fluent-bit | grep -E "\[(error|warn)" | tail -5 || true'

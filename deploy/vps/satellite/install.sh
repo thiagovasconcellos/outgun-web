@@ -69,7 +69,10 @@ if [ -n "${RELEASE:-}" ]; then
 fi
 
 # atualização: o game server recebe SIGTERM e drena (as partidas terminam) antes de trocar
-docker compose up -d --remove-orphans --wait edge game-server
+services="edge game-server"
+# métricas e logs no Grafana Cloud (OG-550): só com as credenciais (deploy/vps/grafana-cloud.sh)
+grep -q '^GRAFANA_CLOUD_TOKEN=.' .env && services="$services fluent-bit"
+docker compose up -d --remove-orphans --wait $services
 docker compose exec -T edge caddy reload --config /etc/caddy/Caddyfile >/dev/null 2>&1 || echo "aviso: não recarreguei o Caddyfile da borda"
 docker image prune -f >/dev/null
 docker compose ps --format '{{.Service}}: {{.Status}}'

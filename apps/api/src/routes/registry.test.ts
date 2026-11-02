@@ -18,7 +18,7 @@ const SECRET = 'segredo-de-teste-0123456789';
 
 describe('escolha do servidor', () => {
   const s = (id: string, players: number, rooms = 1, region = 'eu', maxRooms = 10): ServerRow => ({
-    id, wsBaseUrl: `ws://${id}`, region, maxRooms, rooms, players, lastHeartbeatAt: new Date(), maps: [], rotations: {},
+    id, wsBaseUrl: `ws://${id}`, region, maxRooms, rooms, players, lastHeartbeatAt: new Date(), maps: [], rotations: {}, release: null,
   });
 
   it('menos jogadores primeiro; servidor lotado de salas fica fora', () => {
@@ -207,6 +207,17 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
     await heartbeat('gs-1', [], 'br', 0);
     expect((await post('/rooms', { name: 'Privada 2', preset: 'classic', region: 'br' }, true)).json().room.region).toBe('es');
     await t.db.delete(rooms).where(eq(rooms.id, 'c-fixa'));
+  });
+
+  it('heartbeat grava a versão do servidor e a API expõe a idade do último heartbeat (OG-550)', async () => {
+    const url = '/internal/rooms/heartbeat';
+    const body = JSON.stringify({ server: { wsBaseUrl: 'ws://gs-2.test', region: 'es', release: '2.59.0', maxRooms: 6 }, rooms: [] });
+    const res = await app.inject({ method: 'POST', url, payload: body, headers: { 'content-type': 'application/json', ...signInternalRequest('gs-2', SECRET, 'POST', url, body) } });
+    expect(res.statusCode).toBe(200);
+    const [server] = await t.db.select().from(gameServers).where(eq(gameServers.id, 'gs-2'));
+    expect(server).toMatchObject({ region: 'es', release: '2.59.0', maxRooms: 6 });
+    const metrics = (await app.inject('/metrics')).body;
+    expect(metrics).toMatch(/outgun_game_server_heartbeat_age_seconds\{server="gs-2",region="es"\} 0/);
   });
 
   it('sala fixa de cada servidor fica na região dele; id repetido em outro servidor é ignorado (OG-546)', async () => {

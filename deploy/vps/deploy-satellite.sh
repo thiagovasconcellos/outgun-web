@@ -34,6 +34,7 @@ if ! sat_ "docker image inspect outgun-game-server:$tag >/dev/null 2>&1" 2>/dev/
   docker save "outgun-game-server:$tag" | gzip -1 | sat_ "command -v docker >/dev/null || (apt-get update -q && DEBIAN_FRONTEND=noninteractive apt-get install -yq docker.io docker-compose-v2 >/dev/null); gunzip | docker load" | tail -2
 fi
 scp -q "${opts[@]}" deploy/vps/satellite/compose.yml deploy/vps/satellite/Caddyfile deploy/vps/satellite/install.sh "$host:/opt/outgun/"
+scp -q -r "${opts[@]}" deploy/vps/satellite/fluent-bit "$host:/opt/outgun/"
 
 # o mesmo jogo da principal: variáveis de partida do .env de lá (as de cada máquina, como
 # MAX_ROOMS, ficam no .env do satélite)
