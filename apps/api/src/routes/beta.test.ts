@@ -103,6 +103,28 @@ describe.skipIf(!pgAdminUrl)('beta fechado (OG-106)', () => {
     expect(csv.body).toContain(`"'=HYPERLINK(""x"") travou no mapa verde"`); // fórmula neutralizada
   });
 
+  it('imagens nas evidências do bug: só com conta, só imagem de verdade, pública pelo id e só as do próprio jogador (OG-540)', async () => {
+    const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32, 1)]);
+    const upload = (body: Buffer, type: string, cookie?: string) =>
+      app.inject({ method: 'POST', url: '/feedback/images', payload: body, remoteAddress: `10.20.0.${++ip}`, headers: { origin: ORIGIN, 'content-type': type, ...(cookie ? { cookie } : {}) } });
+    expect((await upload(png, 'image/png')).statusCode).toBe(401);
+    expect((await upload(Buffer.from('<svg onload=alert(1)>'), 'image/png', cookies.Jogador1)).statusCode).toBe(415);
+    expect((await upload(png, 'image/jpeg', cookies.Jogador1)).statusCode).toBe(415); // tipo declarado diferente do conteúdo
+    const mine = await upload(png, 'image/png', cookies.Jogador1);
+    expect(mine.statusCode).toBe(201);
+    const other = (await upload(png, 'image/png', cookies.Jogador2)).json().id as string;
+    const img = await get(`/feedback/images/${mine.json().id}`);
+    expect(img.statusCode).toBe(200);
+    expect(img.headers['content-type']).toBe('image/png');
+    expect(img.headers['cross-origin-resource-policy']).toBe('cross-origin');
+    expect(img.rawPayload.equals(png)).toBe(true);
+    const bug = { area: 'portal', summary: 'campo de evidências', steps: '', expected: '', actual: 'só texto', frequency: 'always', severity: 'low', evidence: '', workaround: '', images: [mine.json().id, other] };
+    const sent = await post('/feedback', { kind: 'bug', text: '', bug }, cookies.Jogador1);
+    expect(sent.statusCode).toBe(201);
+    const [row] = await t.sql`SELECT bug FROM feedback WHERE id = ${sent.json().id as number}`;
+    expect((row!.bug as { images: string[] }).images).toEqual([mine.json().id]); // a do outro jogador sai
+  });
+
   it('fora do beta, cadastro e convidados seguem como antes', async () => {
     const open = await buildApp({ config: { ...loadConfig({}), databaseUrl: t.url }, database: t, mailer: new MemoryMailer(), logger: false });
     expect((await open.inject('/beta')).json()).toEqual({ beta: false });

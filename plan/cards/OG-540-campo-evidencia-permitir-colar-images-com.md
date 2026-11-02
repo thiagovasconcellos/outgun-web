@@ -5,9 +5,9 @@
 | Épico | E9 |
 | Tipo | Bug |
 | Prioridade | Could |
-| Estimativa | 2 pts (provisória, estimar no refinamento) |
+| Estimativa | 3 pts |
 | Sprint | S58 |
-| Status | Backlog |
+| Status | Em revisão |
 | Dependências | — |
 | Issue | [#29](https://github.com/thiagovasconcellos/outgun-web/issues/29) |
 | Regras de negócio | — |
@@ -29,8 +29,10 @@ Como jogador, quero que isto deixe de acontecer: Campo evidencia permitir colar 
 - Corrigir a causa; teste que reproduz o caso.
 
 ## Critérios de aceite
-- [ ] O caso da issue não acontece mais (teste).
+- [x] O caso da issue não acontece mais (teste da API em `beta.test.ts`; colar e anexar no formulário o PO confere).
 - [ ] PO confere.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- Ctrl+V de imagem no campo de evidências ou "Anexar imagem" (até 4): o navegador reduz (lado maior 1920 px, WebP) e manda a `POST /feedback/images` (corpo cru, até 2 MB, tipo conferido pelos bytes, 20/h por conta). Tabela nova `feedback_images` (migração 0050); `GET /feedback/images/:id` é público pelo uuid.
+- Os ids vão em `bug.images` (só os do próprio jogador); a issue mostra `![Imagem N](.../api/feedback/images/id)` em Evidências; o painel mostra as miniaturas.
+- Pendência: imagens sem relato (enviadas e removidas) ficam no banco; limpar se o volume pesar.

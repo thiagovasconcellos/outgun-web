@@ -2560,6 +2560,67 @@
   grid-template-columns: 1fr;
 }
 
+/* imagens das evidências do relato de bug (OG-540) */
+.evidence-images {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.evidence-images-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.evidence-images-list li {
+  position: relative;
+  width: 96px;
+  height: 72px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+.evidence-images-list img {
+  display: block;
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+}
+.evidence-images-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-0);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1;
+}
+.evidence-images-remove:hover,
+.evidence-images-remove:focus-visible {
+  border-color: var(--danger);
+  color: var(--text-danger);
+}
+.evidence-images-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.evidence-images-hint {
+  color: var(--text-muted);
+  font-size: 0.875em;
+}
+
 /* emblema do clã (OG-483) */
 .ui-emblem {
   display: inline-block;

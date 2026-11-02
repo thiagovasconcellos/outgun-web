@@ -98,7 +98,9 @@ export function issueDraft(f: { id: number; username: string; bug: BugReport; co
     .filter(Boolean)
     .map((l, i) => (/^\d+[.)]/.test(l) ? l : `${i + 1}. ${l}`))
     .join('\n');
-  const evidence = [bug.evidence, c.match ? `Última partida: ${webUrl}/matches/${c.match}` : ''].filter(Boolean).join('\n');
+  // imagens coladas ou anexadas no site (OG-540): o GitHub as mostra pelo endereço público da API
+  const images = (bug.images ?? []).map((id, i) => `![Imagem ${i + 1}](${webUrl}/api/feedback/images/${id})`);
+  const evidence = [bug.evidence, ...images, c.match ? `Última partida: ${webUrl}/matches/${c.match}` : ''].filter(Boolean).join('\n');
   const where = [c.room ? `sala ${c.room}` : '', c.map ? `mapa ${c.map}` : ''].filter(Boolean).join(', ');
   const body = `## Resumo
 ${bug.summary}

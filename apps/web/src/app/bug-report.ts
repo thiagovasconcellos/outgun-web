@@ -18,6 +18,8 @@ export interface BugReport {
   frequency: BugFrequency;
   severity: BugSeverity;
   evidence: string;
+  /** Imagens coladas ou anexadas (OG-540): ids devolvidos por `POST /feedback/images`. */
+  images?: string[];
   workaround: string;
 }
 

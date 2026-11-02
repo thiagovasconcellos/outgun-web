@@ -22,8 +22,9 @@ export async function api<T>(path: string, init: { method?: string; body?: unkno
     res = await fetch(`${API_URL}${path}`, {
       method: init.method ?? (init.body === undefined ? 'GET' : 'POST'),
       credentials: 'include',
-      headers: init.body === undefined ? {} : { 'content-type': 'application/json' },
-      body: init.body === undefined ? null : JSON.stringify(init.body),
+      // Blob (imagem das evidências, OG-540) vai cru, com o próprio tipo
+      headers: init.body === undefined ? {} : { 'content-type': init.body instanceof Blob ? init.body.type : 'application/json' },
+      body: init.body === undefined ? null : init.body instanceof Blob ? init.body : JSON.stringify(init.body),
       // envio que precisa sair mesmo com a página fechando
       ...(init.keepalive ? { keepalive: true } : {}),
     });
