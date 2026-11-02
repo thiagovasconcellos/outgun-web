@@ -108,7 +108,8 @@ services:
     image: outgun-web:${TAG}
     environment:
       API_UPSTREAMS: api:7800
-      CSP_CONNECT_SRC: wss://${DOMAIN} https://${DOMAIN} ${CSP_EXTRA:-}
+      # SATELLITE_ORIGINS: game servers satélites (OG-548), gravado pelo deploy-satellite.sh
+      CSP_CONNECT_SRC: wss://${DOMAIN} https://${DOMAIN} ${SATELLITE_ORIGINS:-} ${CSP_EXTRA:-}
     depends_on: [api]
 
   backup:

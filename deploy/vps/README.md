@@ -138,6 +138,32 @@ Consultas úteis no Explore do Grafana: `{service="game-server", level="error"}`
 `sum by (code) (rate(outgun_ws_closed_total{kind="player"}[1m]))` (quedas),
 `rate(node_cpu_seconds_total{mode="steal"}[5m])` (CPU roubada).
 
+## Servidor satélite em outro país (OG-548)
+
+Um satélite é só o game server (com o Caddy na frente) noutra máquina, ligado à API e ao banco da
+VPS principal pela internet. O jogo é o mesmo: mesma versão, mesmas contas, ranking e estatísticas;
+presets, rotações, mapas e bots vêm da API, e as variáveis de partida do `.env` da principal
+(`ROTATION`, `GAMEMOD`, `CASUAL_BOTS_FILL`...) são copiadas para o `shared.env` do satélite a cada
+deploy.
+
+```sh
+# primeira vez (DNS A de mad.outgunweb.com.br apontando para o IP do satélite, nuvem cinza)
+DOMAIN=mad.outgunweb.com.br REGION=es bash deploy/vps/deploy-satellite.sh root@IP_DO_SATELITE
+# daqui em diante, junto com a principal (mesma versão)
+git config outgun.satellites "root@IP_DO_SATELITE"
+bash deploy/vps/deploy.sh root@137.131.202.138
+```
+
+- `REGION` é o código do país (ISO 3166-1, OG-547): aparece com bandeira no lobby, e quem tem menor
+  ping até lá cai nele (OG-545). A sala fixa do satélite é `main-<região>` (`MAIN_ROOM`, OG-546).
+- O `install.sh` do satélite gera `GS_ID` (`gs-<região>`) e `GS_SECRET`; o deploy registra o segredo
+  em `INTERNAL_SECRETS` da principal e o endereço em `SATELLITE_ORIGINS` (CSP do site), e reinicia a
+  API e o site só quando isso muda.
+- O satélite fala com `https://outgunweb.com.br/api` (`/internal/*` com HMAC e a JWKS pública).
+  Se a principal cair, as partidas em andamento no satélite seguem; entradas novas esperam a API.
+- Os replays ficam no disco do satélite (30 dias, `REPLAY_RETENTION_DAYS`), sem backup.
+- `MAX_ROOMS` é por máquina (no `.env` do satélite; o install põe 6, pensando numa E2.1.Micro).
+
 ## Provedores
 
 - **DigitalOcean** (beta): sem região na América do Sul; Nova York dá ~110–150 ms a partir do

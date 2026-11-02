@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S59 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-547 |
 | Regras de negócio | RN-REG-05 |
 | Skills | `outgun-card-workflow` |
@@ -31,6 +31,10 @@ Como PO, quero subir um game-server oficial em outra máquina (Madrid) ligado à
 ## Critérios de aceite
 - [ ] Satélite de teste (pode ser uma segunda VM local ou de staging) aparece no lobby com a região dele e recebe partidas.
 - [ ] Um `deploy.sh` atualiza principal e satélite para o mesmo commit.
-- [ ] Sem o segredo certo, o heartbeat do satélite é recusado.
+- [x] Sem o segredo certo, o heartbeat do satélite é recusado.
 
 ## Notas de implementação
+- `deploy/vps/satellite/` (compose, Caddyfile, install.sh, register.sh) e `deploy/vps/deploy-satellite.sh`; o `deploy.sh` da principal chama os satélites de `SATELLITES`/`git config outgun.satellites` depois da principal (o cliente novo já no ar). O install.sh da principal não mudou.
+- Variáveis de partida copiadas da principal para `shared.env`; `MAX_ROOMS` é por máquina (6 no satélite). A CSP do site ganha `SATELLITE_ORIGINS`; `/health`, `/replays` e `/maps` do game server já respondiam com CORS aberto.
+- Registro na principal testado com um `.env` falso (adiciona, não repete, troca o segredo e preserva o `vps`). O satélite de verdade só dá para conferir com a VM de Madrid (OG-551): critérios 1 e 2 ficam para lá.
+- "Sem o segredo certo, heartbeat recusado" já era garantido pelo HMAC (`internal.ts`).
