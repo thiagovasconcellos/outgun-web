@@ -1028,8 +1028,8 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-546](cards/OG-546-salas-fixas-por-regiao.md) | Salas fixas da plataforma por região | E16 | 3 | Must | S59 | OG-545 | Em revisão |
 | [OG-547](cards/OG-547-pais-e-bandeira-da-regiao.md) | País e bandeira da região na lista de salas | E16 | 3 | Must | S59 | — | Em revisão |
 | [OG-548](cards/OG-548-deploy-de-servidor-satelite.md) | Deploy de servidor satélite (só game-server) e atualização de todas as máquinas | E16 | 5 | Must | S59 | OG-547 | Em revisão |
-| [OG-549](cards/OG-549-replays-de-outro-servidor.md) | Replays e espectador de partidas em outro servidor | E16 | 2 | Should | S59 | OG-548 | Pronto |
-| [OG-550](cards/OG-550-observabilidade-por-regiao.md) | Observabilidade com vários servidores | E16 | 3 | Should | S59 | OG-548 | Pronto |
+| [OG-549](cards/OG-549-replays-de-outro-servidor.md) | Replays e espectador de partidas em outro servidor | E16 | 2 | Should | S59 | OG-548 | Em revisão |
+| [OG-550](cards/OG-550-observabilidade-por-regiao.md) | Observabilidade com vários servidores | E16 | 3 | Should | S59 | OG-548 | Em andamento |
 | [OG-551](cards/OG-551-servidor-oficial-em-madrid.md) | Servidor oficial em Madrid (Oracle Always Free do PO) | E16 | 3 | Must | S59 | OG-545, OG-546, OG-547, OG-548 | Bloqueado |
 
 **Total:** 388 cards, 1226 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 319 cards, 931 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).

@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 2 pts |
 | Sprint | S59 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-548 |
 | Regras de negócio | RN-REG-05 |
 | Skills | `outgun-card-workflow` |
@@ -28,3 +28,5 @@ Como jogador, quero ver o replay e assistir ao vivo partidas jogadas em Madrid p
 - [ ] Espectador ao vivo funciona numa sala do satélite.
 
 ## Notas de implementação
+- Sem mudança de código: o replay é gravado com o endereço público do servidor que hospedou a partida (`REPLAY_PUBLIC_URL`, padrão `https://<satélite>/gs/replays`), o espectador usa o `spectateUrl` da sala (do `wsUrl` dela) e os mapas vêm do servidor da conexão; `/replays`, `/maps` e `/health` já respondem com CORS aberto e a CSP do site inclui o satélite (`SATELLITE_ORIGINS`, OG-548).
+- Os dois critérios só dá para conferir com a VM de Madrid no ar (OG-551). Retenção e falta de backup dos replays anotadas no README do deploy (OG-548).
