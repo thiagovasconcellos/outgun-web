@@ -14,7 +14,7 @@ import { verifyPassword } from '../auth/password.js';
 import { bans, clanMembers, clans, gameServers, rooms } from '../db/schema.js';
 import { playerSkillRank } from '../skill.js';
 import { botLevelFrom, recentRanked } from '../bot-level.js';
-import { onlineServers, placeRoom, roomHumans, roomOnline, regionFallback, type RoomRow } from '../registry.js';
+import { canSpawnRoom, onlineServers, placeRoom, roomHumans, roomOnline, regionFallback, type RoomRow } from '../registry.js';
 import { ErrorSchema, GameModeSchema, RoomId } from './schemas.js';
 import { nameBlocked } from '../name-filter.js';
 import { previousPodium } from '../ranking.js';
@@ -215,7 +215,7 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
           .orderBy(desc(rooms.players), rooms.id);
         const now = Date.now();
         const servers = await onlineServers(db, now);
-        const canSpawn = deps.config.devRoomWsUrl !== undefined || servers.length > 0;
+        const dev = deps.config.devRoomWsUrl !== undefined;
         // a região pedida tem servidor com vaga para abrir uma sala nova
         const regionCanSpawn = servers.some((s) => s.region === region && s.rooms < s.maxRooms);
         // Sala no ar com vaga, na região pedida e com mais gente primeiro (quem chega completa
@@ -223,7 +223,9 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
         // região pedida (`placeRoom`); só sem nenhuma das duas, uma sala no ar de outra região
         // (RN-REG-02, OG-545). Sem região (nem padrão), qualquer sala no ar, como antes.
         const open = list.filter((r) => roomOnline(r.room, now) && r.room.players < r.room.maxPlayers);
-        const spawnable = canSpawn ? list.find((r) => r.room.persistent && !roomOnline(r.room, now))?.room : undefined;
+        // sala fixa fora do ar que dá para abrir (a de região só na região dela, OG-546)
+        const offline = list.filter((r) => r.room.persistent && !roomOnline(r.room, now) && canSpawnRoom(r.room, servers, dev));
+        const spawnable = (region ? (offline.find((r) => r.room.region === region) ?? offline.find((r) => !r.room.region)) : offline[0])?.room;
         const choice = region
           ? (open.find((r) => r.region === region)?.room ?? (regionCanSpawn ? spawnable : undefined) ?? open[0]?.room ?? spawnable)
           : (open[0]?.room ?? spawnable);

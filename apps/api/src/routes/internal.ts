@@ -2,7 +2,7 @@
 // Rotas dos game servers (PLAN 5.4): heartbeat das salas e resultado das partidas. Toda chamada é
 // autenticada por HMAC (`verifyInternalRequest` de @outgun/tickets).
 import { Type, type FastifyPluginAsyncTypebox, type Static, type TArray, type TOptional, type TString } from '@fastify/type-provider-typebox';
-import { and, eq, gt, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNotNull, isNull, lt, ne, notInArray, or } from 'drizzle-orm';
 import { BOT_CHAT_MESSAGE_MAX_LENGTH, BOT_CHAT_MESSAGES_MAX, BOT_CHAT_PER_MINUTE_MAX, PRESETS, ROTATION_KEYS, seriesOver, seriesWinner, seriesWinsNeeded, type RotationKey } from '@outgun/settings';
 import type { AppDeps, Services } from '../app.js';
 import { EmblemSchema } from './schemas.js';
@@ -350,7 +350,17 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
           const players = hosted.reduce((n, r) => n + r.players, 0);
           const status = { wsBaseUrl: server.wsBaseUrl, region: server.region, maxRooms: server.maxRooms, rooms: hosted.length, players, lastHeartbeatAt: now, ...(server.maps ? { maps: server.maps } : {}), ...(server.rotations ? { rotations: server.rotations } : {}) };
           await tx.insert(gameServers).values({ id: serverId, ...status }).onConflictDoUpdate({ target: gameServers.id, set: status });
+          // Sala no ar em outro servidor com o mesmo id (dois servidores com a mesma `main`, OG-546):
+          // fica com o primeiro, sem trocar de servidor a cada heartbeat; o operador vê no log.
+          const hostedIds = hosted.map((r) => r.id);
+          const taken = new Set(
+            hostedIds.length
+              ? (await tx.select({ id: rooms.id }).from(rooms).where(and(inArray(rooms.id, hostedIds), ne(rooms.serverId, serverId), gt(rooms.lastHeartbeatAt, new Date(now.getTime() - ONLINE_MS))))).map((r) => r.id)
+              : [],
+          );
+          if (taken.size > 0) request.log.warn({ event: 'room_id_conflict', server: serverId, rooms: [...taken] }, 'sala com o mesmo id no ar em outro servidor: ignorada (use MAIN_ROOM diferente em cada servidor)');
           for (const r of hosted) {
+            if (taken.has(r.id)) continue;
             // Salas novas (as persistentes do próprio servidor) são criadas; nas existentes, só o
             // estado de execução muda: modo, preset e senha pertencem à API.
             await tx
@@ -363,6 +373,9 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
                 maxPlayers: r.maxPlayers,
                 persistent: r.persistent,
                 serverId,
+                // só na criação: a sala fixa do próprio servidor fica na região dele; a da plataforma
+                // (já no banco) segue sem região e abre onde quem entra estiver
+                region: server.region,
                 wsUrl: r.wsUrl,
                 players: r.players,
                 map: r.map,

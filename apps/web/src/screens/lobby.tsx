@@ -110,6 +110,15 @@ export function sortRooms(rooms: readonly RoomSummary[]): RoomSummary[] {
   );
 }
 
+/**
+ * Salas da região mais próxima primeiro (OG-546), mantendo a ordem de `sortRooms` dentro de cada
+ * região; com uma região só (ou sem ping), a lista fica como está.
+ */
+export function nearestFirst(rooms: readonly RoomSummary[], pings: ReadonlyMap<string, number>): RoomSummary[] {
+  const rank = (r: RoomSummary) => (r.region !== null && pings.has(r.region) ? pings.get(r.region)! : Infinity);
+  return [...rooms].sort((a, b) => (isFull(a) ? 1 : 0) - (isFull(b) ? 1 : 0) || rank(a) - rank(b));
+}
+
 /** "Jogar agora": a API escolhe a sala do modo; o jogo pede o próprio ticket ao entrar. */
 export async function quickJoin(mode: Mode, name: string): Promise<string> {
   const r = await api<{ roomId: string }>('/rooms/quick-join', {
@@ -189,7 +198,7 @@ export function LobbyScreen() {
       (id) => void navigate(`/play?sala=${encodeURIComponent(id)}`),
       fail,
     );
-  const shown = filterRooms(rooms ?? [], search, hideFull);
+  const shown = filterRooms(nearestFirst(rooms ?? [], pings), search, hideFull);
 
   return (
     <Page title={t('Rooms')} onBack={() => void navigate('/')}>

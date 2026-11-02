@@ -2,7 +2,7 @@
 // Registro de salas e matchmaking (OG-086): heartbeat, saída do lobby, abertura sob demanda,
 // "Jogar agora" e sala privada.
 import { fromJwks, signInternalRequest, verifyTicket } from '@outgun/tickets';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp, type App } from '../app.js';
 import { loadConfig } from '../config.js';
@@ -207,6 +207,23 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
     await heartbeat('gs-1', [], 'br', 0);
     expect((await post('/rooms', { name: 'Privada 2', preset: 'classic', region: 'br' }, true)).json().room.region).toBe('es');
     await t.db.delete(rooms).where(eq(rooms.id, 'c-fixa'));
+  });
+
+  it('sala fixa de cada servidor fica na região dele; id repetido em outro servidor é ignorado (OG-546)', async () => {
+    await heartbeat('gs-1', [{ id: 'main', players: 2 }], 'br');
+    // Madrid configurado sem MAIN_ROOM: manda a mesma `main`, que continua no Brasil
+    await heartbeat('gs-2', [{ id: 'main', players: 0 }, { id: 'main-es', players: 1 }], 'es');
+    const rows = await t.db.select().from(rooms).where(inArray(rooms.id, ['main', 'main-es']));
+    expect(rows.find((r) => r.id === 'main')).toMatchObject({ serverId: 'gs-1', players: 2 });
+    expect(rows.find((r) => r.id === 'main-es')).toMatchObject({ serverId: 'gs-2', region: 'es', persistent: true });
+    // sala fixa de Madrid fora do ar: só reabre em Madrid, mesmo para quem pede o Brasil
+    await t.db.update(rooms).set({ lastHeartbeatAt: null }).where(eq(rooms.id, 'main-es'));
+    expect((await post('/rooms/main-es/join', { name: 'Ana', region: 'br' })).json().wsUrl).toBe('ws://gs-2.test/rooms/main-es');
+    // Madrid fora do ar: a sala dele some da lista e não abre no Brasil
+    await t.db.update(gameServers).set({ lastHeartbeatAt: new Date(Date.now() - ONLINE_MS - 1000) }).where(eq(gameServers.id, 'gs-2'));
+    expect((await list()).map((r) => r.id)).not.toContain('main-es');
+    expect((await post('/rooms/main-es/join', { name: 'Ana', region: 'br' })).json().error).toBe('room_offline');
+    await t.db.delete(rooms).where(eq(rooms.id, 'main-es'));
   });
 
   it('cria sala privada Casual em menos de 1 s, com senha e mapas próprios', async () => {

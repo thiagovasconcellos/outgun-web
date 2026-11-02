@@ -9,7 +9,7 @@ import { randomBytes } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
 import { hashPassword } from '../auth/password.js';
 import { gameServers, panelMaps, rooms } from '../db/schema.js';
-import { onlineServers, pickServer, regionFallback, roomHumans, roomListed, roomOnline } from '../registry.js';
+import { canSpawnRoom, onlineServers, pickServer, regionFallback, roomHumans, roomListed, roomOnline } from '../registry.js';
 import { ErrorSchema, GameModeSchema, LobbyPhaseSchema, RankedFormatSchema, RoomId, SeriesBestOfSchema } from './schemas.js';
 
 const RoomSummary = Type.Object({
@@ -97,9 +97,10 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
           .leftJoin(gameServers, eq(gameServers.id, rooms.serverId))
           .where(and(request.query.mode ? eq(rooms.mode, request.query.mode) : undefined, request.query.format ? eq(rooms.format, request.query.format) : undefined))
           .orderBy(asc(rooms.mode), asc(rooms.id));
-        const canSpawn = config.devRoomWsUrl !== undefined || (await onlineServers(db, now)).length > 0;
+        const servers = await onlineServers(db, now);
+        const dev = config.devRoomWsUrl !== undefined;
         return {
-          rooms: list.filter(({ room }) => roomListed(room, canSpawn, now)).map(({ room, region }) => summary(room, region, now)),
+          rooms: list.filter(({ room }) => roomListed(room, canSpawnRoom(room, servers, dev), now)).map(({ room, region }) => summary(room, region ?? room.region, now)),
         };
       },
     );

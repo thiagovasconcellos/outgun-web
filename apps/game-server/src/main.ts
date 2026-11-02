@@ -17,6 +17,7 @@
 // DRAIN_TIMEOUT_S (240): prazo da drenagem no SIGTERM.
 // SEED: semente fixa das salas (capturas determinísticas do `pnpm visual:check`, OG-265); padrão aleatória.
 // ROOMS: salas fixas além da `main`, `id[:preset[:max_jogadores]]` separadas por vírgula (testes de carga, OG-101).
+// MAIN_ROOM (main): id da sala fixa sempre no ar; único entre os servidores (ex.: `main-es` no de Madrid, OG-546).
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listMaps, resolveRotation, type Rotations } from './maps.js';
@@ -142,7 +143,7 @@ const fixedRoom = (id: string, name: string, preset: string, maxPlayers: number)
 const telemetry = new GameTelemetry(manager, logger, reporter);
 metrics.telemetry = telemetry;
 manager.observer = telemetry;
-fixedRoom('main', 'Principal', env.PRESET ?? 'classic', Number(env.MAX_PLAYERS ?? 16));
+fixedRoom(env.MAIN_ROOM || 'main', 'Principal', env.PRESET ?? 'classic', Number(env.MAX_PLAYERS ?? 16));
 for (const spec of (env.ROOMS ?? '').split(',').filter(Boolean)) {
   const [id = '', preset = env.PRESET ?? 'classic', max = env.MAX_PLAYERS ?? '16'] = spec.split(':');
   fixedRoom(id, id, preset, Number(max));

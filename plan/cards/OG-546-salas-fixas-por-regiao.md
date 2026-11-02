@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S59 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-545 |
 | Regras de negócio | RN-REG-03 |
 | Skills | `outgun-card-workflow` |
@@ -26,8 +26,12 @@ Como jogador europeu, quero ver as salas fixas do Outgun também no servidor de 
 - Salas da OutCup e do Ranked seguem a região de quem cria (OG-545); a OutCup fica em `br` até decisão do PO.
 
 ## Critérios de aceite
-- [ ] Com `br` e `es` no ar, a lista mostra as salas fixas das duas regiões, a mais próxima primeiro.
-- [ ] Sala fixa de `es` nunca abre em `br` (e vice-versa).
-- [ ] Desligar o servidor `es` tira as salas fixas de `es` da lista em até 10 s.
+- [x] Com `br` e `es` no ar, a lista mostra as salas fixas das duas regiões, a mais próxima primeiro.
+- [x] Sala fixa de `es` nunca abre em `br` (e vice-versa).
+- [x] Desligar o servidor `es` tira as salas fixas de `es` da lista em até 10 s.
 
 ## Notas de implementação
+- Achado: todo game server criava a sala fixa `main`; dois servidores trocariam a sala de dono a cada heartbeat. Agora o id vem de `MAIN_ROOM` (padrão `main`; Madrid usa `main-es`, OG-548) e a API ignora (com log `room_id_conflict`) sala no ar com o mesmo id em outro servidor.
+- `rooms.region` (migração 0051) é gravada só quando o próprio servidor cria a sala: a `main` de cada servidor fica presa à região dele; as da plataforma no banco (`main` do seed, `ranked`) seguem sem região e abrem onde quem entra estiver.
+- Salas fixas por região vêm de cada servidor (`MAIN_ROOM`/`ROOMS`); não fiz tela de salas fixas por região no painel (não havia cadastro de salas fixas no painel).
+- Lista: região mais próxima primeiro (`nearestFirst`); lotadas continuam no fim.

@@ -73,9 +73,11 @@ export type Placement = { ok: true; wsUrl: string; spawn?: RoomSpawn; /** regiã
  */
 export async function placeRoom(db: Db, room: RoomRow, devRoomWsUrl: string | undefined, region?: string, now = Date.now()): Promise<Placement> {
   if (roomOnline(room, now) && room.wsUrl) return { ok: true, wsUrl: room.wsUrl };
-  const servers = await onlineServers(db, now);
+  // sala fixa com região só abre nela (RN-REG-03, OG-546)
+  const all = await onlineServers(db, now);
+  const servers = room.persistent && room.region ? all.filter((s) => s.region === room.region) : all;
   // volta ao servidor de antes se ele ainda aceita salas (maxRooms 0 = drenando, OG-103)
-  const server = servers.find((s) => s.id === room.serverId && s.maxRooms > 0) ?? pickServer(servers, region);
+  const server = servers.find((s) => s.id === room.serverId && s.maxRooms > 0) ?? pickServer(servers, room.persistent && room.region ? room.region : region);
   if (server) {
     const wsUrl = `${server.wsBaseUrl.replace(/\/$/, '')}/rooms/${room.id}`;
     if (server.id !== room.serverId || wsUrl !== room.wsUrl) {
@@ -85,6 +87,12 @@ export async function placeRoom(db: Db, room: RoomRow, devRoomWsUrl: string | un
   }
   const dev = devRoomWsUrl?.replace('{id}', room.id);
   return dev ? { ok: true, wsUrl: dev, spawn: roomSpawn(room) } : { ok: false };
+}
+
+/** Dá para abrir a sala agora: algum servidor no ar (na região dela, se for sala fixa com região). */
+export function canSpawnRoom(room: Pick<RoomRow, 'persistent' | 'region'>, servers: readonly ServerRow[], dev: boolean): boolean {
+  if (dev) return true;
+  return room.persistent && room.region ? servers.some((s) => s.region === room.region && s.rooms < s.maxRooms) : servers.length > 0;
 }
 
 /** A sala pode ser listada no lobby: no ar, ou da plataforma e abrível agora. */

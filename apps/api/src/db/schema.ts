@@ -146,6 +146,8 @@ export const rooms = pgTable('rooms', {
   maxPlayers: smallint('max_players').notNull(),
   persistent: boolean('persistent').notNull().default(false),
   serverId: text('server_id'),
+  /** Região da sala fixa criada pelo próprio game server (OG-546): só abre nela; nula = qualquer região. */
+  region: text('region'),
   wsUrl: text('ws_url'),
   players: smallint('players').notNull().default(0),
   map: text('map'),
