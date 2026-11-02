@@ -146,6 +146,8 @@ export const rooms = pgTable('rooms', {
   maxPlayers: smallint('max_players').notNull(),
   persistent: boolean('persistent').notNull().default(false),
   serverId: text('server_id'),
+  /** Região da sala fixa criada pelo próprio game server (OG-546): só abre nela; nula = qualquer região. */
+  region: text('region'),
   wsUrl: text('ws_url'),
   players: smallint('players').notNull().default(0),
   map: text('map'),
@@ -206,6 +208,8 @@ export const gameServers = pgTable('game_servers', {
   maps: text('maps').array().notNull().default(sql`'{}'::text[]`),
   /** Rotações padrão do servidor (ROTATION/RANKED_ROTATION, OG-378): o painel parte delas sem rotação salva. */
   rotations: jsonb('rotations').$type<Partial<Record<RotationKey, string[]>>>().notNull().default({}),
+  /** Versão do game server (RELEASE), do heartbeat (OG-550); nula nos servidores antigos. */
+  release: text('release'),
 });
 
 /** Lado que virou o clã na partida (OG-409). */

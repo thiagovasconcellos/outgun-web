@@ -133,6 +133,12 @@ describe('ErrorReporter', () => {
     expect(event).toMatchObject({ environment: 'staging', release: '0.1.0', tags: { service: 'api', room: 'main' }, exception: { values: [{ type: 'TypeError', value: 'quebrou' }] } });
   });
 
+  it('rótulos fixos do servidor vão em todo erro; os do erro têm prioridade (OG-550)', () => {
+    const reporter = new ErrorReporter({ service: 'game-server', tags: { region: 'es', server: 'gs-es' } });
+    const event = JSON.parse(reporter.envelope(new Error('x'), { tags: { room: 'main-es', region: 'outra' } }).split('\n')[2]!) as { tags: Record<string, string> };
+    expect(event.tags).toEqual({ service: 'game-server', region: 'outra', server: 'gs-es', room: 'main-es' });
+  });
+
   it('leva a causa encadeada, da mais interna para a de fora (OG-512)', () => {
     const pg = Object.assign(new Error('terminating connection due to administrator command'), { code: '57P01' });
     const values = exceptionChain(new Error('Failed query: select "id" from "casual_presets"', { cause: pg }));

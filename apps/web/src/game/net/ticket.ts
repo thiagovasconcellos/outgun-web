@@ -4,6 +4,7 @@
 // o servidor só aceita com DEV_TICKETS.
 import { api, ApiError } from '../../app/api.js';
 import { deviceId } from '../../app/device.js';
+import { withRegion } from '../../app/regions.js';
 
 export interface JoinTicket {
   readonly ticket: string;
@@ -24,7 +25,7 @@ export class JoinError extends Error {
 export async function requestTicket(room: string, name: string, server: string, explicitServer: boolean, password?: string): Promise<JoinTicket> {
   const fallbackUrl = `${server.replace(/\/$/, '')}/rooms/${encodeURIComponent(room)}`;
   try {
-    const r = await api<{ ticket: string; wsUrl: string }>(`/rooms/${encodeURIComponent(room)}/join`, { body: { name, device: deviceId(), ...(password ? { password } : {}) } });
+    const r = await api<{ ticket: string; wsUrl: string }>(`/rooms/${encodeURIComponent(room)}/join`, { body: await withRegion({ name, device: deviceId(), ...(password ? { password } : {}) }) });
     return { ticket: r.ticket, url: explicitServer ? fallbackUrl : r.wsUrl };
   } catch (error) {
     if (error instanceof ApiError && error.status !== 0 && error.status < 500 && error.code !== 'unknown') throw new JoinError(error.code);

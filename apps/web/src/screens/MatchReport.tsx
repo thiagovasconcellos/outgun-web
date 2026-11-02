@@ -13,6 +13,7 @@ import { copyText } from '../app/clipboard.js';
 import { Badge, Button } from '../ui/Button.js';
 import { Page } from '../ui/Page.js';
 import { Panel } from '../ui/Panel.js';
+import { isCountryRegion, RegionCell, regionName } from '../ui/Flag.js';
 import { Table } from '../ui/Table.js';
 import { MapPreview } from './MapPreview.js';
 import { milestoneText } from './Profile.js';
@@ -415,6 +416,11 @@ export function MatchScreen() {
               </>
             )}
           </Badge>
+        )}
+        {isCountryRegion(m.region) && (
+          <span className="ui-muted">
+            <RegionCell region={m.region}>{t('Played in $1', regionName(m.region, prefs.locale))}</RegionCell>
+          </span>
         )}
         {chance[0] !== undefined && chance[1] !== undefined && (
           <span className="ui-muted">{t('Predicted win chance: red $1% · blue $2%', String(Math.round(100 * chance[0])), String(Math.round(100 * chance[1])))}</span>

@@ -7,7 +7,7 @@
 import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { checkName } from '@outgun/protocol';
 import { BOT_NAMES_MAX, BOT_PREFIX_MAX_LENGTH, BOT_PREFIXES_MAX, botChatConfig, casualPresetProblems, cleanBotPrefix, cleanBotText, PRESETS, ROTATION_KEYS, type BotNameEntry } from '@outgun/settings';
-import { and, count, desc, eq, gt, isNull, lt, or, sql, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gt, isNull, lt, or, sql, type SQL } from 'drizzle-orm';
 import { createInvites } from '../beta.js';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { AppDeps, Services } from '../app.js';
@@ -756,6 +756,31 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
           FROM net_reports WHERE created_at > now() - make_interval(days => ${days})
           GROUP BY 1 ORDER BY 2 DESC`);
         return { days, regions: [...rows] };
+      },
+    );
+
+    // --- servidores (OG-550) ---
+    app.get(
+      '/servers',
+      { schema: { tags: ['admin'], summary: 'Game servers vistos nos últimos 7 dias: região, versão, salas, jogadores e último heartbeat' } },
+      async (request, reply) => {
+        if (!(await guard(request, reply, 'moderator'))) return reply;
+        const now = Date.now();
+        const rows = await db.select().from(gameServers).where(gt(gameServers.lastHeartbeatAt, new Date(now - 7 * 86_400_000))).orderBy(asc(gameServers.region), asc(gameServers.id));
+        return {
+          release: deps.config.release ?? null,
+          servers: rows.map((s) => ({
+            id: s.id,
+            region: s.region,
+            release: s.release,
+            online: now - s.lastHeartbeatAt.getTime() < ONLINE_MS,
+            draining: s.maxRooms === 0,
+            rooms: s.rooms,
+            maxRooms: s.maxRooms,
+            players: s.players,
+            lastHeartbeatAt: s.lastHeartbeatAt.toISOString(),
+          })),
+        };
       },
     );
 

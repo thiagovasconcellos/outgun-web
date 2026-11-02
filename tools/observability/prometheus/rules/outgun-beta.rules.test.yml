@@ -30,6 +30,26 @@ tests:
       - eval_time: 3m
         alertname: OutgunSemMetricasDoJogo
         exp_alerts: []
+  # satélite de Madrid para de mandar heartbeat; o do Brasil segue (OG-550)
+  - interval: 1m
+    input_series:
+      - series: 'outgun_game_server_heartbeat_age_seconds{job="api",instance="api",server="gs-es",region="es"}'
+        values: '3 3 63 123 183 243'
+      - series: 'outgun_game_server_heartbeat_age_seconds{job="api",instance="api",server="vps",region="br"}'
+        values: '3x5'
+      - series: 'outgun_ticks_total{job="game-server",instance="vps"}'
+        values: '1x5'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: OutgunServidorSemHeartbeat
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: OutgunServidorSemHeartbeat
+        exp_alerts:
+          - exp_labels: { severity: page, server: gs-es, region: es }
+            exp_annotations:
+              summary: 'Game server gs-es (es) sem heartbeat há 3m 3s'
+              description: 'A API não recebe o heartbeat dele: o servidor caiu, perdeu a rede ou o segredo (INTERNAL_SECRETS) não confere. As salas dele somem do lobby.'
   # 950 MB de RAM: 80 MB disponíveis (8%) por 10 minutos
   - interval: 1m
     input_series:

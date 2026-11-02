@@ -7,11 +7,13 @@
 # atualiza os alarmes. Usa a CLI `oci` configurada nesta máquina (~/.oci/config).
 #
 # Uso: bash deploy/vps/oci-alarms.sh EMAIL [NOME_DA_INSTANCIA]
+# Outra conta (ex.: a VM de Madrid, OG-550): OCI_CLI_PROFILE=MADRID bash deploy/vps/oci-alarms.sh EMAIL outgun-mad
 set -euo pipefail
 export SUPPRESS_LABEL_WARNING=True PYTHONWARNINGS=ignore
 email="${1:?uso: oci-alarms.sh EMAIL [NOME_DA_INSTANCIA]}"
 name="${2:-instance-20261014-1747}"
-tenancy=$(grep '^tenancy' ~/.oci/config | head -1 | cut -d= -f2 | tr -d ' ')
+# tenancy do perfil em uso (OCI_CLI_PROFILE, padrão DEFAULT)
+tenancy=$(awk -v p="[${OCI_CLI_PROFILE:-DEFAULT}]" '$0 == p { on = 1; next } /^\[/ { on = 0 } on && /^tenancy/ { sub(/^tenancy *= */, ""); print; exit }' ~/.oci/config)
 comp="${OCI_COMPARTMENT:-$tenancy}"
 
 inst=$(oci compute instance list -c "$comp" --lifecycle-state RUNNING --display-name "$name" --query 'data[0].id' --raw-output)

@@ -17,6 +17,7 @@
 // DRAIN_TIMEOUT_S (240): prazo da drenagem no SIGTERM.
 // SEED: semente fixa das salas (capturas determinísticas do `pnpm visual:check`, OG-265); padrão aleatória.
 // ROOMS: salas fixas além da `main`, `id[:preset[:max_jogadores]]` separadas por vírgula (testes de carga, OG-101).
+// MAIN_ROOM (main): id da sala fixa sempre no ar; único entre os servidores (ex.: `main-es` no de Madrid, OG-546).
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listMaps, resolveRotation, type Rotations } from './maps.js';
@@ -45,7 +46,8 @@ const panelMaps = new PanelMaps(async (name) => {
 });
 const production = env.NODE_ENV === 'production';
 const logger = createLogger({ service: 'game-server', level: env.LOG_LEVEL ?? 'info', ...(env.RELEASE ? { version: env.RELEASE } : {}) });
-const reporter = new ErrorReporter({ dsn: env.SENTRY_DSN, service: 'game-server', environment: env.SENTRY_ENVIRONMENT ?? env.NODE_ENV, release: env.RELEASE });
+// região e id do servidor nos erros: com satélites, diz de qual máquina veio (OG-550)
+const reporter = new ErrorReporter({ dsn: env.SENTRY_DSN, service: 'game-server', environment: env.SENTRY_ENVIRONMENT ?? env.NODE_ENV, release: env.RELEASE, tags: { region: env.REGION ?? 'local', server: env.GS_ID ?? 'dev' } });
 process.on('uncaughtException', (error) => {
   logger.fatal({ err: error }, 'exceção não tratada');
   reporter.capture(error, { level: 'fatal' });
@@ -142,7 +144,7 @@ const fixedRoom = (id: string, name: string, preset: string, maxPlayers: number)
 const telemetry = new GameTelemetry(manager, logger, reporter);
 metrics.telemetry = telemetry;
 manager.observer = telemetry;
-fixedRoom('main', 'Principal', env.PRESET ?? 'classic', Number(env.MAX_PLAYERS ?? 16));
+fixedRoom(env.MAIN_ROOM || 'main', 'Principal', env.PRESET ?? 'classic', Number(env.MAX_PLAYERS ?? 16));
 for (const spec of (env.ROOMS ?? '').split(',').filter(Boolean)) {
   const [id = '', preset = env.PRESET ?? 'classic', max = env.MAX_PLAYERS ?? '16'] = spec.split(':');
   fixedRoom(id, id, preset, Number(max));
@@ -182,7 +184,7 @@ const server = await startServer({
 if (production && !env.METRICS_TOKEN) logger.warn('METRICS_TOKEN vazio: /metrics aberto; deixe a porta só na rede interna ou defina o token');
 logger.info({ port: server.port }, `game-server na porta ${server.port}; depuração em http://localhost:${server.port}/dev`);
 // o heartbeat lê este objeto a cada envio: na drenagem, maxRooms 0 tira o servidor da escolha da API
-const serverInfo = { wsBaseUrl: publicWsUrl, region: env.REGION ?? env.FLY_REGION ?? 'local', maxRooms: manager.maxRooms, maps: listMaps(mapsDir), rotations: { casual: [...rotations.casual], ranked: [...rotations.ranked] } };
+const serverInfo = { wsBaseUrl: publicWsUrl, region: env.REGION ?? env.FLY_REGION ?? 'local', ...(env.RELEASE ? { release: env.RELEASE.slice(0, 64) } : {}), maxRooms: manager.maxRooms, maps: listMaps(mapsDir), rotations: { casual: [...rotations.casual], ranked: [...rotations.ranked] } };
 const panel = new AdminPanelLink({ manager, rotations, map: mapFile, generatedMaps, panelMaps, log: (msg, fields) => logger.info({ component: 'painel', ...fields }, msg) });
 if (env.HEARTBEAT !== '0') platform.startHeartbeat(serverInfo, () => manager.hosted(), 3000, panel);
 

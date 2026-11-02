@@ -2,13 +2,21 @@
 import { describe, expect, it } from 'vitest';
 import { LIVE_POLL_MS, liveRooms, POLL_MS } from './home-panels.js';
 import { API_REFRESH_MS } from './stats.js';
-import { filterRooms, REFRESH_MS, sortRooms, type RoomSummary } from './lobby.js';
+import { filterRooms, nearestFirst, REFRESH_MS, sortRooms, type RoomSummary } from './lobby.js';
 
 const room = (id: string, players: number, maxPlayers = 16, online = true): RoomSummary => ({
   id, name: id, mode: 'casual', preset: 'classic', hasPassword: false, maxPlayers, players, humans: players, map: null, online, persistent: false, region: null,
 });
 
 describe('lobby (OG-069)', () => {
+  it('salas da região mais próxima primeiro; lotadas continuam no fim (OG-546)', () => {
+    const at = (id: string, region: string | null, players = 1, max = 16) => ({ ...room(id, players, max), region });
+    const list = sortRooms([at('es-cheia', 'es', 9), at('br-1', 'br', 3), at('es-2', 'es', 1), at('br-lotada', 'br', 2, 2), at('sem', null)]);
+    expect(nearestFirst(list, new Map([['br', 30], ['es', 200]])).map((r) => r.id)).toEqual(['br-1', 'es-cheia', 'es-2', 'sem', 'br-lotada']);
+    // sem ping, a ordem de `sortRooms`
+    expect(nearestFirst(list, new Map()).map((r) => r.id)).toEqual(list.map((r) => r.id));
+  });
+
   it('lista: com gente primeiro, mais cheia antes, lotadas no fim', () => {
     expect(sortRooms([room('b', 0), room('cheia', 2, 2), room('a', 0), room('meio', 5), room('quase', 9)]).map((r) => r.id)).toEqual(['quase', 'meio', 'a', 'b', 'cheia']);
   });

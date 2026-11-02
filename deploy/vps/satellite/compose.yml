@@ -1,0 +1,75 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+# Servidor satélite (OG-548): só o game server e o Caddy com HTTPS, ligado à API e ao banco da VPS
+# principal pela internet (HMAC nas rotas /internal, tickets conferidos pela JWKS pública). O jogo é o
+# mesmo da principal: mesma versão (TAG), presets/rotações/mapas/bots vindos da API (platform-config)
+# e as variáveis de partida copiadas da principal em shared.env a cada deploy.
+# Variáveis em /opt/outgun/.env (geradas pelo install.sh): DOMAIN, REGION, GS_ID, GS_SECRET,
+# MAIN_ROOM, API_URL, SITE_ORIGIN, METRICS_TOKEN e TAG.
+name: outgun
+
+x-restart: &restart
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: { max-size: 20m, max-file: '5', labels: com.docker.compose.service }
+
+services:
+  edge:
+    <<: *restart
+    image: caddy:2.10.2-alpine
+    ports: ['80:80', '443:443']
+    environment:
+      DOMAIN: ${DOMAIN}
+      SITE_ORIGIN: ${SITE_ORIGIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [game-server]
+
+  game-server:
+    <<: *restart
+    image: outgun-game-server:${TAG}
+    # shared.env: variáveis de partida da principal (deploy-satellite.sh); .env: as desta máquina
+    env_file: [shared.env, .env]
+    environment:
+      API_URL: ${API_URL}
+      TICKET_JWKS_URL: ${API_URL}/.well-known/jwks.json
+      PUBLIC_WS_URL: wss://${DOMAIN}/gs
+      ALLOWED_ORIGINS: ${SITE_ORIGIN}
+      REGION: ${REGION}
+      GS_ID: ${GS_ID}
+      MAIN_ROOM: ${MAIN_ROOM}
+      TRUST_PROXY: '1'
+      RELEASE: ${RELEASE:-${TAG}}
+    stop_grace_period: 300s
+    volumes: [replays:/data/replays]
+
+  # métricas e logs no Grafana Cloud (OG-550): só com as credenciais (deploy/vps/grafana-cloud.sh)
+  fluent-bit:
+    <<: *restart
+    image: fluent/fluent-bit:5.1.4
+    profiles: [observabilidade]
+    command: ['-c', '/fluent-bit/etc/outgun/fluent-bit.yaml']
+    environment:
+      GRAFANA_CLOUD_PROM_HOST: ${GRAFANA_CLOUD_PROM_HOST:-}
+      GRAFANA_CLOUD_PROM_USER: ${GRAFANA_CLOUD_PROM_USER:-}
+      GRAFANA_CLOUD_LOKI_HOST: ${GRAFANA_CLOUD_LOKI_HOST:-}
+      GRAFANA_CLOUD_LOKI_USER: ${GRAFANA_CLOUD_LOKI_USER:-}
+      GRAFANA_CLOUD_TOKEN: ${GRAFANA_CLOUD_TOKEN:-}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      OUTGUN_HOST_LABEL: ${REGION}
+      OUTGUN_INSTANCE: ${GS_ID}
+    mem_limit: 64m
+    volumes:
+      - ./fluent-bit:/fluent-bit/etc/outgun:ro
+      - fluent-bit-data:/data
+      - /:/rootfs:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on: [game-server]
+
+volumes:
+  caddy-data:
+  caddy-config:
+  replays:
+  fluent-bit-data:

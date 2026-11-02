@@ -45,6 +45,14 @@ scp -q -r deploy/vps/fluent-bit "$host:/opt/outgun/"
 echo "== instalação"
 ssh_ "TAG=$tag RELEASE=$version ${DOMAIN:+DOMAIN=$DOMAIN} bash /opt/outgun/install.sh"
 
+# servidores satélites (OG-548) na mesma versão, depois da principal (o cliente novo já está no ar):
+# SATELLITES="root@IP ..." ou `git config outgun.satellites`. Falha num satélite não desfaz a
+# principal; repita com deploy-satellite.sh.
+satellites="${SATELLITES-$(git config --get outgun.satellites || true)}"
+for sat in $satellites; do
+  MAIN="$host" bash deploy/vps/deploy-satellite.sh "$sat" || echo "== satélite $sat: deploy falhou; repita com: bash deploy/vps/deploy-satellite.sh $sat" >&2
+done
+
 # app da Steam na mesma versão (pedido do PO, 2026-10-27): espera o build do commit no CI e envia
 # para a branch beta. Falha aqui não desfaz o deploy do servidor; repita com o release.sh.
 case "$tag" in

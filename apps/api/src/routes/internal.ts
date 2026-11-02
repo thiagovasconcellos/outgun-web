@@ -2,7 +2,7 @@
 // Rotas dos game servers (PLAN 5.4): heartbeat das salas e resultado das partidas. Toda chamada é
 // autenticada por HMAC (`verifyInternalRequest` de @outgun/tickets).
 import { Type, type FastifyPluginAsyncTypebox, type Static, type TArray, type TOptional, type TString } from '@fastify/type-provider-typebox';
-import { and, eq, gt, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNotNull, isNull, lt, ne, notInArray, or } from 'drizzle-orm';
 import { BOT_CHAT_MESSAGE_MAX_LENGTH, BOT_CHAT_MESSAGES_MAX, BOT_CHAT_PER_MINUTE_MAX, PRESETS, ROTATION_KEYS, seriesOver, seriesWinner, seriesWinsNeeded, type RotationKey } from '@outgun/settings';
 import type { AppDeps, Services } from '../app.js';
 import { EmblemSchema } from './schemas.js';
@@ -25,6 +25,8 @@ const Heartbeat = Type.Object({
     /** Endereço público do servidor; as salas ficam em `<wsBaseUrl>/rooms/<id>`. */
     wsBaseUrl: Type.String({ pattern: '^wss?://', maxLength: 200 }),
     region: Type.String({ pattern: '^[a-z0-9-]{1,32}$' }),
+    /** Versão do servidor (RELEASE), para o painel (OG-550). */
+    release: Type.Optional(Type.String({ maxLength: 64 })),
     /** Quantas salas o servidor aceita hospedar (as abertas sob demanda contam). */
     maxRooms: Type.Integer({ minimum: 0, maximum: 1000 }),
     /** Mapas da pasta do servidor, para o painel conferir as rotações (OG-251). */
@@ -305,7 +307,20 @@ const ABANDONED_MS = 60 * 60_000;
 export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<Services, 'mailer'>): FastifyPluginAsyncTypebox {
   /** Retrato das salas de cada servidor no último heartbeat: mudou, avisa o portal ao vivo (OG-284). */
   const roomSignatures = new Map<string, string>();
+  /** Último heartbeat de cada servidor (OG-550): a métrica abaixo, para o alerta de servidor caído. */
+  const seen = new Map<string, { region: string; at: number }>();
   return async (app) => {
+    // servidores vistos nos últimos 7 dias: um que caiu antes de a API reiniciar continua no alerta
+    // (sem banco na partida, começa vazio: a API sobe do mesmo jeito e os heartbeats preenchem)
+    try {
+      const known = await database.db.select({ id: gameServers.id, region: gameServers.region, at: gameServers.lastHeartbeatAt }).from(gameServers).where(gt(gameServers.lastHeartbeatAt, new Date(Date.now() - 7 * 86_400_000)));
+      for (const s of known) seen.set(s.id, { region: s.region, at: s.at.getTime() });
+    } catch (err) {
+      app.log.warn({ err }, 'servidores conhecidos não carregados; a métrica de heartbeat começa vazia');
+    }
+    app.metrics.gauge('outgun_game_server_heartbeat_age_seconds', 'Segundos desde o último heartbeat de cada game server (OG-550).', () =>
+      [...seen].map(([server, s]) => [{ server, region: s.region }, Math.round((Date.now() - s.at) / 1000)] as const),
+    );
     app.addHook('preHandler', async (request, reply) => {
       const result = verifyInternalRequest(
         request.headers,
@@ -348,9 +363,20 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
         const { server, rooms: hosted } = request.body;
         await database.db.transaction(async (tx) => {
           const players = hosted.reduce((n, r) => n + r.players, 0);
-          const status = { wsBaseUrl: server.wsBaseUrl, region: server.region, maxRooms: server.maxRooms, rooms: hosted.length, players, lastHeartbeatAt: now, ...(server.maps ? { maps: server.maps } : {}), ...(server.rotations ? { rotations: server.rotations } : {}) };
+          const status = { wsBaseUrl: server.wsBaseUrl, region: server.region, maxRooms: server.maxRooms, rooms: hosted.length, players, lastHeartbeatAt: now, release: server.release ?? null, ...(server.maps ? { maps: server.maps } : {}), ...(server.rotations ? { rotations: server.rotations } : {}) };
+          seen.set(serverId, { region: server.region, at: now.getTime() });
           await tx.insert(gameServers).values({ id: serverId, ...status }).onConflictDoUpdate({ target: gameServers.id, set: status });
+          // Sala no ar em outro servidor com o mesmo id (dois servidores com a mesma `main`, OG-546):
+          // fica com o primeiro, sem trocar de servidor a cada heartbeat; o operador vê no log.
+          const hostedIds = hosted.map((r) => r.id);
+          const taken = new Set(
+            hostedIds.length
+              ? (await tx.select({ id: rooms.id }).from(rooms).where(and(inArray(rooms.id, hostedIds), ne(rooms.serverId, serverId), gt(rooms.lastHeartbeatAt, new Date(now.getTime() - ONLINE_MS))))).map((r) => r.id)
+              : [],
+          );
+          if (taken.size > 0) request.log.warn({ event: 'room_id_conflict', server: serverId, rooms: [...taken] }, 'sala com o mesmo id no ar em outro servidor: ignorada (use MAIN_ROOM diferente em cada servidor)');
           for (const r of hosted) {
+            if (taken.has(r.id)) continue;
             // Salas novas (as persistentes do próprio servidor) são criadas; nas existentes, só o
             // estado de execução muda: modo, preset e senha pertencem à API.
             await tx
@@ -363,6 +389,9 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
                 maxPlayers: r.maxPlayers,
                 persistent: r.persistent,
                 serverId,
+                // só na criação: a sala fixa do próprio servidor fica na região dele; a da plataforma
+                // (já no banco) segue sem região e abre onde quem entra estiver
+                region: server.region,
                 wsUrl: r.wsUrl,
                 players: r.players,
                 map: r.map,

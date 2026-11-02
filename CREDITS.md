@@ -24,6 +24,7 @@ Allegro, HawkNL e Pthreads-win32. O port web não usa essas bibliotecas; elas ap
 ## Dados de terceiros no port
 
 - Lista de senhas comuns recusadas no cadastro (`apps/api/src/auth/common-passwords.ts`, OG-104): derivada de "10k-most-common" do [SecLists](https://github.com/danielmiessler/SecLists), Copyright (c) 2018 Daniel Miessler, licença MIT.
+- Bandeiras dos países dos servidores (`apps/web/src/ui/Flag.tsx`, OG-547): SVG do [flag-icons](https://github.com/lipis/flag-icons), Copyright (c) 2013 Panayiotis Lipiridis, licença MIT.
 
 ## Fonte da interface
 

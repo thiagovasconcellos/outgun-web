@@ -47,6 +47,8 @@ export interface ServerInfo {
   /** Endereço público (ws:// ou wss://) por onde os jogadores chegam a este servidor. */
   wsBaseUrl: string;
   region: string;
+  /** Versão (RELEASE), para o painel (OG-550). */
+  release?: string;
   maxRooms: number;
   /** Mapas da pasta, para o painel conferir as rotações (OG-251). */
   maps?: string[];

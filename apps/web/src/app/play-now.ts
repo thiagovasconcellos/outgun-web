@@ -5,12 +5,14 @@ import { quickJoin } from '../screens/lobby.js';
 import { joinName, useAccount } from './account.js';
 import { ApiError } from './api.js';
 import { usePrefs } from './prefs.js';
+import { useWarmPings } from './regions.js';
 
 /** Entra numa sala Casual escolhida pela API (OG-069); sem a API (desenvolvimento), na sala principal. */
 export function usePlayNow(): () => void {
   const { prefs } = usePrefs();
   const { user } = useAccount();
   const navigate = useNavigate();
+  useWarmPings();
   return () =>
     void quickJoin('casual', joinName(user, prefs.playerName)).then(
       (id) => void navigate(`/play?sala=${encodeURIComponent(id)}`),

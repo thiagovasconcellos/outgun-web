@@ -8,11 +8,13 @@ import { Navigate, useNavigate } from 'react-router';
 import { useAccount } from '../app/account.js';
 import { api, ApiError } from '../app/api.js';
 import { usePrefs } from '../app/prefs.js';
+import { withRegion } from '../app/regions.js';
 import { JoinError, joinErrorText, requestTicket } from '../game/net/ticket.js';
 import { defaultServerUrl } from '../game/net/connection.js';
 import { Badge, Button } from '../ui/Button.js';
 import { ChoiceField, TextField } from '../ui/Field.js';
 import { Form, FormMessageLine, Page } from '../ui/Page.js';
+import { RegionCell } from '../ui/Flag.js';
 import { Table } from '../ui/Table.js';
 import { REFRESH_MS, type RoomSummary } from './lobby.js';
 import { fallbackMs, useLive, useLiveConnected } from '../app/live.js';
@@ -206,7 +208,7 @@ export function RankedRoomsPanel({ pings }: { pings: ReadonlyMap<string, number>
           { key: 'series', header: t('Series'), cell: (r) => t(seriesLabel(r.bestOf)) },
           { key: 'players', header: t('Players'), cell: (r) => `${r.players}/${r.maxPlayers}`, align: 'end' },
           { key: 'phase', header: t('Phase'), cell: (r) => <Badge tone={r.phase === 'lobby' ? 'success' : 'neutral'}>{t(phaseLabel(r.phase))}</Badge> },
-          { key: 'ping', header: t('Ping'), cell: (r) => (r.region && pings.has(r.region) ? `${pings.get(r.region)} ms` : '—'), align: 'end' },
+          { key: 'ping', header: t('Ping'), cell: (r) => <RegionCell region={r.region}>{r.region && pings.has(r.region) ? `${pings.get(r.region)} ms` : '—'}</RegionCell>, align: 'end' },
           { key: 'watch', header: t('Watch'), cell: (r) => <WatchButton room={r} />, align: 'end' },
         ]}
       />
@@ -229,7 +231,9 @@ export function CreateRankedRoomScreen() {
   const create = () => {
     if (!name.trim()) return;
     setError(null);
-    api<{ room: RoomSummary }>('/rooms/ranked', { body: { name: name.trim(), format, bestOf, ...(password ? { password } : {}) } }).then(
+    void withRegion({ name: name.trim(), format, bestOf, ...(password ? { password } : {}) })
+      .then((body) => api<{ room: RoomSummary }>('/rooms/ranked', { body }))
+      .then(
       ({ room }) => void navigate(`/play?sala=${encodeURIComponent(room.id)}`, password ? { state: { password } } : undefined),
       (e: unknown) => setError(t(e instanceof ApiError && e.code === 'rate_limited' ? 'Too many rooms. Try again later.' : 'Could not create the room.')),
     );

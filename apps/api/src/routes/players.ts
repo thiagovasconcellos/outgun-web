@@ -6,7 +6,7 @@ import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typ
 import { and, asc, desc, eq, gte, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type { AppDeps, Services } from '../app.js';
 import { usernameKey } from '../db/keys.js';
-import { clans, matchEventPlayers, matchEvents, matches, matchPlayers, playerMilestones, playerProfiles, rankedSeries, seasonChampions, seasons, users } from '../db/schema.js';
+import { clans, gameServers, matchEventPlayers, matchEvents, matches, matchPlayers, playerMilestones, playerProfiles, rankedSeries, seasonChampions, seasons, users } from '../db/schema.js';
 import { isSecretMilestone, SECRET_MILESTONES } from '@outgun/content/secret';
 import { milestoneProgressOf, milestoneRarity, SECRET_TOTAL, unlockedSecrets } from '../milestones.js';
 import { matchSkillChanges, playerSkillOf } from '../skill.js';
@@ -302,6 +302,8 @@ export function playerRoutes({ database }: AppDeps, { sessions }: Services): Fas
               teams: Type.Union([Type.Null(), Type.Array(Type.Union([MatchTeamSchema, Type.Null()]))]),
               /** Variação do rating de habilidade de cada conta (OG-349); vazio antes da implantação e no Casual. */
               skill: Type.Array(SkillChangeLine),
+              /** Região (país) do servidor em que a partida rodou (OG-547); null se o servidor sumiu. */
+              region: Type.Optional(Type.Union([Type.String(), Type.Null()])),
             }),
             404: ErrorSchema,
           },
@@ -342,6 +344,7 @@ export function playerRoutes({ database }: AppDeps, { sessions }: Services): Fas
           clans: await warClans(m),
           teams: m.teamIdentity ?? null,
           skill: await skillLines(m.id),
+          region: (await db.select({ region: gameServers.region }).from(gameServers).where(eq(gameServers.id, m.serverId)))[0]?.region ?? null,
         };
       },
     );
