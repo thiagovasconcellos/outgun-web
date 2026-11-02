@@ -23,7 +23,7 @@ import { MatchEventRecorder, type EventFlag } from './match-events.js';
 import { TRAINEE_TEAM, TrainingSession, type BotSlot, type TrainingConfig, type TrainingEvent, type TrainingPlayer, type TrainingRole, type TrainingAnnouncement } from './training.js';
 import { TRAINING_MODES } from './training-modes.js';
 import { matchReport, rankingMinimumsMet, type MatchReport, type ReportPlayer, type SkillRosterEntry, type Substitution, type ReportTeam } from './match-report.js';
-import { endOfGameMessages, statsKey, statsMessage, teamStatsKey, teamStatsMessage } from './stats-sync.js';
+import { endOfGameMessages, MOVEMENT_SHOTS_PERIOD, movementShotsKey, movementShotsMessage, statsKey, statsMessage, teamMovementShotsMessage, teamStatsKey, teamStatsMessage } from './stats-sync.js';
 import { teamStrength, type PlayerSkill } from './ranking.js';
 import { buildFrame, minimapViews, RecipientState, seesRocket } from './aoi.js';
 import { InputGuard, isNewerOrSame } from './input-guard.js';
@@ -190,6 +190,8 @@ interface Client {
   sentFrags: number;
   /** Contadores do último `stats` enviado deste jogador (OG-066). */
   sentStats: string;
+  /** Tiros e movimento do último `movementShots` enviado deste jogador (OG-543). */
+  sentMovementShots: string;
   /** Rodízio do minimapa e propriedades já informadas. */
   rs: RecipientState;
   /** Eventos só deste jogador, enviados com o próximo frame. */
@@ -329,6 +331,9 @@ export class Room {
   private readonly sentScores: [number, number] = [0, 0];
   /** Estatísticas de time já enviadas (`teamStats` só quando mudam, OG-066). */
   private readonly sentTeamStats: [string, string] = ['', ''];
+  private sentTeamMovementShots = '';
+  /** `world.time` do último envio de tiros e movimento durante a partida (OG-543). */
+  private movementShotsAt = -Infinity;
   /** Times cujas bandeiras mudaram no frame (um `flagUpdate` por time, antes do frame). */
   private readonly dirtyFlags = new Set<number>();
   /** Replay da partida em curso (OG-090). */
@@ -571,6 +576,7 @@ export class Room {
       frameOffset: 0,
       sentFrags: 0,
       sentStats: '',
+      sentMovementShots: '',
       rs: new RecipientState(),
       queue: [],
       bytes: 0,
@@ -656,7 +662,9 @@ export class Room {
       if (c.identity.accountId) out.push(this.playerInfo(other, c));
       out.push(message('frags', { pid: other, frags: (this.world.players[other] as PlayerState).stats.frags }));
       out.push(statsMessage(this.world.players[other] as PlayerState, this.world.time)); // `send_stats`
+      out.push(movementShotsMessage(other, (this.world.players[other] as PlayerState).stats)); // F4 já com tiros (OG-543)
     }
+    out.push(teamMovementShotsMessage([this.world.teams[0], this.world.teams[1]]));
     out.push(teamStatsMessage(0, this.world.teams[0]), teamStatsMessage(1, this.world.teams[1])); // `send_team_stats`
     for (const team of [0, 1, 2]) out.push(this.flagUpdate(team));
     out.push(message('flagModes', this.sim.flagModes())); // `send_flag_modes` na entrada
@@ -755,6 +763,7 @@ export class Room {
       frameOffset: 0,
       sentFrags: -1,
       sentStats: '',
+      sentMovementShots: '',
       rs: new RecipientState(),
       queue: [],
       guard: new InputGuard(),
@@ -1954,6 +1963,22 @@ export class Room {
       this.sentTeamStats[team] = key;
       this.broadcast(teamStatsMessage(team, world.teams[team]));
     });
+    // tiros, precisão e movimento na F3/F4 durante a partida (OG-543), sem pesar a cada frame
+    if (world.time < this.movementShotsAt) this.movementShotsAt = -Infinity; // mapa novo: o relógio voltou
+    if (world.time - this.movementShotsAt < MOVEMENT_SHOTS_PERIOD) return;
+    this.movementShotsAt = world.time;
+    for (const [pid, c] of this.clients) {
+      const st = (world.players[pid] as PlayerState).stats;
+      const key = movementShotsKey(st);
+      if (key === c.sentMovementShots) continue;
+      c.sentMovementShots = key;
+      this.broadcast(movementShotsMessage(pid, st));
+    }
+    const teams = [world.teams[0], world.teams[1]] as const;
+    const teamKey = `${movementShotsKey(teams[0])}|${movementShotsKey(teams[1])}`;
+    if (teamKey === this.sentTeamMovementShots) return;
+    this.sentTeamMovementShots = teamKey;
+    this.broadcast(teamMovementShotsMessage(teams));
   }
 
   private onGameOver(reason: GameOverReason, result: MatchResult): void {

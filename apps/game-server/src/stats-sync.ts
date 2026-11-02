@@ -2,7 +2,8 @@
 // Estatísticas para as telas F3/F4 (OG-066, spec plan/specs/telas-estatisticas.md). O original manda
 // um retrato ao entrar (`send_stats`, `send_team_stats`) e o cliente segue contando pelos eventos;
 // aqui o servidor manda o retrato do jogador (e do time) sempre que um contador muda — os mesmos
-// valores, sem refazer a contagem no cliente. Movimento e tiros só no fim da partida, como lá.
+// valores, sem refazer a contagem no cliente. Movimento e tiros: no original só no fim da partida; na v2
+// também durante, a cada `MOVEMENT_SHOTS_PERIOD` segundos (OG-543, issue #32: F4 zerada no meio do jogo).
 import { message, type AnyMessage } from '@outgun/protocol';
 import { CarriedFlag, flagCarryingTime, lifetime, playtime, type PlayerState, type TeamState } from '@outgun/sim';
 
@@ -62,17 +63,36 @@ export function teamStatsMessage(team: 0 | 1, t: TeamState): AnyMessage {
   });
 }
 
+type MovementShots = { movement: number; shots: number; hits: number; shotsTaken: number };
+const ms = (x: MovementShots) => ({
+  movement: Math.max(0, Math.trunc(x.movement)),
+  shots: x.shots,
+  hits: x.hits,
+  shotsTaken: x.shotsTaken,
+});
+
+/** De quantos em quantos segundos (do jogo) tiros e movimento saem durante a partida (OG-543). */
+export const MOVEMENT_SHOTS_PERIOD = 2;
+
+/** Valores de `movementShots` como enviados; mudando, pedem uma nova mensagem. */
+export function movementShotsKey(x: MovementShots): string {
+  const v = ms(x);
+  return `${v.movement},${v.shots},${v.hits},${v.shotsTaken}`;
+}
+
+export function movementShotsMessage(pid: number, x: MovementShots): AnyMessage {
+  return message('movementShots', { pid, data: ms(x) });
+}
+
+export function teamMovementShotsMessage(teams: readonly [TeamState, TeamState]): AnyMessage {
+  return message('teamMovementShots', { red: ms(teams[0]), blue: ms(teams[1]) });
+}
+
 /** Fim de partida (`server_next_map`): movimento e tiros de cada um e dos times, e `stats_ready`. */
 export function endOfGameMessages(players: readonly PlayerState[], teams: readonly [TeamState, TeamState]): AnyMessage[] {
-  const ms = (x: { movement: number; shots: number; hits: number; shotsTaken: number }) => ({
-    movement: Math.max(0, Math.trunc(x.movement)),
-    shots: x.shots,
-    hits: x.hits,
-    shotsTaken: x.shotsTaken,
-  });
   return [
-    ...players.map((p) => message('movementShots', { pid: p.pid, data: ms(p.stats) })),
-    message('teamMovementShots', { red: ms(teams[0]), blue: ms(teams[1]) }),
+    ...players.map((p) => movementShotsMessage(p.pid, p.stats)),
+    teamMovementShotsMessage(teams),
     message('statsReady', {}),
   ];
 }
