@@ -12,7 +12,8 @@ const FRESH_MS = 60_000;
 /** Quem entra não espera mais que isso pela medição; sem ela, a API usa a região padrão. */
 const WAIT_MS = 1_500;
 
-let last: { at: number; pings: Pings } | undefined;
+/** Última medição: o ping de cada região e as regiões que a API listou (com ou sem ping). */
+let last: { at: number; pings: Pings; regions: readonly string[] } | undefined;
 let running: Promise<Pings> | undefined;
 const listeners = new Set<(pings: Pings) => void>();
 
@@ -31,21 +32,21 @@ async function ping(url: string): Promise<number | undefined> {
   return best < Infinity ? Math.round(best) : undefined;
 }
 
-async function measure(): Promise<Pings> {
+async function measure(): Promise<{ pings: Pings; regions: readonly string[] }> {
   const { regions } = await api<{ regions: { region: string; pingUrl: string }[] }>('/regions');
   const results = await Promise.all(
     regions.map(async ({ region, pingUrl }) => [region, await ping(pingUrl)] as const),
   );
   const pings = new Map<string, number>();
   for (const [region, ms] of results) if (ms !== undefined) pings.set(region, ms);
-  return pings;
+  return { pings, regions: regions.map((r) => r.region) };
 }
 
 /** Mede de novo (uma medição por vez) e avisa quem usa `usePings`. */
 export function measurePings(): Promise<Pings> {
   running ??= measure()
-    .then((pings) => {
-      last = { at: Date.now(), pings };
+    .then(({ pings, regions }) => {
+      last = { at: Date.now(), pings, regions };
       for (const l of listeners) l(pings);
       return pings;
     })
@@ -62,11 +63,18 @@ export function bestRegion(pings: Pings): string | undefined {
 }
 
 /**
- * Região mais próxima para abrir ou escolher sala: a da medição recente, ou mede agora esperando no
- * máximo `WAIT_MS`. Sem medição, `undefined` (a API usa a região padrão da plataforma).
+ * Região mais próxima para abrir ou escolher sala, sem atrasar a entrada quando não há escolha:
+ * - medição recente: a região de menor ping;
+ * - nenhuma medição ainda (a tela inicial já começou uma): `undefined`, e a API usa a região padrão;
+ * - uma região só: ela, sem medir de novo;
+ * - várias e medição velha: mede agora, esperando no máximo `WAIT_MS`.
  */
 export async function nearestRegion(): Promise<string | undefined> {
-  if (last && Date.now() - last.at < FRESH_MS) return bestRegion(last.pings);
+  if (last && Date.now() - last.at < FRESH_MS) return bestRegion(last.pings) ?? last.regions[0];
+  if (!last || last.regions.length <= 1) {
+    void measurePings();
+    return last?.regions[0];
+  }
   const timeout = new Promise<undefined>((resolve) =>
     setTimeout(() => resolve(undefined), WAIT_MS),
   );

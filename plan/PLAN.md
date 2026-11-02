@@ -628,7 +628,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | S56 | v2: 2x2 oficial e OutCup (D-88) — formato 2x2 no Ranked, rotação 2x2, 15 min e bot por lado, atalho 2x2 no Casual; OutCup: calendário, inscrição e sorteio de duplas, chave, página, horário marcado, sala automática, W.O., avisos e títulos | OG-516, OG-517, OG-518, OG-519, OG-520, OG-521, OG-522, OG-523, OG-524, OG-525, OG-526, OG-527, OG-528 | |
 | S57 | v2: espectador para a transmissão da OutCup (D-89) — assistir até o fim, 15 s de atraso, som do jogo, modo transmissão | OG-533, OG-534, OG-535, OG-536 | |
 | S58 | v2: rodada de correções — tela preta no app da Steam (OG-539) e issues #29–#32 do GitHub | OG-539, OG-540, OG-541, OG-542, OG-543 | |
-| S59 | v2: servidor oficial em Madrid (D-90) — região sempre informada e estrita, salas fixas por região, país e bandeira nas salas, deploy satélite, replays e observabilidade com vários servidores; a VM de Madrid por último | OG-545, OG-546, OG-547, OG-548, OG-549, OG-550, OG-551 | |
+| S59 | v2: servidor oficial em Madrid (D-90) — região sempre informada e estrita, salas fixas por região, país e bandeira nas salas, deploy satélite, replays e observabilidade com vários servidores (a VM de Madrid, OG-551, voltou ao Backlog: sem capacidade na Oracle) | OG-545, OG-546, OG-547, OG-548, OG-549, OG-550 | |
 
 > Duração total estimada: **13 sprints (~26 semanas)**. Replanejar após S2 com a velocidade real.
 
@@ -1030,7 +1030,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-548](cards/OG-548-deploy-de-servidor-satelite.md) | Deploy de servidor satélite (só game-server) e atualização de todas as máquinas | E16 | 5 | Must | S59 | OG-547 | Em revisão |
 | [OG-549](cards/OG-549-replays-de-outro-servidor.md) | Replays e espectador de partidas em outro servidor | E16 | 2 | Should | S59 | OG-548 | Em revisão |
 | [OG-550](cards/OG-550-observabilidade-por-regiao.md) | Observabilidade com vários servidores | E16 | 3 | Should | S59 | OG-548 | Em revisão |
-| [OG-551](cards/OG-551-servidor-oficial-em-madrid.md) | Servidor oficial em Madrid (Oracle Always Free do PO) | E16 | 3 | Must | S59 | OG-545, OG-546, OG-547, OG-548 | Bloqueado |
+| [OG-551](cards/OG-551-servidor-oficial-em-madrid.md) | Servidor oficial em Madrid (Oracle Always Free do PO) | E16 | 3 | Must | — | OG-545, OG-546, OG-547, OG-548 | Backlog |
 
 **Total:** 388 cards, 1226 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 319 cards, 931 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 

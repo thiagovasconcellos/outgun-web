@@ -6,13 +6,13 @@
 | Tipo | Infra |
 | Prioridade | Must |
 | Estimativa | 3 pts |
-| Sprint | S59 |
-| Status | Bloqueado |
+| Sprint | — (saiu da S59 em 2026-11-02) |
+| Status | Backlog |
 | Dependências | OG-545, OG-546, OG-547, OG-548 |
 | Regras de negócio | RN-REG-05 |
 | Skills | `outgun-card-workflow` |
 
-> Bloqueado por: conta Oracle do PO em criação (eu-madrid-1) — o PO avisa quando estiver pronta.
+> Conta Oracle do PO pronta (perfil `MADRID` na `oci`, rede `outgun-vcn` e alerta de custo criados em 2026-11-02). Madrid sem capacidade para A1 e E2.1.Micro; script tentando a Micro (só Always Free, autorizada pelo PO) a cada 10 min. Com a VM: DNS `mad`, `DOMAIN=mad.outgunweb.com.br REGION=es bash deploy/vps/deploy-satellite.sh root@IP` e `git config outgun.satellites`.
 
 ## História
 Como jogador europeu, quero um servidor oficial em Madrid, para jogar com ping baixo o mesmo Outgun do Brasil.

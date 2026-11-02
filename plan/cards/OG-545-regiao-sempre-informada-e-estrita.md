@@ -36,7 +36,7 @@ Como jogador no Brasil, quero que "Jogar agora", a sala privada e a sala Ranked 
 - `tools/dev` sobe dois game-servers locais com `REGION` diferente para o teste (porta e `GS_ID` próprios).
 
 ## Notas de implementação
-- `apps/web/src/app/regions.ts`: ping por região compartilhado (cache de 60 s, espera no máximo 1,5 s; a tela inicial já começa a medir). Todas as entradas mandam a região, inclusive o ticket de uma sala ainda fora do ar.
+- `apps/web/src/app/regions.ts`: ping por região compartilhado (cache de 60 s; a tela inicial já começa a medir). Só espera (até 1,5 s) com várias regiões e medição velha; com uma região só, ou sem medição ainda, responde na hora (pedido do PO: o beta com um servidor não ganha atraso na entrada). Todas as entradas mandam a região, inclusive o ticket de uma sala ainda fora do ar.
 - `DEFAULT_REGION` (API) vale para pedido sem região e para a OutCup; sem ela, o comportamento de antes (o beta não muda até o OG-547 pôr `br`).
 - Quick-join: sala aberta na região → sala fixa fora do ar (se a região tiver vaga) → sala aberta de outra região. Abrir sala nova por região depende das salas fixas por região (OG-546).
 - O teste com dois servidores ficou no `registry.test.ts` (servidores simulados por heartbeat); não criei o modo de dois game-servers no `tools/dev`.
