@@ -1015,8 +1015,9 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-536](cards/OG-536-espectador-modo-transmissao.md) | Espectador em modo transmissão (tela limpa para OBS) | E6 | 2 | Should | S57 | OG-533, OG-535 | Concluído |
 | [OG-537](cards/OG-537-partida-casual-no-celular.md) | Partida Casual no celular e no tablet com controles de toque (PR #27, experimental) | E8 | 5 | Should | — | OG-417 | Concluído |
 | [OG-538](cards/OG-538-lista-ranked-bot-substituto.md) | Lista Ranked: o bot substituto não fecha a sala para quem foi substituído (incidente da semifinal da OutCup, v2.57.3) | E8 | 1 | Must | — | OG-262, OG-525 | Concluído |
+| [OG-539](cards/OG-539-tela-preta-no-app-da-steam.md) | Tela preta no app da Steam: recuperar o WebGL, console no app e erros do cliente | E7 | 3 | Must | — | OG-324, OG-401, OG-538 | Backlog |
 
-**Total:** 375 cards, 1190 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 306 cards, 895 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
+**Total:** 376 cards, 1193 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 307 cards, 898 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
 ---
 
