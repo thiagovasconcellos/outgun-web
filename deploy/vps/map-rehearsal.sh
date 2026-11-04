@@ -26,7 +26,7 @@ fi
 ssh_ "TAG=$tag bash -s" <<'REMOTE'
 set -euo pipefail
 cd /opt/outgun
-set -a; . ./.env; set +a
+POSTGRES_PASSWORD=$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2-)
 psql_() { docker compose exec -T postgres psql -U outgun -v ON_ERROR_STOP=1 -Atc "$2" -d "$1"; }
 COUNTS="select 'partidas', count(*) from matches union all select 'participações', count(*) from match_players
   union all select 'marcos', count(*) from player_milestones union all select 'ratings', count(*) from skill_changes
