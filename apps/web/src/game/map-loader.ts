@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Carga de mapas no cliente: dos assets do jogo ou, para os que não estão neles (gerados, OG-015, e
-// publicados pela moderação, OG-367), do game server em `<base>/maps/<nome>.txt`.
+// publicados pela moderação, OG-367), do game server em `<base>/maps/<nome>.txt`. Um nativo com
+// revisão nova (OG-553) tem outro CRC: o texto daquela revisão vem do servidor (`?crc=`).
 import { decodeMapFile, parseMapFile } from '@outgun/content';
 import type { GameMap } from '@outgun/sim';
 import { ASSETS, loadManifest } from '../assets.js';
@@ -9,9 +10,9 @@ import { ASSETS, loadManifest } from '../assets.js';
 export const GENERATED_MAP = /^mapgen_\d+$/;
 
 /** Texto de um mapa baixado: um caractere por byte (Latin-1), como os arquivos do jogo. */
-export async function fetchMapText(base: string, name: string): Promise<string | undefined> {
+export async function fetchMapText(base: string, name: string, crc?: number): Promise<string | undefined> {
   try {
-    const res = await fetch(`${base}/maps/${encodeURIComponent(name)}.txt`);
+    const res = await fetch(`${base}/maps/${encodeURIComponent(name)}.txt${crc !== undefined ? `?crc=${crc}` : ''}`);
     return res.ok ? decodeMapFile(new Uint8Array(await res.arrayBuffer())) : undefined;
   } catch {
     return undefined;
@@ -27,10 +28,10 @@ export async function serverOnlyMap(name: string): Promise<boolean> {
  * Mapa pelo nome: dos assets (`maps/`), do texto já recebido (replay) ou baixado do game server
  * (gerado ou da moderação).
  */
-export async function loadMap(name: string, source: { text?: string | undefined; base?: string | undefined } = {}): Promise<{ map: GameMap; bytes: Uint8Array }> {
+export async function loadMap(name: string, source: { text?: string | undefined; base?: string | undefined; crc?: number | undefined } = {}): Promise<{ map: GameMap; bytes: Uint8Array }> {
   let bytes: Uint8Array;
   const fromServer = async () => {
-    const text = await fetchMapText(source.base!, name);
+    const text = await fetchMapText(source.base!, name, source.crc);
     if (text === undefined) throw new Error(`mapa não encontrado no servidor: ${name}`);
     return Uint8Array.from(text, (c) => c.charCodeAt(0));
   };
@@ -39,8 +40,14 @@ export async function loadMap(name: string, source: { text?: string | undefined;
   else if (GENERATED_MAP.test(name) && source.base) bytes = await fromServer();
   else {
     const entry = (await loadManifest())?.maps[name];
-    if (entry) bytes = new Uint8Array(await (await fetch(ASSETS + entry.file)).arrayBuffer());
-    else if (source.base) bytes = await fromServer();
+    if (entry) {
+      bytes = new Uint8Array(await (await fetch(ASSETS + entry.file)).arrayBuffer());
+      // nativo revisado (OG-553): a sala anuncia o CRC da revisão; outro CRC = baixa a revisão da sala
+      if (source.crc !== undefined && source.base) {
+        const asset = parseMapFile(name, bytes);
+        if (!asset.ok || asset.map.crc !== source.crc) bytes = await fromServer();
+      }
+    } else if (source.base) bytes = await fromServer();
     else throw new Error(`mapa não encontrado: ${name}`);
   }
   const result = parseMapFile(name, bytes);

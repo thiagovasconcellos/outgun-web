@@ -115,6 +115,10 @@ interface RotationEntry {
   file: string;
   lastGame: number;
   random?: RandomMapParams;
+  /** Revisão do catálogo presa na última troca para este mapa (OG-553); null = sem catálogo. */
+  rev?: number | null;
+  /** Texto (Latin-1) da revisão presa, para o replay levar o mapa exato (OG-554). */
+  text?: string;
 }
 
 /** Bots da sala Casual configurados pelo cliente (OG-289, D-51): quantidade fixa e nível (0 = variável). */
@@ -140,6 +144,11 @@ export interface RoomOptions {
   generatedMaps?: GeneratedMaps | undefined;
   /** Texto dos mapas da moderação (OG-367), para o replay levar o mapa. */
   mapText?: ((file: string) => string | undefined) | undefined;
+  /**
+   * Revisão em vigor de um mapa do catálogo (OG-553, RN-MRV-04): a sala consulta na troca de mapa e
+   * prende geometria, texto e número até a troca seguinte. Sem ela, fica o mapa da criação da sala.
+   */
+  mapEntry?: ((file: string) => { map: GameMap; text: string; rev: number | null } | undefined) | undefined;
   /** Relógio em ms para medir quando os inputs chegam dentro do frame (padrão `performance.now`). */
   now?: () => number;
   /** Auditoria das ações de admin (OG-046): o servidor manda para a API. */
@@ -428,6 +437,8 @@ export class Room {
       ...(options.randomSlots?.[i] ? { random: options.randomSlots[i] } : {}),
     }));
     this.mapIndex = first;
+    const firstEntry = this.rotation[first] as RotationEntry;
+    if (!firstEntry.random) this.pinRevision(firstEntry);
     if (options.ranked) {
       const lobbyRng = new GlibcRand(options.seed + 3);
       this.lobby = new RankedLobby(options.maxPlayers, this.rotation.length, (n) => lobbyRng.rand() % n);
@@ -2332,6 +2343,7 @@ export class Room {
       entry.map = generated.map;
       entry.file = generated.file;
     }
+    else if (!entry.random) this.pinRevision(entry);
     this.matchStartedAt = this.wallClock();
     this.departed.clear();
     this.away.clear();
@@ -2357,6 +2369,20 @@ export class Room {
     );
     for (const team of [0, 1, 2]) this.dirtyFlags.add(team); // bandeiras do mapa novo
     this.sendVotes();
+  }
+
+  /** Prende a revisão em vigor do mapa da entrada (RN-MRV-04): publicação nova só vale na troca seguinte. */
+  private pinRevision(entry: RotationEntry): void {
+    const current = this.options.mapEntry?.(entry.file);
+    if (!current) return;
+    entry.map = current.map;
+    entry.rev = current.rev;
+    entry.text = current.text;
+  }
+
+  /** Revisão presa do mapa em jogo (null = sem catálogo ou mapa gerado). */
+  get mapRevision(): number | null {
+    return (this.rotation[this.mapIndex] as RotationEntry).rev ?? null;
   }
 
   private mapFile(index: number): string {
