@@ -132,6 +132,22 @@ describe('ClientSession', () => {
     expect(sent.filter((m) => m.type === 'input')).toHaveLength(2);
   });
 
+  it('tiro: a seta que esperava o próximo envio sai antes do tiro, para a arma virar no servidor (OG-564, issue #33)', () => {
+    const { s, sent } = session();
+    s.handle([frame(10, [player(0, 100, 100)])], 1000);
+    s.sendFrame(1040);
+    const inputs = () => sent.filter((m): m is Extract<AnyMessage, { type: 'input' }> => m.type === 'input').map((m) => [m.clientFrame, m.controls]);
+    s.setControls(CONTROL.up | CONTROL.right, 1095); // segunda metade do frame: esperaria o próximo envio
+    expect(inputs()).toEqual([[1, 0]]);
+    s.setControls(CONTROL.up | CONTROL.right, 1100, 1100, true); // o tiro chega: sai já, mesmo sem mudança nova
+    expect(inputs()).toEqual([
+      [1, 0],
+      [1, CONTROL.up | CONTROL.right],
+    ]);
+    s.setControls(CONTROL.up | CONTROL.right, 1105, 1105, true); // nada pendente: não repete
+    expect(inputs()).toHaveLength(2);
+  });
+
   it('reenvia toda mudança que ainda pega o mesmo tick, não só a primeira (D-71)', () => {
     const { s, sent } = session();
     s.handle([frame(10, [player(0, 100, 100)])], 1000);

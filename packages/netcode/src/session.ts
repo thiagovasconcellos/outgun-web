@@ -850,15 +850,25 @@ export class ClientSession {
    * próximo envio, que chega a tempo do tick seguinte. A predição usa o controle atual já no quadro
    * seguinte em ambos os casos (`extrapolateWith`).
    */
-  setControls(controls: number, now: number, changedAt = now): void {
+  setControls(controls: number, now: number, changedAt = now, urgent = false): void {
     const c = controls & 0x3f;
-    if (c === this.controls) return;
-    this.controls = c;
-    if (this.changeNotSent === null) this.changeNotSent = changedAt;
-    this.changeNotRendered = changedAt;
+    // `urgent` (tiro, OG-564): a mudança que ainda esperava o próximo envio sai agora, antes do tiro
+    if (c === this.controls && !(urgent && this.changeNotSent !== null)) return;
+    if (c !== this.controls) {
+      this.controls = c;
+      if (this.changeNotSent === null) this.changeNotSent = changedAt;
+      this.changeNotRendered = changedAt;
+    }
+    if (!this.world) return;
     // ainda chega no mesmo frame do servidor que o envio anterior? então corrige esse envio (`send_frame(false)`)
-    if (this.world && this.serverFrameNow(now) < (this.svFrameHistory[this.clFrameSent] as number) + 0.5) {
+    if (this.serverFrameNow(now) < (this.svFrameHistory[this.clFrameSent] as number) + 0.5) {
       this.controlHistory[this.clFrameSent] = c;
+      this.options.send([message('input', { clientFrame: this.clFrameSent, controls: c, gundir: 0 })]);
+      this.controlsSent(now);
+    } else if (urgent) {
+      // o servidor vira a arma na chegada do input e o tiro sai na direção da arma na chegada do `fire`:
+      // sem isto, a seta apertada junto com o tiro (a diagonal) chegava depois e o tiro saía na direção
+      // antiga. O histórico fica como está: o tick desse envio provavelmente já passou com os controles dele.
       this.options.send([message('input', { clientFrame: this.clFrameSent, controls: c, gundir: 0 })]);
       this.controlsSent(now);
     }

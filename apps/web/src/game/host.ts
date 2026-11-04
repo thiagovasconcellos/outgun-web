@@ -583,25 +583,37 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
     /** Lê a entrada: controles (com reenvio no meio do frame) e bordas de tiro e largar bandeira. */
     const readInput = (now: number) => {
       const s = input.sample();
-      // tolerância de diagonal (OG-372): o tiro vira a arma antes de sair
       chord.windowMs = client.chordWindowMs ?? CHORD_WINDOW_DEFAULT_MS;
-      const controls = s.fire && !lastFire ? chord.flush(s.controls) : chord.filter(s.controls, now);
+      if (s.fire && !lastFire) firePending = true;
+      let controls = chord.filter(s.controls, now);
+      // tolerância de diagonal (OG-372): tiro apertado com o acorde ainda aberto espera a janela fechar
+      // (o segundo dedo da diagonal), no máximo a tolerância escolhida; depois vira a arma e sai (OG-564)
+      const shoot = firePending && chord.deadline() === null;
+      if (shoot) controls = chord.flush(s.controls);
       // tecla→envio e tecla→tela (OG-369): conta da tecla só na primeira leitura depois dela; o resto
       // (gamepad, fim da janela da diagonal, que só vira a arma) conta do momento da leitura
       const changedAt = input.lastChangeAt > keyMeasured ? input.lastChangeAt : now;
       keyMeasured = input.lastChangeAt;
-      session?.setControls(controls, now, changedAt);
+      // com tiro, os controles saem já, antes do `fire`: a arma vira no servidor antes de o tiro sair (OG-564)
+      session?.setControls(controls, now, changedAt, shoot);
       // fim da janela aberta: lê de novo para virar a arma se o acorde não se completou
       clearTimeout(chordTimer);
       const deadline = chord.deadline();
       if (deadline !== null) chordTimer = setTimeout(() => readInput(performance.now()), Math.max(0, deadline - now) + 1);
-      if (s.fire !== lastFire) session?.send(message('fire', { on: (lastFire = s.fire) }));
+      if (shoot) {
+        firePending = false;
+        session?.send(message('fire', { on: (lastFire = true) }));
+      }
+      // toque mais curto que a janela: o tiro acima já saiu e o soltar vai logo depois
+      if (!firePending && s.fire !== lastFire) session?.send(message('fire', { on: (lastFire = s.fire) }));
       if (s.dropFlag !== lastDrop) session?.send(message('dropFlag', { on: (lastDrop = s.dropFlag) }));
     };
     // timer, não requestAnimationFrame: o envio tem de seguir o relógio do servidor (`nextSend`)
     let nextSend = performance.now();
     const chord = new ChordFilter();
     let keyMeasured = 0;
+    /** Tiro apertado esperando a janela da diagonal fechar (OG-564). */
+    let firePending = false;
     let chordTimer: ReturnType<typeof setTimeout> | undefined;
     const sendLoop = () => {
       const now = performance.now();

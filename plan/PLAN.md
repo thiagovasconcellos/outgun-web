@@ -1045,8 +1045,12 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-561](cards/OG-561-backup-ensaio-implantacao-mapas.md) | Backup, ensaio da migração e implantação recuperável dos mapas | E17 | 3 | Must | S60 | OG-552, OG-553, OG-554, OG-555, OG-559 | Backlog |
 | [OG-562](cards/OG-562-rascunho-testavel-em-sala-privada.md) | Rascunho testável: revisão jogável só em sala privada antes de ativar | E17 | 3 | Should | S60 | OG-553, OG-557 | Backlog |
 | [OG-563](cards/OG-563-volta-sem-prazo-no-ranked.md) | Ranked: quem saiu do jogo volta à vaga sem prazo, mesmo com o time seguindo um a menos (incidente do 5x5 de 04/11, v2.59.1) | E11 | 2 | Must | — | OG-262, OG-332 | Em revisão |
+| [OG-564](cards/OG-564-tiro-na-diagonal-sai-na-direcao-antiga.md) | Tiro na diagonal sai na direção antiga: seta e tiro chegavam fora de ordem (issue #33, v2.59.1) | E11 | 2 | Must | — | OG-371, OG-372 | Em revisão |
+| [OG-565](cards/OG-565-power-ups-atrasados-ao-entrar-na-sala.md) | Power-ups aparecem atrasados ao entrar numa sala do mapa (issue #33) | E11 | 3 | Should | — | OG-460 | Backlog |
+| [OG-566](cards/OG-566-vultos-de-jogadores-mortos.md) | "Vultos" de jogadores mortos durante a partida (issue #33) | E11 | 2 | Should | — | — | Backlog |
+| [OG-567](cards/OG-567-toque-de-tiro-durante-a-recarga.md) | Toque rápido de tiro durante a recarga se perde (issue #33; decisão do PO) | E11 | 2 | Should | — | — | Backlog |
 
-**Total:** 400 cards, 1263 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 331 cards, 968 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
+**Total:** 404 cards, 1272 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 335 cards, 977 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
 ---
 
