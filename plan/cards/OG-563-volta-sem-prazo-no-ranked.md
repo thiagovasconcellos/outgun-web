@@ -26,7 +26,7 @@ Como jogador que caiu (ou saiu) de um jogo Ranked, quero voltar à minha vaga a 
 ## Critérios de aceite
 - [x] Quem saiu com o time seguindo um a menos volta ao mesmo lado a qualquer momento do jogo; outros continuam recusados.
 - [x] A API aceita a volta dessas contas com o jogo em andamento.
-- [ ] v2.59.1 no beta e na branch beta da Steam.
+- [x] v2.59.1 no beta e na branch beta da Steam (build 26431095).
 
 ## Notas de implementação
 - Quem volta entra como jogador novo (frags do jogo zerados no placar); a marca "Com um a menos" do relatório continua, porque o time jogou desfalcado.
