@@ -27,7 +27,8 @@ ssh_ "TAG=$tag bash -s" <<'REMOTE'
 set -euo pipefail
 cd /opt/outgun
 POSTGRES_PASSWORD=$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2-)
-psql_() { docker compose exec -T postgres psql -U outgun -v ON_ERROR_STOP=1 -Atc "$2" -d "$1"; }
+# </dev/null: o exec e o run leriam o resto deste script (que chega pela entrada padrão do ssh)
+psql_() { docker compose exec -T postgres psql -U outgun -v ON_ERROR_STOP=1 -Atc "$2" -d "$1" </dev/null; }
 COUNTS="select 'partidas', count(*) from matches union all select 'participações', count(*) from match_players
   union all select 'marcos', count(*) from player_milestones union all select 'ratings', count(*) from skill_changes
   union all select 'replays', count(*) from matches where replay_url is not null union all select 'mapas do painel', count(*) from panel_maps
@@ -35,20 +36,20 @@ COUNTS="select 'partidas', count(*) from matches union all select 'participaçõ
   union all select 'frags', coalesce(sum(frags), 0) from match_players"
 
 echo "== backup"
-dump=$(docker compose exec -T backup sh /usr/local/bin/backup.sh | sed -n 's/^backup: \(\S*\).*/\1/p')
+dump=$(docker compose exec -T backup sh /usr/local/bin/backup.sh </dev/null | sed -n 's/^backup: \(\S*\).*/\1/p')
 echo "arquivo: $dump"
 
 echo "== restauração testada em outgun_rehearsal"
 psql_ outgun "DROP DATABASE IF EXISTS outgun_rehearsal" >/dev/null
 psql_ outgun "CREATE DATABASE outgun_rehearsal" >/dev/null
-docker compose exec -T -e RESTORE_CONFIRM=sim -e DATABASE_URL="postgres://outgun:${POSTGRES_PASSWORD}@postgres:5432/outgun_rehearsal" backup sh /usr/local/bin/restore.sh "$dump"
+docker compose exec -T -e RESTORE_CONFIRM=sim -e DATABASE_URL="postgres://outgun:${POSTGRES_PASSWORD}@postgres:5432/outgun_rehearsal" backup sh /usr/local/bin/restore.sh "$dump" </dev/null
 before=$(psql_ outgun "$COUNTS")
 restored=$(psql_ outgun_rehearsal "$COUNTS")
 echo "$before"
 [ "$before" = "$restored" ] && echo "OK: restauração igual à produção" || { echo "ERRO: restauração difere"; echo "$restored"; exit 1; }
 
-net=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' "$(docker compose ps -q postgres)")
-run() { docker run --rm --network "$net" -e DATABASE_URL="postgres://outgun:${POSTGRES_PASSWORD}@postgres:5432/outgun_rehearsal" -e MAPS_DIR=/app/maps "outgun-api:$TAG" node dist/cli.js "$@"; }
+net=$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}}{{end}}' "$(docker compose ps -q postgres </dev/null)")
+run() { docker run --rm --network "$net" -e DATABASE_URL="postgres://outgun:${POSTGRES_PASSWORD}@postgres:5432/outgun_rehearsal" -e MAPS_DIR=/app/maps "outgun-api:$TAG" node dist/cli.js "$@" </dev/null; }
 
 echo "== migrações + semente + preenchimento (ensaio)"
 run migrate up
