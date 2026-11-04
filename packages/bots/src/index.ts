@@ -10,3 +10,4 @@ export * from './situation.js';
 export * from './view.js';
 export * from './skill.js';
 export * from './training/training-robot.js';
+export * from './super-bot.js';
