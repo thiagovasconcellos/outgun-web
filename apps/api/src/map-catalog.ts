@@ -33,7 +33,8 @@ export interface CatalogMap {
   crc: number;
   rev: number;
   sha256: string;
-  origin: MapOrigin;
+  /** `draft` = rascunho (OG-562), só para sala privada de moderador. */
+  origin: MapOrigin | 'draft';
 }
 
 /** Mapas jogáveis em novas partidas, com a revisão ativa (chave, número, CRC, SHA-256). */
@@ -45,6 +46,21 @@ export async function playableMaps(db: Conn): Promise<CatalogMap[]> {
     .where(and(eq(maps.playable, true), isNotNull(maps.activeRevision)))
     .orderBy(asc(maps.key));
   return rows;
+}
+
+/** Nome de um rascunho nas salas (OG-562): `<chave>~r<número>`, fora do formato das chaves. */
+export const DRAFT_NAME = /^(.+)~r(\d{1,6})$/;
+export const draftName = (key: string, n: number) => `${key}~r${n}`;
+
+/** Rascunhos ainda não ativados (OG-562): o heartbeat entrega aos game servers para salas privadas. */
+export async function draftMaps(db: Conn): Promise<(CatalogMap & { title: string })[]> {
+  const rows = await db
+    .select({ key: maps.key, rev: mapRevisions.number, crc: mapRevisions.crc, sha256: mapRevisions.sha256, title: mapRevisions.title, active: maps.activeRevision })
+    .from(mapRevisions)
+    .innerJoin(maps, eq(maps.id, mapRevisions.mapId))
+    .where(eq(mapRevisions.draft, true))
+    .orderBy(asc(maps.key), asc(mapRevisions.number));
+  return rows.filter((r) => r.rev !== r.active).map((r) => ({ name: draftName(r.key, r.rev), crc: r.crc, rev: r.rev, sha256: r.sha256, origin: 'draft' as const, title: r.title }));
 }
 
 /** Mapa pela chave ou por um nome antigo (alias, sem maiúsculas; RN-MRV-03). */
@@ -84,6 +100,8 @@ export interface NewRevision {
   publishedAt?: Date;
   note?: string | null;
   baseRevision?: number | null;
+  /** Rascunho (OG-562): quem chama não muda a revisão ativa. */
+  draft?: boolean;
 }
 
 /**
@@ -118,6 +136,7 @@ export async function addRevision(tx: Conn, mapId: number, rev: NewRevision): Pr
       provenance: rev.provenance,
       note: rev.note ?? null,
       baseRevision: rev.baseRevision ?? null,
+      draft: rev.draft ?? false,
     })
     .returning();
   return { revision: revision!, created: true };

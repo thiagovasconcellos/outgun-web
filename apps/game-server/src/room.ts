@@ -2108,6 +2108,8 @@ export class Room {
     this.matchCount++;
     const serverMatchId = `${this.id}-${this.createdAt.toString(36)}-${this.matchCount}`;
     const replayUrl = this.finishRecording(serverMatchId);
+    // rascunho de mapa (OG-562, RN-MRV-10): a partida fica fora de estatísticas, marcos e ranking
+    if (/~r\d+$/.test(this.mapFile(this.mapIndex))) return;
     const series = this.recordSeriesGame(result.winner);
     if (!this.options.reportMatch || ![...this.clients.values()].some((c) => !c.bot)) return;
     this.options.reportMatch(

@@ -12,7 +12,7 @@ import { areaLabels, frequencyLabels, severityLabels, type BugReport } from '../
 import { usePrefs } from '../app/prefs.js';
 import { Badge, Button } from '../ui/Button.js';
 import { CupTab } from './admin-cup.js';
-import { ChoiceField, TextAreaField, TextField } from '../ui/Field.js';
+import { ChoiceField, TextAreaField, TextField, ToggleField } from '../ui/Field.js';
 import { MapHistory } from './admin-map-history.js';
 import { Dialog } from '../ui/Dialog.js';
 import { Page } from '../ui/Page.js';
@@ -905,7 +905,7 @@ function MapsTab() {
   const list = useLoad<{ maps: CatalogRow[] }>('/admin/maps');
   const rotations = useLoad<RotationsData>('/admin/rotations');
   const [status, setStatus] = useState<{ text?: string; error?: string }>({});
-  const [form, setForm] = useState({ text: '', utf8: false, target: '', note: '' });
+  const [form, setForm] = useState({ text: '', utf8: false, target: '', note: '', draft: false });
   const [conflict, setConflict] = useState<string | null>(null);
   const [history, setHistory] = useState<CatalogRow | null>(null);
   // atalho (OG-378): põe o mapa publicado na rotação em uso, sem redigitar os outros
@@ -943,16 +943,16 @@ function MapsTab() {
   };
   const verify = () =>
     api<MapCheck>('/admin/maps/check', { body: { text: form.text, ...(form.target ? { target: form.target } : {}) } }).then(setCheck, (e: unknown) => setStatus({ error: errorText(e) }));
-  const published = (r: { key: string; revision: number }) => {
-    setStatus({ text: t('$1: revision $2 published. It applies from the next map change.', r.key, String(r.revision)) });
+  const published = (r: { key: string; revision: number; draft?: boolean }) => {
+    setStatus({ text: r.draft ? t('$1: revision $2 saved as a draft. Test it in a private room, then activate it in the history.', r.key, String(r.revision)) : t('$1: revision $2 published. It applies from the next map change.', r.key, String(r.revision)) });
     reset();
-    setForm({ text: '', utf8: false, target: '', note: '' });
+    setForm({ text: '', utf8: false, target: '', note: '', draft: false });
     list.reload();
   };
   const publish = (force = false) => {
     const note = form.note.trim() ? { note: form.note.trim() } : {};
     const call = target
-      ? api<{ key: string; revision: number }>(`/admin/maps/${encodeURIComponent(target.key)}/revisions`, { body: { text: form.text, baseRevision: target.activeRevision ?? 1, ...note, ...(force ? { force: true } : {}) } })
+      ? api<{ key: string; revision: number }>(`/admin/maps/${encodeURIComponent(target.key)}/revisions`, { body: { text: form.text, baseRevision: target.activeRevision ?? 1, ...note, ...(force ? { force: true } : {}), ...(form.draft ? { draft: true } : {}) } })
       : api<{ key: string; revision: number }>('/admin/maps', { body: { text: form.text, ...note } });
     return call.then(published, (e: unknown) => {
       if (e instanceof ApiError && e.code === 'newer_revision') setConflict(e.message);
@@ -995,6 +995,14 @@ function MapsTab() {
             hint={target ? t('Based on revision $1, the active one.', String(target.activeRevision ?? 1)) : undefined}
           />
           <TextField label={t('Revision note (optional)')} value={form.note} maxLength={500} onChange={(v) => setForm({ ...form, note: v })} />
+          {target && (
+            <ToggleField
+              label={t('Publish as a draft')}
+              checked={form.draft}
+              onChange={(v) => setForm({ ...form, draft: v })}
+              hint={t('A draft does not go into the rotations: only a moderator can pick it in a private room, and those matches do not count.')}
+            />
+          )}
           <Button type="submit" disabled={!form.text}>
             {t('Check')}
           </Button>
@@ -1028,7 +1036,7 @@ function MapsTab() {
                 </>
               ) : (
                 <Button variant="primary" onClick={() => void publish()}>
-                  {target ? t('Publish revision') : t('Publish map')}
+                  {target ? (form.draft ? t('Save draft') : t('Publish revision')) : t('Publish map')}
                 </Button>
               )}
             </>

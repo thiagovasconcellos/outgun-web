@@ -54,9 +54,13 @@ export type Rotations = Record<'casual' | 'ranked', readonly string[]> & Partial
 /** Rotações que vieram do painel (D-69); sem a Casual aqui, a sala privada escolhe livremente. */
 export const panelRotationKeys = new Set<RotationKey>();
 
+/** Nome de rascunho nas salas privadas (OG-562): `<chave>~r<número>`. */
+export const DRAFT_MAP = /~r\d{1,6}$/;
+
 /** Mapas escolhidos que estão na rotação (D-69); vazio = a sala usa a rotação inteira. */
 export function withinRotation(chosen: readonly string[], rotation: readonly string[]): string[] {
-  return chosen.filter((m) => rotation.includes(m));
+  // rascunho de mapa (OG-562): a API só deixa o moderador escolher; fica fora das rotações por definição
+  return chosen.filter((m) => rotation.includes(m) || DRAFT_MAP.test(m));
 }
 
 /**

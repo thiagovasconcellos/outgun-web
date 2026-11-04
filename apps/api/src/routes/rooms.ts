@@ -9,7 +9,7 @@ import { randomBytes } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
 import { hashPassword } from '../auth/password.js';
 import { gameServers, rooms } from '../db/schema.js';
-import { findMap, findRevision, findRevisionByCrc, playableMaps } from '../map-catalog.js';
+import { DRAFT_NAME, draftMaps, findMap, findRevision, findRevisionByCrc, playableMaps } from '../map-catalog.js';
 import { canSpawnRoom, onlineServers, pickServer, regionFallback, roomHumans, roomListed, roomOnline } from '../registry.js';
 import { ErrorSchema, GameModeSchema, LobbyPhaseSchema, RankedFormatSchema, RoomId, SeriesBestOfSchema } from './schemas.js';
 
@@ -272,6 +272,12 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
           const mine = await db.select().from(rooms).where(and(eq(rooms.ownerId, user.id), isNotNull(rooms.training)));
           if (mine.some((r) => roomOnline(r, Date.now()) && roomHumans(r) > 0)) return reply.code(409).send({ error: 'training_room_open', message: 'you already have a training room open; leave it first' });
           if (mine.length > 0) await db.delete(rooms).where(and(eq(rooms.ownerId, user.id), isNotNull(rooms.training)));
+        } else if (body.maps?.some((m) => DRAFT_NAME.test(m))) {
+          // rascunho de mapa (OG-562, RN-MRV-10): só o moderador que cria a sala escolhe; os convidados jogam
+          if (!user.isModerator && !user.isAdmin) return reply.code(422).send({ error: 'draft_map_forbidden', message: 'only moderators can open a room on a draft map' });
+          const drafts = new Set((await draftMaps(db)).map((d) => d.name));
+          const unknown = body.maps.filter((m) => DRAFT_NAME.test(m) && !drafts.has(m));
+          if (unknown.length > 0) return reply.code(422).send({ error: 'map_not_in_rotation', message: `no such draft: ${unknown.join(', ')}` });
         } else {
           // rotação do painel sempre respeitada (D-69): a sala escolhe só entre os mapas dela
           // sala de 4 vagas (atalho 2x2, OG-519): os mapas da rotação 2x2 também valem

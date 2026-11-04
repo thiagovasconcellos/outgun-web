@@ -99,6 +99,8 @@ export function MapHistory({ map, onClose, onChanged }: { readonly map: { key: s
   const [left, setLeft] = useState('');
   const [right, setRight] = useState('');
   const [pair, setPair] = useState<[GameMap, GameMap] | null>(null);
+  /** Rascunho mais antigo que a ativa: o primeiro clique só avisa (OG-562). */
+  const [armed, setArmed] = useState<number | null>(null);
   const load = () =>
     api<{ revisions: MapRevisionRow[] }>(`/admin/maps/${encodeURIComponent(map.key)}/revisions`).then(
       (r) => {
@@ -156,8 +158,16 @@ export function MapHistory({ map, onClose, onChanged }: { readonly map: { key: s
                   {t('Download TXT')}
                 </Button>
                 {!r.active && (
-                  <Button variant="ghost" onClick={() => void restore(r.number)}>
-                    {r.draft ? t('Activate this draft') : t('Restore')}
+                  <Button
+                    variant={armed === r.number ? 'danger' : 'ghost'}
+                    onClick={() => {
+                      const activeNumber = rows?.find((x) => x.active)?.number ?? 0;
+                      if (r.draft && r.number < activeNumber && armed !== r.number) return setArmed(r.number);
+                      setArmed(null);
+                      void restore(r.number);
+                    }}
+                  >
+                    {armed === r.number ? t('Older than the active revision: activate anyway?') : r.draft ? t('Activate this draft') : t('Restore')}
                   </Button>
                 )}
               </span>

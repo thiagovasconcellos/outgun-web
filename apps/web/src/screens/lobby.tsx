@@ -450,10 +450,24 @@ export function CreateRoomScreen() {
       );
     });
   }, []);
+  // rascunhos de mapa (OG-562): só o moderador vê e escolhe; os convidados entram e jogam normalmente
+  const [drafts, setDrafts] = useState<readonly { name: string; title: string; revision: number }[]>([]);
+  const moderator = !!(user?.isModerator || user?.isAdmin);
+  useEffect(() => {
+    if (!moderator) return setDrafts([]);
+    api<{ drafts: { name: string; title: string; revision: number }[] }>('/admin/maps/drafts').then(
+      (r) => setDrafts(r.drafts),
+      () => setDrafts([]),
+    );
+  }, [moderator]);
   const duel = preset === 'duel';
   const slots = duel ? 2 : maxPlayers;
   // na sala 2x2 os mapas da rotação 2x2 também aparecem na lista
-  const mapChoices = duo ? [...allMaps, ...duoMaps.filter((m) => !allMaps.includes(m))] : allMaps;
+  const mapChoices = [...(duo ? [...allMaps, ...duoMaps.filter((m) => !allMaps.includes(m))] : allMaps), ...drafts.map((d) => d.name)];
+  const draftLabel = (m: string) => {
+    const d = drafts.find((x) => x.name === m);
+    return d ? `${d.title} (${t('draft')} ${d.revision})` : m;
+  };
   const mapsLabel = useMemo(
     () =>
       maps.length === 0
@@ -662,8 +676,8 @@ export function CreateRoomScreen() {
               <li key={m}>
                 <label>
                   <input type="checkbox" checked={maps.includes(m)} onChange={() => toggleMap(m)} />
-                  {mapsOpen && <MapPreview name={m} label={m} thumb />}
-                  {m}
+                  {mapsOpen && <MapPreview name={m.replace(/~r\d+$/, '')} label={m} thumb revision={drafts.find((d) => d.name === m)?.revision} />}
+                  {draftLabel(m)}
                 </label>
               </li>
             ))}

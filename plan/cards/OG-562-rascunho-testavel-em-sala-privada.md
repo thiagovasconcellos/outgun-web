@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 3 pts |
 | Sprint | S60 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-553, OG-557 |
 | Regras de negócio | RN-MRV-02, RN-MRV-10 |
 | Skills | `outgun-card-workflow` |
@@ -24,9 +24,12 @@ Como moderador, quero publicar uma revisão como rascunho e jogá-la com a galer
 - No painel: **Ativar este rascunho** (vira a revisão ativa, a partir da próxima troca de mapa) ou deixá-lo no histórico. Rascunho mais antigo que a revisão ativa avisa antes de ativar.
 
 ## Critérios de aceite
-- [ ] Rascunho não aparece nas salas públicas nem nas rotações até ser ativado.
-- [ ] Moderador abre sala privada com o rascunho; convidado sem papel de moderador entra e joga.
-- [ ] Partida no rascunho não muda estatísticas, marcos nem filtros do mapa.
+- [x] Rascunho não aparece nas salas públicas nem nas rotações até ser ativado.
+- [x] Moderador abre sala privada com o rascunho; convidado sem papel de moderador entra e joga.
+- [x] Partida no rascunho não muda estatísticas, marcos nem filtros do mapa.
 
 ## Notas de implementação
+- Migração 0057 (`map_revisions.draft`). No painel, "Publicar como rascunho" vale para revisão de mapa existente (mapa novo publica direto); o rascunho não muda a ativa e o conflito de base não se aplica a ele. "Ativar este rascunho" = restaurar (OG-558), com aviso de dois cliques se for mais antigo que a ativa.
+- Nas salas o rascunho se chama `<chave>~r<N>`: o heartbeat leva os rascunhos não ativados (origem `draft`), o game server baixa como os outros e aceita o nome fora da rotação; a API só deixa moderador/admin criar sala com ele (`GET /admin/maps/drafts` alimenta o lobby). Convidados entram normalmente.
+- Diferente do escopo: partida em rascunho **não é relatada** à API (como o treino, OG-498), o que garante que fica fora de estatísticas, marcos, ranking e filtros; o replay fica só no game server até a retenção.
 - Confirmado pelo PO (2026-11-02): só moderador escolhe rascunho ao criar a sala; os convidados não precisam de papel. Partidas de rascunho ficam fora das estatísticas.

@@ -754,6 +754,8 @@ export const mapRevisions = pgTable(
     provenance: text('provenance').notNull(),
     note: text('note'),
     baseRevision: integer('base_revision'),
+    /** Rascunho (OG-562): não vira a ativa ao publicar; só sala privada de moderador. */
+    draft: boolean('draft').notNull().default(false),
   },
   (t) => [unique().on(t.mapId, t.number), unique().on(t.mapId, t.sha256)],
 );

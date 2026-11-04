@@ -8,7 +8,7 @@ import { activeBotNames, botChatConfig, PRESETS, type BotChatConfig, type BotNam
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import type { Db } from './db/client.js';
-import { playableMaps, type CatalogMap } from './map-catalog.js';
+import { draftMaps, playableMaps, type CatalogMap } from './map-catalog.js';
 import { adminCommands, bans, botSettings, casualPresets, mapRotations, users } from './db/schema.js';
 
 export interface PlatformConfig {
@@ -65,7 +65,8 @@ export async function platformConfig(db: Db): Promise<PlatformConfig> {
   const presets = (await panelPresets(db)).map(({ id, description, overrides }) => ({ id, description, overrides }));
   const rotations: PlatformConfig['rotations'] = {};
   for (const r of await db.select().from(mapRotations)) rotations[r.key] = r.maps;
-  const maps = await playableMaps(db);
+  // rascunhos (OG-562) vão junto: o game server só os usa em sala privada de moderador
+  const maps = [...(await playableMaps(db)), ...(await draftMaps(db)).map(({ title: _t, ...m }) => m)];
   const bots = activeBotNames(await botNamesConfig(db));
   const chat = await botChat(db);
   const version = createHash('sha256').update(JSON.stringify({ presets, rotations, maps, bots, chat })).digest('hex').slice(0, 16);

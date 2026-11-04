@@ -16,7 +16,7 @@ import { clanKey, usernameKey } from '../db/keys.js';
 import { adminActions, adminCommands, bans, betaInvites, botSettings, betaInviteUses, casualPresets, casualPresetVersions, clans, feedback, gameServers, mapRevisions, mapRotations, maps, playerReports, rooms, users } from '../db/schema.js';
 import { nameBlocked } from '../name-filter.js';
 import { checkMapText } from '../panel-maps.js';
-import { addRevision, catalogRows, ensureMap, findRevision, mapSha256, newMapKey, playableMaps, similarMaps } from '../map-catalog.js';
+import { addRevision, catalogRows, draftMaps, ensureMap, findRevision, mapSha256, newMapKey, playableMaps, similarMaps } from '../map-catalog.js';
 import { botChat, botNamesConfig } from '../platform-config.js';
 import { BotChatSchema } from './internal.js';
 import { checkClanFields, ClanError, uniqueError, updateClan } from './clans.js';
@@ -428,6 +428,8 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
             note: Type.Optional(Type.String({ maxLength: 500 })),
             /** Publicar mesmo com revisão mais nova que a base (depois de comparar). */
             force: Type.Optional(Type.Boolean()),
+            /** Rascunho (OG-562): não vira a ativa; testável em sala privada de moderador. */
+            draft: Type.Optional(Type.Boolean()),
           }),
         },
       },
@@ -449,14 +451,15 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
             .orderBy(desc(mapRevisions.number))
             .limit(1);
           // outra revisão publicada (ou restaurada) depois da base em que se trabalhou (RN-MRV-08)
-          if (latest && map.activeRevision !== base.number && !request.body.force) {
+          if (latest && map.activeRevision !== base.number && !request.body.force && !request.body.draft) {
             const [active] = await tx.select({ r: mapRevisions, by: users.username }).from(mapRevisions).leftJoin(users, eq(users.id, mapRevisions.publishedBy)).where(and(eq(mapRevisions.mapId, map.id), eq(mapRevisions.number, map.activeRevision ?? latest.r.number)));
             const c = active ?? latest;
             return { conflict: { revision: c.r.number, by: c.by, at: c.r.publishedAt.toISOString() } };
           }
-          const { revision, created } = await addRevision(tx, map.id, { text: request.body.text, provenance: 'panel', publishedBy: user.id, note: request.body.note ?? null, baseRevision: base.number });
+          const draft = request.body.draft ?? false;
+          const { revision, created } = await addRevision(tx, map.id, { text: request.body.text, provenance: 'panel', publishedBy: user.id, note: request.body.note ?? null, baseRevision: base.number, draft });
           if (!created) return { same: revision.number };
-          await tx.update(maps).set({ activeRevision: revision.number }).where(eq(maps.id, map.id));
+          if (!draft) await tx.update(maps).set({ activeRevision: revision.number }).where(eq(maps.id, map.id));
           return { revision };
         });
         if ('error' in outcome) return reply.code(404).send({ error: 'not_found', message: 'no such map or base revision' });
@@ -465,10 +468,15 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
           return reply.code(409).send({ error: 'newer_revision', message: `${c.by ?? '?'} published revision ${c.revision} at ${c.at}: compare before publishing`, revision: c.revision, by: c.by, at: c.at });
         }
         if ('same' in outcome) return reply.code(409).send({ error: 'same_revision', message: `this file is already revision ${outcome.same}`, revision: outcome.same });
-        await publishAudit(user, request.params.key, outcome.revision!);
-        return { key: request.params.key, revision: outcome.revision!.number, title: outcome.revision!.title };
+        await publishAudit(user, request.params.key, outcome.revision!, outcome.revision!.draft ? { draft: true } : {});
+        return { key: request.params.key, revision: outcome.revision!.number, title: outcome.revision!.title, draft: outcome.revision!.draft };
       },
     );
+
+    app.get('/maps/drafts', { schema: { tags: ['admin'], summary: 'Rascunhos de mapa ainda não ativados (OG-562), para a sala privada do moderador' } }, async (request, reply) => {
+      if (!(await guard(request, reply, 'moderator'))) return reply;
+      return { drafts: (await draftMaps(db)).map((d) => ({ name: d.name, title: d.title, revision: d.rev })) };
+    });
 
     // --- catálogo: histórico, baixar, restaurar, desativar (OG-558) ---
     const findByKey = async (key: string) => (await db.select().from(maps).where(eq(maps.key, key)))[0];
@@ -486,7 +494,7 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
       return {
         revisions: rows.map(({ r, by }) => ({
           number: r.number, title: r.title, author: r.author, width: r.width, height: r.height, crc: r.crc, sha256: r.sha256, provenance: r.provenance,
-          note: r.note, baseRevision: r.baseRevision, publishedBy: by, publishedAt: r.publishedAt.toISOString(), active: r.number === map.activeRevision,
+          note: r.note, baseRevision: r.baseRevision, publishedBy: by, publishedAt: r.publishedAt.toISOString(), active: r.number === map.activeRevision, draft: r.draft,
         })),
       };
     });
