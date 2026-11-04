@@ -100,6 +100,8 @@ export interface MatchDetails {
 
 export interface MatchPage {
   match: MatchSummary & { startedAt: string; roomId: string | null };
+  /** Revisão do mapa jogada (OG-555); null/ausente = sem revisão (a prévia mostra a atual). */
+  mapRevision?: { number: number; inferred: boolean } | null;
   /** O clã que cada lado foi na rodada (OG-409); null = vermelho x azul. */
   /** Lado que virou o clã (OG-409), com o emblema e as cores do dia da partida (OG-485; ausentes nas antigas). */
   teams?: readonly ({ tag: string; name: string; color: string | null; emblem?: ClanEmblem; colors?: { primary: string; secondary: string } } | null)[] | null;

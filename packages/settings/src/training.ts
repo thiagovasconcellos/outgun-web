@@ -2,9 +2,9 @@
 // Modos de treino (D-86, D-87): opções da sala de treino, compartilhadas entre o cliente, a API e o
 // servidor do jogo (RN-TRN-04, RN-TRN-06).
 
-export type TrainingModeId = 'attack' | 'defense' | 'escape' | 'capture';
+export type TrainingModeId = 'attack' | 'defense' | 'escape' | 'capture' | 'aim';
 
-export const TRAINING_MODES_LIST: readonly TrainingModeId[] = ['attack', 'defense', 'escape', 'capture'];
+export const TRAINING_MODES_LIST: readonly TrainingModeId[] = ['attack', 'defense', 'escape', 'capture', 'aim'];
 
 /** Opções da sala de treino, escolhidas na criação (OG-492). */
 export interface TrainingOptions {
@@ -21,8 +21,18 @@ export interface TrainingOptions {
   sameStart: boolean;
 }
 
-/** Mapas de treino (D-87): lista fixa, a mesma nos quatro modos, independente da rotação Casual. */
+/** Mapas de treino (D-87): lista fixa, a mesma nos quatro modos de bandeira, independente da rotação Casual. */
 export const TRAINING_MAPS: readonly string[] = ['2 versus 2 (duel)', '3x3 (duel)', 'cebs park', 'pari2', 'the cover 4'];
+
+/** Treino de mira (OG-568, D-93): mapa fixo T4, fora do catálogo e das rotações. */
+export const AIM_TRAINING_MAP = 't4';
+/** Meta do Treino de mira (RN-TRN-09): em 60 s, no mínimo 70 tiros e 90 % de precisão. */
+export const AIM_TRAINING = { seconds: 60, shots: 70, accuracy: 90 } as const;
+
+/** Mapas que a sala de treino do modo aceita. */
+export function trainingMapsFor(mode: TrainingModeId): readonly string[] {
+  return mode === 'aim' ? [AIM_TRAINING_MAP] : TRAINING_MAPS;
+}
 
 /** Limites das opções por modo (RN-TRN-04). */
 export const TRAINING_LIMITS: Record<TrainingModeId, { bots: readonly [number, number]; allies: readonly [number, number] }> = {
@@ -30,6 +40,7 @@ export const TRAINING_LIMITS: Record<TrainingModeId, { bots: readonly [number, n
   defense: { bots: [1, 5], allies: [0, 2] },
   escape: { bots: [1, 4], allies: [0, 0] },
   capture: { bots: [0, 3], allies: [0, 0] },
+  aim: { bots: [1, 1], allies: [0, 0] },
 };
 
 /** Opções novas de um modo: o meio dos limites, nível 3, power-ups desligados, início variado. */

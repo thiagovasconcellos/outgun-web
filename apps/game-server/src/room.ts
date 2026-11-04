@@ -7,7 +7,7 @@ import { chatName, encodeFrame, message, packNumberStyle, PERSONAL_COLORS, PROTO
 import { applyGamemod, formatGamemod, formatPlayers, MAX_SUBSTITUTES, maxSubstitutesPerSide, newSeries, recordSeriesGame, seriesOver, seriesWinner, settingsOf, type GameMode, type GameSettings, type Preset, type RankedRoomFormat, type SeriesScore } from '@outgun/settings';
 import { findPreset } from './presets.js';
 import type { GeneratedMaps, RandomMapParams } from './generated-maps.js';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { censor, formatDuration, MAX_CHAT_LENGTH, TalkMeter } from './chat.js';
 import { ReportLimiter, runCommand, type AuditEntry, type BotConsole, type ConsoleHost, type ConsolePlayer, type PlayerReport } from './moderation.js';
 import { BotClient, type BotHost } from './bot-client.js';
@@ -115,6 +115,10 @@ interface RotationEntry {
   file: string;
   lastGame: number;
   random?: RandomMapParams;
+  /** Revisão do catálogo presa na última troca para este mapa (OG-553); null = sem catálogo. */
+  rev?: number | null;
+  /** Texto (Latin-1) da revisão presa, para o replay levar o mapa exato (OG-554). */
+  text?: string;
 }
 
 /** Bots da sala Casual configurados pelo cliente (OG-289, D-51): quantidade fixa e nível (0 = variável). */
@@ -140,6 +144,11 @@ export interface RoomOptions {
   generatedMaps?: GeneratedMaps | undefined;
   /** Texto dos mapas da moderação (OG-367), para o replay levar o mapa. */
   mapText?: ((file: string) => string | undefined) | undefined;
+  /**
+   * Revisão em vigor de um mapa do catálogo (OG-553, RN-MRV-04): a sala consulta na troca de mapa e
+   * prende geometria, texto e número até a troca seguinte. Sem ela, fica o mapa da criação da sala.
+   */
+  mapEntry?: ((file: string) => { map: GameMap; text: string; rev: number | null } | undefined) | undefined;
   /** Relógio em ms para medir quando os inputs chegam dentro do frame (padrão `performance.now`). */
   now?: () => number;
   /** Auditoria das ações de admin (OG-046): o servidor manda para a API. */
@@ -428,6 +437,8 @@ export class Room {
       ...(options.randomSlots?.[i] ? { random: options.randomSlots[i] } : {}),
     }));
     this.mapIndex = first;
+    const firstEntry = this.rotation[first] as RotationEntry;
+    if (!firstEntry.random) this.pinRevision(firstEntry);
     if (options.ranked) {
       const lobbyRng = new GlibcRand(options.seed + 3);
       this.lobby = new RankedLobby(options.maxPlayers, this.rotation.length, (n) => lobbyRng.rand() % n);
@@ -508,6 +519,8 @@ export class Room {
               const role = this.botRoles.get(pid);
               return role === undefined || roleMayTakeFlag(role); // humanos pegam; bots só pelo papel
             },
+            // alvo do Treino de mira (OG-568): imortal; o acerto conta mesmo sem dano
+            mayTakeDamage: (pid: number) => this.botRoles.get(pid) !== 'target',
           }
         : {}),
       screenSample: (pid, sample) => {
@@ -550,6 +563,8 @@ export class Room {
     // OutCup (OG-525): só os jogadores do confronto, no lado da dupla
     const cupSide = this.options.cup && identity.accountId !== null ? this.options.cup.sides[identity.accountId] : undefined;
     if (this.options.cup && !opts.bot && cupSide === undefined) return { ok: false, reason: 'roomClosed', text: 'Sala da OutCup: só os jogadores do confronto.' };
+    // Treino de mira (OG-568): só quem treina; o alvo não tem vaga para outra pessoa assumir
+    if (this.options.training?.mode === 'aim' && !opts.bot && [...this.clients.values()].some((c) => !c.bot && (identity.accountId === null || c.identity.accountId !== identity.accountId))) return { ok: false, reason: 'roomClosed', text: 'Treino de mira: sala só para quem treina.' };
     // quem saiu no meio do jogo Ranked volta à vaga, sem prazo (OG-563, D-92)
     const back = this.lobby?.playing && this.inGame && identity.accountId !== null ? this.away.get(identity.accountId) : undefined;
     // lobby Ranked (OG-252, D-43): em jogo ou com a série acabada ninguém entra; entre jogos, se houver vaga
@@ -931,12 +946,17 @@ export class Room {
           if (!f) return null;
           return { pos: f.pos, atBase: f.status === 'base', carrier: f.status === 'carried' ? f.carrier : -1 };
         },
+        shotStats: (pid) => {
+          const st = this.world.players[pid]?.stats;
+          return { shots: st?.shots ?? 0, hits: st?.hits ?? 0 };
+        },
       },
       {
         setBots: (slots) => this.setTrainingBots(slots),
         place: (pid, pos, safeUntil, fresh) => this.placeTrainee(pid, pos, safeUntil, fresh),
         resetFlags: () => this.sim.returnAllFlags(),
         announce: (state) => this.broadcast(this.trainingMessage(state)),
+        announceAim: (state) => this.broadcast(message('trainingAim', state)),
         holdRespawn: (pid) => {
           const pl = this.world.players[pid];
           if (pl?.dead) pl.framesToRespawn = 1_000_000;
@@ -1854,7 +1874,10 @@ export class Room {
     if (this.options.training) return; // treino não grava replay nem alimenta espectadores (OG-498)
     const init = this.welcomeMessages(-1).filter((m) => m.type !== 'welcome');
     const file = this.mapFile(this.mapIndex);
-    const mapText = this.options.generatedMaps?.text(file) ?? this.options.mapText?.(file);
+    const entry = this.rotation[this.mapIndex] as RotationEntry;
+    // texto da revisão presa (OG-554): o replay toca com as paredes desta partida, nativo inclusive
+    const mapText = this.options.generatedMaps?.text(file) ?? entry.text ?? this.options.mapText?.(file);
+    const mapSha256 = mapText !== undefined && entry.rev != null ? createHash('sha256').update(Buffer.from(mapText, 'latin1')).digest('hex') : undefined;
     this.recorder = new ReplayRecorder(
       {
         roomId: this.id,
@@ -1864,6 +1887,8 @@ export class Room {
         mapTitle: this.world.map.title,
         // mapa gerado (OG-015) ou da moderação (OG-367): o texto vai no replay, porque não existe em maps/
         ...(mapText !== undefined ? { mapText } : {}),
+        ...(entry.rev != null ? { mapRevision: entry.rev } : {}),
+        ...(mapSha256 ? { mapSha256 } : {}),
         maxPlayers: this.world.maxPlayers,
         startedAt: new Date(this.wallClock()).toISOString(),
         startFrame: this.world.frame,
@@ -2092,6 +2117,8 @@ export class Room {
     this.matchCount++;
     const serverMatchId = `${this.id}-${this.createdAt.toString(36)}-${this.matchCount}`;
     const replayUrl = this.finishRecording(serverMatchId);
+    // rascunho de mapa (OG-562, RN-MRV-10): a partida fica fora de estatísticas, marcos e ranking
+    if (/~r\d+$/.test(this.mapFile(this.mapIndex))) return;
     const series = this.recordSeriesGame(result.winner);
     if (!this.options.reportMatch || ![...this.clients.values()].some((c) => !c.bot)) return;
     this.options.reportMatch(
@@ -2103,6 +2130,7 @@ export class Room {
         ranked: this.rankingEnabled(),
         rules: (({ captureLimit, winScoreDifference, timeLimit, extraTime, extraTimePeriods, suddenDeath }) => ({ captureLimit, winScoreDifference, timeLimit, extraTime, extraTimePeriods, suddenDeath }))(this.settings.world),
         map: this.mapFile(this.mapIndex),
+        mapRevision: this.mapRevision,
         result,
         startedAt,
         endedAt,
@@ -2332,6 +2360,7 @@ export class Room {
       entry.map = generated.map;
       entry.file = generated.file;
     }
+    else if (!entry.random) this.pinRevision(entry);
     this.matchStartedAt = this.wallClock();
     this.departed.clear();
     this.away.clear();
@@ -2357,6 +2386,20 @@ export class Room {
     );
     for (const team of [0, 1, 2]) this.dirtyFlags.add(team); // bandeiras do mapa novo
     this.sendVotes();
+  }
+
+  /** Prende a revisão em vigor do mapa da entrada (RN-MRV-04): publicação nova só vale na troca seguinte. */
+  private pinRevision(entry: RotationEntry): void {
+    const current = this.options.mapEntry?.(entry.file);
+    if (!current) return;
+    entry.map = current.map;
+    entry.rev = current.rev;
+    entry.text = current.text;
+  }
+
+  /** Revisão presa do mapa em jogo (null = sem catálogo ou mapa gerado). */
+  get mapRevision(): number | null {
+    return (this.rotation[this.mapIndex] as RotationEntry).rev ?? null;
   }
 
   private mapFile(index: number): string {

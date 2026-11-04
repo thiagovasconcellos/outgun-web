@@ -18,8 +18,14 @@ export interface ReplayHeader {
   preset: string;
   /** Arquivo do mapa (sem `.txt`) e título. */
   map: string;
-  /** Texto do mapa quando ele foi gerado na hora (`random_map`, OG-015): não existe em `maps/`. */
+  /**
+   * Texto do mapa (Latin-1): gerados (`random_map`, OG-015), da moderação e, desde o OG-554, todos —
+   * nativos inclusive —, para o replay tocar com as paredes da revisão jogada.
+   */
   mapText?: string;
+  /** Revisão do catálogo jogada (OG-554, D-91) e o SHA-256 dos bytes; ausentes em replays antigos. */
+  mapRevision?: number;
+  mapSha256?: string;
   mapTitle: string;
   maxPlayers: number;
   /** ISO 8601. */

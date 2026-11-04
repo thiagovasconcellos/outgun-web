@@ -6,7 +6,7 @@ import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typ
 import { and, asc, desc, eq, gte, inArray, or, sql, type SQL } from 'drizzle-orm';
 import type { AppDeps, Services } from '../app.js';
 import { usernameKey } from '../db/keys.js';
-import { clans, gameServers, matchEventPlayers, matchEvents, matches, matchPlayers, playerMilestones, playerProfiles, rankedSeries, seasonChampions, seasons, users } from '../db/schema.js';
+import { clans, gameServers, mapRevisions, matchEventPlayers, matchEvents, matches, matchPlayers, playerMilestones, playerProfiles, rankedSeries, seasonChampions, seasons, users } from '../db/schema.js';
 import { isSecretMilestone, SECRET_MILESTONES } from '@outgun/content/secret';
 import { milestoneProgressOf, milestoneRarity, SECRET_TOTAL, unlockedSecrets } from '../milestones.js';
 import { matchSkillChanges, playerSkillOf } from '../skill.js';
@@ -98,6 +98,11 @@ const stat = (key: string) => sql<number>`coalesce(sum((${matchPlayers.stats} ->
 
 export function playerRoutes({ database }: AppDeps, { sessions }: Services): FastifyPluginAsyncTypebox {
   const { db } = database;
+  /** Número da revisão jogada (OG-555), para a miniatura histórica. */
+  const revisionRef = async (id: number, inferred: boolean) => {
+    const [r] = await db.select({ number: mapRevisions.number }).from(mapRevisions).where(eq(mapRevisions.id, id));
+    return r ? { number: r.number, inferred } : null;
+  };
   const titles = (where: SQL) => titlesWhere(db, where);
   return async (app) => {
     app.get(
@@ -304,6 +309,8 @@ export function playerRoutes({ database }: AppDeps, { sessions }: Services): Fas
               skill: Type.Array(SkillChangeLine),
               /** Região (país) do servidor em que a partida rodou (OG-547); null se o servidor sumiu. */
               region: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+              /** Revisão do mapa jogada (OG-555): número e se foi inferida; null = sem revisão (mostra a atual). */
+              mapRevision: Type.Optional(Type.Union([Type.Null(), Type.Object({ number: Type.Integer(), inferred: Type.Boolean() })])),
             }),
             404: ErrorSchema,
           },
@@ -326,6 +333,7 @@ export function playerRoutes({ database }: AppDeps, { sessions }: Services): Fas
             playSeconds: p.playSeconds, scoreDelta: p.scoreDelta, negDelta: p.negDelta, stats: p.stats,
           })),
           replayUrl: m.replayUrl,
+          mapRevision: m.mapRevisionId === null ? null : await revisionRef(m.mapRevisionId, m.mapRevisionInferred),
           // secretos (OG-394): o nome vai junto, o cliente não tem o catálogo deles
           milestones: (
             await db

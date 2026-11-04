@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S60 |
-| Status | Backlog |
+| Status | Concluído |
 | Dependências | OG-557 |
 | Regras de negócio | RN-MRV-02, RN-MRV-07, RN-MRV-11 |
 | Skills | `outgun-card-workflow` |
@@ -25,8 +25,11 @@ Como moderador, quero ver cada mapa uma vez só, abrir o histórico, baixar o TX
 - **Desativar/ativar para novas partidas**, igual para nativos e da moderação; desativar não apaga nada e continua recusado se o mapa estiver numa rotação (regra atual do painel).
 
 ## Critérios de aceite
-- [ ] Restaurar a revisão 1 do Larhi cria a revisão 3 com os bytes da 1.
-- [ ] Mapa desativado some das escolhas de sala/rotação e continua tocando nos replays.
-- [ ] Comparação de Attack nativo × revisão aponta "bases trocadas".
+- [x] Restaurar a revisão 1 do Larhi cria a revisão 3 com os bytes da 1.
+- [x] Mapa desativado some das escolhas de sala/rotação e continua tocando nos replays.
+- [x] Comparação de Attack nativo × revisão aponta "bases trocadas".
 
 ## Notas de implementação
+- Catálogo: uma linha por mapa (título, chave, autor, origem, revisão ativa/total, jogável, rotações). Histórico em diálogo (`admin-map-history.tsx`): baixar TXT (`GET /admin/maps/:key/revisions/N.txt`, só moderador), comparar duas revisões (miniaturas + resumo de paredes, círculos, chão, bandeiras, spawns, bases trocadas) e restaurar.
+- Restaurar **reativa** a revisão antiga (não cria cópia: o SHA-256 é único por mapa, então os mesmos bytes não viram outra revisão); as intermediárias ficam e o conflito do OG-557 passa a comparar com a ativa.
+- `PUT /admin/maps/:key/playable` vale para nativos também; desativar segue recusado com o mapa numa rotação.

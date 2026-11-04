@@ -108,7 +108,7 @@ describe.skipIf(!pgAdminUrl)('radar de estilo (OG-469)', () => {
 
   it('filtro por mapa (OG-479): lista dos mapas e "poucos jogos neste mapa" com menos de 3 ativos', async () => {
     const ana = await style('Ana');
-    expect(ana.maps).toEqual([{ map: 'outgun1', title: 'outgun1', games: 5 }]);
+    expect(ana.maps).toEqual([{ map: 'outgun1', title: 'outgun1', games: 5, revisions: [] }]);
     expect(ana.fewOnMap).toBe(false);
     const onMap = await style('Ana', 'map=outgun1');
     expect(onMap).toMatchObject({ fewOnMap: true, radar: { games: 5, axes: null, population: 2 } });

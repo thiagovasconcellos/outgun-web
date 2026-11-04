@@ -235,6 +235,10 @@ export const matches = pgTable(
     mode: gameMode('mode').notNull(),
     ranked: boolean('ranked').notNull(),
     map: text('map').notNull(),
+    /** Mapa e revisão jogada (OG-555); nulos em mapas gerados. `inferred` = preenchida sem prova. */
+    mapId: integer('map_id').references((): AnyPgColumn => maps.id),
+    mapRevisionId: integer('map_revision_id').references((): AnyPgColumn => mapRevisions.id),
+    mapRevisionInferred: boolean('map_revision_inferred').notNull().default(false),
     redScore: smallint('red_score').notNull(),
     blueScore: smallint('blue_score').notNull(),
     startedAt: tstz('started_at').notNull(),
@@ -718,6 +722,52 @@ export const panelMapVersions = pgTable(
   (t) => [primaryKey({ columns: [t.name, t.version] })],
 );
 
+/** Mapas com identidade estável (OG-552, D-91): `key` é o nome das rotações e partidas. */
+export const maps = pgTable('maps', {
+  id: serial('id').primaryKey(),
+  key: text('key').notNull().unique(),
+  origin: text('origin').$type<'native' | 'panel' | 'import'>().notNull(),
+  activeRevision: integer('active_revision'),
+  playable: boolean('playable').notNull().default(true),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: tstz('created_at').notNull().defaultNow(),
+});
+
+/** Revisões imutáveis de um mapa (RN-MRV-02); texto em Latin-1, os bytes exatos do arquivo. */
+export const mapRevisions = pgTable(
+  'map_revisions',
+  {
+    id: serial('id').primaryKey(),
+    mapId: integer('map_id')
+      .notNull()
+      .references(() => maps.id),
+    number: integer('number').notNull(),
+    text: text('text').notNull(),
+    sha256: text('sha256').notNull(),
+    crc: integer('crc').notNull(),
+    title: text('title').notNull(),
+    author: text('author').notNull().default(''),
+    width: smallint('width').notNull(),
+    height: smallint('height').notNull(),
+    publishedBy: uuid('published_by').references(() => users.id, { onDelete: 'set null' }),
+    publishedAt: tstz('published_at').notNull().defaultNow(),
+    provenance: text('provenance').notNull(),
+    note: text('note'),
+    baseRevision: integer('base_revision'),
+    /** Rascunho (OG-562): não vira a ativa ao publicar; só sala privada de moderador. */
+    draft: boolean('draft').notNull().default(false),
+  },
+  (t) => [unique().on(t.mapId, t.number), unique().on(t.mapId, t.sha256)],
+);
+
+/** Nomes antigos → mapa (RN-MRV-03); a busca ignora maiúsculas. */
+export const mapAliases = pgTable('map_aliases', {
+  alias: text('alias').primaryKey(),
+  mapId: integer('map_id')
+    .notNull()
+    .references(() => maps.id),
+});
+
 export const mapRotations = pgTable('map_rotations', {
   /** casual | ranked | ranked:2x2 | ranked:3x3 | ranked:4x4 | ranked:5x5 (OG-251, `RotationKey`). */
   key: text('key').$type<RotationKey>().primaryKey(),
@@ -995,6 +1045,9 @@ export const allTables = {
   panel_map_versions: panelMapVersions,
   casual_preset_versions: casualPresetVersions,
   map_rotations: mapRotations,
+  maps,
+  map_revisions: mapRevisions,
+  map_aliases: mapAliases,
   bot_settings: botSettings,
   ranked_series: rankedSeries,
   beta_invites: betaInvites,

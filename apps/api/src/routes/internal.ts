@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Rotas dos game servers (PLAN 5.4): heartbeat das salas e resultado das partidas. Toda chamada é
 // autenticada por HMAC (`verifyInternalRequest` de @outgun/tickets).
+import { matchMapRefs } from '../map-catalog.js';
 import { Type, type FastifyPluginAsyncTypebox, type Static, type TArray, type TOptional, type TString } from '@fastify/type-provider-typebox';
 import { and, eq, gt, inArray, isNotNull, isNull, lt, ne, notInArray, or } from 'drizzle-orm';
 import { BOT_CHAT_MESSAGE_MAX_LENGTH, BOT_CHAT_MESSAGES_MAX, BOT_CHAT_PER_MINUTE_MAX, PRESETS, ROTATION_KEYS, seriesOver, seriesWinner, seriesWinsNeeded, type RotationKey } from '@outgun/settings';
@@ -135,8 +136,8 @@ const HeartbeatReply = Type.Object({
     version: Type.String(),
     presets: Type.Array(Type.Object({ id: Type.String(), description: Type.String(), overrides: Type.String() })),
     rotations: Type.Object(Object.fromEntries(ROTATION_KEYS.map((k) => [k, Type.Optional(Type.Array(Type.String()))])) as Record<RotationKey, TOptional<TArray<TString>>>),
-    /** Mapas publicados pela moderação (OG-367): nome e CRC; o texto sai de `GET /maps/:name`. */
-    maps: Type.Array(Type.Object({ name: Type.String(), crc: Type.Integer() })),
+    /** Mapas jogáveis com a revisão ativa (OG-553); o texto sai de `GET /maps/:key/rev/:n.txt`. */
+    maps: Type.Array(Type.Object({ name: Type.String(), crc: Type.Integer(), rev: Type.Integer(), sha256: Type.String(), origin: Type.String() })),
     /** Nomes e prefixos ativos dos bots (OG-403). */
     bots: Type.Object({ prefixes: Type.Array(Type.String()), names: Type.Array(Type.String()) }),
     /** Chat dos bots (OG-404). */
@@ -200,6 +201,8 @@ const MatchResult = Type.Object({
   mode: GameModeSchema,
   ranked: Type.Boolean(),
   map: Type.String({ minLength: 1, maxLength: 64 }),
+  /** Revisão do catálogo jogada (OG-555); ausente em mapas gerados e em game servers antigos. */
+  mapRevision: Type.Optional(Type.Integer({ minimum: 1 })),
   redScore: Type.Integer({ minimum: 0, maximum: 32767 }),
   blueScore: Type.Integer({ minimum: 0, maximum: 32767 }),
   startedAt: Type.String({ format: 'date-time' }),
@@ -511,6 +514,7 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
               mode: body.mode,
               ranked: body.ranked,
               map: body.map,
+              ...(await matchMapRefs(tx, body.map, body.mapRevision)),
               redScore: body.redScore,
               blueScore: body.blueScore,
               startedAt: new Date(body.startedAt),

@@ -2,13 +2,14 @@
 // Lista pública de salas (substitui a lista do master server do original), criação de sala
 // privada Casual (OG-086, RN-CFG-03) e de sala de lobby Ranked (OG-252, RN-RKL-05/06, D-44).
 import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { clampTraining, formatPlayers, isSeriesBestOf, PRESETS, settingsOf, TRAINING_MAPS, TRAINING_MAX_PLAYERS } from '@outgun/settings';
+import { clampTraining, formatPlayers, isSeriesBestOf, PRESETS, settingsOf, TRAINING_MAX_PLAYERS, trainingMapsFor } from '@outgun/settings';
 import { casualRotation, findPreset, panelPresets, rotationMaps } from '../platform-config.js';
-import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
 import { hashPassword } from '../auth/password.js';
-import { gameServers, panelMaps, rooms } from '../db/schema.js';
+import { gameServers, rooms } from '../db/schema.js';
+import { DRAFT_NAME, draftMaps, findMap, findRevision, findRevisionByCrc, playableMaps } from '../map-catalog.js';
 import { canSpawnRoom, onlineServers, pickServer, regionFallback, roomHumans, roomListed, roomOnline } from '../registry.js';
 import { ErrorSchema, GameModeSchema, LobbyPhaseSchema, RankedFormatSchema, RoomId, SeriesBestOfSchema } from './schemas.js';
 
@@ -34,12 +35,12 @@ const RoomSummary = Type.Object({
   bestOf: Type.Union([Type.Null(), SeriesBestOfSchema]),
   phase: Type.Union([Type.Null(), LobbyPhaseSchema]),
   /** Sala de treino (OG-492): o modo; null nas outras. No lobby aparece como "Treino · <modo>" e conta como privada. */
-  training: Type.Union([Type.Null(), Type.Literal('attack'), Type.Literal('defense'), Type.Literal('escape'), Type.Literal('capture')]),
+  training: Type.Union([Type.Null(), Type.Literal('attack'), Type.Literal('defense'), Type.Literal('escape'), Type.Literal('capture'), Type.Literal('aim')]),
 });
 
 /** Opções da sala de treino na criação (OG-492, RN-TRN-04/06). */
 const TrainingSchema = Type.Object({
-  mode: Type.Union([Type.Literal('attack'), Type.Literal('defense'), Type.Literal('escape'), Type.Literal('capture')]),
+  mode: Type.Union([Type.Literal('attack'), Type.Literal('defense'), Type.Literal('escape'), Type.Literal('capture'), Type.Literal('aim')]),
   bots: Type.Integer({ minimum: 0, maximum: 5 }),
   allies: Type.Integer({ minimum: 0, maximum: 2 }),
   /** 1 a 5; 0 = progressivo (OG-499). */
@@ -172,7 +173,7 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
         maps: await casualRotation(db),
         /** Rotação 2x2 (OG-519): mapas do atalho 2x2, que valem em sala de 4 vagas. */
         duo: (await rotationMaps(db, 'ranked:2x2')) ?? [],
-        published: (await db.select({ name: panelMaps.name }).from(panelMaps).where(isNull(panelMaps.deletedAt)).orderBy(asc(panelMaps.name))).map((m) => m.name),
+        published: (await playableMaps(db)).filter((m) => m.origin !== 'native').map((m) => m.name),
       }),
     );
 
@@ -181,14 +182,46 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
       {
         schema: {
           tags: ['salas'],
-          summary: 'Texto de um mapa publicado pela moderação (OG-366), em Latin-1, para os game servers e o cliente',
-          params: Type.Object({ name: Type.String({ minLength: 1, maxLength: 64 }) }),
+          summary:
+            'Texto da revisão ativa de um mapa jogável (OG-552), em Latin-1, pela chave ou por um nome antigo (`.txt` opcional); `?crc=` dá a revisão com aquele CRC (replays antigos, OG-554)',
+          params: Type.Object({ name: Type.String({ minLength: 1, maxLength: 68 }) }),
+          querystring: Type.Object({ crc: Type.Optional(Type.Integer({ minimum: 0 })) }),
         },
       },
       async (request, reply) => {
-        const [m] = await db.select({ text: panelMaps.text, crc: panelMaps.crc }).from(panelMaps).where(and(eq(panelMaps.name, request.params.name), isNull(panelMaps.deletedAt)));
-        if (!m) return reply.code(404).send({ error: 'map_not_found', message: 'map not found' });
-        return reply.header('content-type', 'text/plain; charset=iso-8859-1').header('x-map-crc', String(m.crc)).header('cache-control', 'public, max-age=60').send(Buffer.from(m.text, 'latin1'));
+        const name = request.params.name.replace(/\.txt$/, '');
+        const m = await findMap(db, name);
+        const { crc } = request.query;
+        const r = !m ? undefined : crc !== undefined ? await findRevisionByCrc(db, m.id, crc) : m.playable && m.activeRevision !== null ? await findRevision(db, m.id, m.activeRevision) : undefined;
+        if (!r) return reply.code(404).send({ error: 'map_not_found', message: 'map not found' });
+        return reply
+          .header('content-type', 'text/plain; charset=iso-8859-1')
+          .header('x-map-crc', String(r.crc))
+          .header('x-map-revision', String(r.number))
+          .header('cache-control', 'public, max-age=60')
+          .send(Buffer.from(r.text, 'latin1'));
+      },
+    );
+
+    app.get(
+      '/maps/:name/rev/:file',
+      {
+        schema: {
+          tags: ['salas'],
+          summary: 'Texto de uma revisão de um mapa (OG-552), imutável: `N.txt`; para os game servers, replays e miniaturas',
+          params: Type.Object({ name: Type.String({ minLength: 1, maxLength: 64 }), file: Type.String({ pattern: '^[0-9]{1,6}\\.txt$' }) }),
+        },
+      },
+      async (request, reply) => {
+        const m = await findMap(db, request.params.name);
+        const r = m ? await findRevision(db, m.id, Number.parseInt(request.params.file, 10)) : undefined;
+        if (!r) return reply.code(404).send({ error: 'map_not_found', message: 'map revision not found' });
+        return reply
+          .header('content-type', 'text/plain; charset=iso-8859-1')
+          .header('x-map-crc', String(r.crc))
+          .header('x-map-sha256', r.sha256)
+          .header('cache-control', 'public, max-age=31536000, immutable')
+          .send(Buffer.from(r.text, 'latin1'));
       },
     );
 
@@ -232,13 +265,21 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
         const training = body.training ? clampTraining(body.training) : null;
         if (training) {
           // mapas de treino (D-87): um só, da lista fixa, fora da rotação do painel
-          if (!body.maps || body.maps.length !== 1 || !TRAINING_MAPS.includes(body.maps[0]!)) {
-            return reply.code(422).send({ error: 'invalid_training_map', message: `training rooms take one of: ${TRAINING_MAPS.join(', ')}` });
+          // Treino de mira (OG-568): só o T4
+          const allowed = trainingMapsFor(training.mode);
+          if (!body.maps || body.maps.length !== 1 || !allowed.includes(body.maps[0]!)) {
+            return reply.code(422).send({ error: 'invalid_training_map', message: `training rooms take one of: ${allowed.join(', ')}` });
           }
           // uma sala de treino aberta por conta (RN-TRN-06): a fora do ar ou vazia sai; com gente nela, recusa
           const mine = await db.select().from(rooms).where(and(eq(rooms.ownerId, user.id), isNotNull(rooms.training)));
           if (mine.some((r) => roomOnline(r, Date.now()) && roomHumans(r) > 0)) return reply.code(409).send({ error: 'training_room_open', message: 'you already have a training room open; leave it first' });
           if (mine.length > 0) await db.delete(rooms).where(and(eq(rooms.ownerId, user.id), isNotNull(rooms.training)));
+        } else if (body.maps?.some((m) => DRAFT_NAME.test(m))) {
+          // rascunho de mapa (OG-562, RN-MRV-10): só o moderador que cria a sala escolhe; os convidados jogam
+          if (!user.isModerator && !user.isAdmin) return reply.code(422).send({ error: 'draft_map_forbidden', message: 'only moderators can open a room on a draft map' });
+          const drafts = new Set((await draftMaps(db)).map((d) => d.name));
+          const unknown = body.maps.filter((m) => DRAFT_NAME.test(m) && !drafts.has(m));
+          if (unknown.length > 0) return reply.code(422).send({ error: 'map_not_in_rotation', message: `no such draft: ${unknown.join(', ')}` });
         } else {
           // rotação do painel sempre respeitada (D-69): a sala escolhe só entre os mapas dela
           // sala de 4 vagas (atalho 2x2, OG-519): os mapas da rotação 2x2 também valem

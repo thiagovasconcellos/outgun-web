@@ -80,6 +80,11 @@ export interface ServerHooks {
    * bots com papel de atacar ou levar pegam bandeira, D-87).
    */
   mayTakeFlag?(pid: number, flagTeam: number): boolean;
+  /**
+   * Treino de mira (OG-568, D-93): o jogador pode levar dano? Sem o gancho, todos levam. O acerto conta
+   * nas estatísticas mesmo sem dano (o alvo imortal registra os tiros que o atingem).
+   */
+  mayTakeDamage?(pid: number): boolean;
 }
 
 export class ServerSim {
@@ -184,6 +189,7 @@ export class ServerSim {
   damagePlayer(target: number, attacker: number, damage: number, type: DamageType): void {
     const t = this.player(target);
     if (t.dead || this.frame < t.startTakeDamageFrame) return;
+    if (this.hooks.mayTakeDamage && !this.hooks.mayTakeDamage(target)) return;
     if (t.hasShadow()) t.visibility = MAXIMUM_SHADOW_VISIBILITY;
     const pups = this.settings.powerups;
     if (t.shield) {

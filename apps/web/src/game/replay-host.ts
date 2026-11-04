@@ -3,6 +3,7 @@
 // original (`GuiClient`, src/guiclient.cpp:2580-2660): PageUp/PageDown dobram ou dividem a
 // velocidade (1/32 a 128), Home volta ao normal, P pausa, setas trocam a sala do canto, + e − do
 // teclado numérico mudam o zoom. A mais: F segue um jogador (e Esc solta), e o seek pela barra.
+import { API_URL } from '../app/api.js';
 import { ReplayPlayer } from '@outgun/netcode';
 import { decodeReplayBody, readReplayPrefix, type Replay } from '@outgun/protocol';
 import { positiveModulo, type GameMap, type WorldCoords } from '@outgun/sim';
@@ -44,6 +45,8 @@ export interface ReplayStatus {
   readonly audioBlocked: boolean;
   /** Seguindo sozinho quem pega a bandeira (OG-536). */
   readonly autoFollow: boolean;
+  /** O mapa gravado não foi encontrado (CRC diferente): a geometria pode estar diferente (OG-554). */
+  readonly mapMismatch: boolean;
 }
 
 export interface ReplayHost {
@@ -131,6 +134,9 @@ export function mountReplay(container: HTMLElement, initial: Replay | null, opts
   let entities: EntityRenderer | undefined;
   let map: GameMap | undefined;
   let mapName = '';
+  /** Nome + conteúdo do mapa carregado (OG-554) e se o CRC gravado não bateu. */
+  let mapIdentity = '';
+  let mapMismatch = false;
   let lastStatus = '';
   // HUD da partida para quem assiste (OG-340): minimapa, placar dos times, frags, relógio e chat.
   // Voltar no replay recria a sessão; o HUD acompanha.
@@ -194,6 +200,7 @@ export function mountReplay(container: HTMLElement, initial: Replay | null, opts
       ended: !opts.live && !!player && player.position >= player.length,
       audioBlocked: !!sounds && soundOn && sounds.blocked,
       autoFollow,
+      mapMismatch,
     };
     const key = JSON.stringify(st);
     if (key !== lastStatus) {
@@ -274,8 +281,13 @@ export function mountReplay(container: HTMLElement, initial: Replay | null, opts
     if (!setup) throw new Error('player não iniciado');
     const { theme, sprites, font } = await setup;
     if (destroyed) return;
-    if (next.header.map !== mapName || !world) {
-      const { map: loaded, bytes } = await loadMap(next.header.map, { text: next.header.mapText });
+    // recarrega quando muda o nome **ou** o conteúdo: duas revisões do mesmo mapa (OG-554)
+    const recorded = next.init.find((m) => m.type === 'mapChange');
+    const recordedCrc = recorded?.type === 'mapChange' ? recorded.crc : undefined;
+    const identity = `${next.header.map}\n${next.header.mapSha256 ?? next.header.mapText ?? ''}\n${recordedCrc ?? ''}`;
+    if (identity !== mapIdentity || !world) {
+      // replay antigo sem texto: a revisão com o CRC gravado vem da API (nativo = assets, revisão 1)
+      const { map: loaded, bytes } = await loadMap(next.header.map, next.header.mapText !== undefined ? { text: next.header.mapText } : { crc: recordedCrc, base: API_URL });
       const source = await createRoomSource(loaded, next.header.map, bytes, theme);
       if (destroyed) return source.destroy();
       world?.destroy();
@@ -284,6 +296,7 @@ export function mountReplay(container: HTMLElement, initial: Replay | null, opts
       map = loaded;
       mapBytes = bytes;
       mapName = next.header.map;
+      mapIdentity = identity;
       layout();
       identityFor = undefined; // mapa novo: emblemas de novo
     }
@@ -298,8 +311,8 @@ export function mountReplay(container: HTMLElement, initial: Replay | null, opts
       app.stage.addChild(hud.stage);
       layout();
     }
-    const recorded = next.init.find((m) => m.type === 'mapChange');
-    if (recorded?.type === 'mapChange' && map && recorded.crc !== map.crc) console.warn(`replay: CRC do mapa ${map.crc} ≠ ${recorded.crc} gravado`);
+    mapMismatch = recordedCrc !== undefined && !!map && recordedCrc !== map.crc;
+    if (mapMismatch) console.warn(`replay: CRC do mapa ${map!.crc} ≠ ${recordedCrc} gravado`);
     const fx = entities;
     const p = new ReplayPlayer(next, map!, (ev) => {
       const time = (p.session.world?.frame ?? 0) / 10;

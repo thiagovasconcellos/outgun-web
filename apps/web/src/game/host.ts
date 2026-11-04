@@ -358,13 +358,13 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
   /** Troca o mapa desenhado (início da partida e cada troca de mapa do servidor). */
   /** Base HTTP do game server da partida (mapas gerados, OG-015). */
   let serverBase: string | undefined;
-  let shownMap: { name: string; theme: RoomTheme } | null = null;
+  let shownMap: { name: string; theme: RoomTheme; crc?: number | undefined } | null = null;
   let mapToken = 0;
-  const showMap = async (name: string, theme: RoomTheme): Promise<GameMap | null> => {
-    shownMap = { name, theme };
+  const showMap = async (name: string, theme: RoomTheme, crc?: number): Promise<GameMap | null> => {
+    shownMap = { name, theme, crc };
     // só o pedido mais recente vale: duas trocas de cor seguidas não deixam o desenho antigo por cima
     const token = ++mapToken;
-    const { map, bytes } = await loadMap(name, { base: serverBase });
+    const { map, bytes } = await loadMap(name, { base: serverBase, crc });
     const source = await createRoomSource(map, name, bytes, theme);
     if (destroyed || token !== mapToken) {
       source.destroy();
@@ -473,7 +473,7 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
       holdReady: () => graphics().stayDeadInMenus && !input.isEnabled(),
       onMapChange: (request) => {
         // um mapa de cada vez, na ordem em que o servidor pediu
-        void queueMap(() => showMap(request.file, theme))
+        void queueMap(() => showMap(request.file, theme, request.crc))
           .then((map) => {
             if (!map || !session || session.mapRequest !== request) return;
             if (map.crc !== request.crc) console.warn(`mapa ${request.file}: CRC ${map.crc} ≠ ${request.crc} do servidor`);
@@ -761,7 +761,7 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
             void loadEntitySprites(manifest, opts.theme, theme.colours).then((s) => !destroyed && entities === target && target.setSprites(s));
             // as bases das salas são pintadas com as cores da carga do mapa: redesenha com as novas
             // na fila, depois de uma carga pendente; o mapa é lido na hora (pode ter mudado até lá)
-            void queueMap(async () => shownMap && showMap(shownMap.name, shownMap.theme)).catch(() => undefined);
+            void queueMap(async () => shownMap && showMap(shownMap.name, shownMap.theme, shownMap.crc)).catch(() => undefined);
           }
         }
         if (session && entities && world?.layout && worldMap && session.world?.map === worldMap) {

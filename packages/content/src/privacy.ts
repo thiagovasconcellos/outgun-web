@@ -62,6 +62,10 @@ export const TABLES: Readonly<Record<string, 'personal' | 'none'>> = {
   casual_presets: 'none',
   casual_preset_versions: 'none',
   map_rotations: 'none',
+  // catálogo de mapas (OG-552): só o publicador (FK, sem dado pessoal na linha)
+  maps: 'none',
+  map_revisions: 'none',
+  map_aliases: 'none',
   bot_settings: 'none',
   cups: 'none',
   cup_entries: 'personal',

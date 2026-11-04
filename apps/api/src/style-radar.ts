@@ -2,13 +2,16 @@
 // Radar de estilo de jogo (OG-469, D-84, RN-RAD): 6 eixos em percentil contra os ativos do período
 // e o arquétipo que sai do formato. Uma consulta só por período traz todas as contas; o perfil de um
 // jogador, a mediana do clã (OG-473) e a sombra do top 10 (OG-476) saem da mesma lista.
+import { MATCH_MAP_KEY, mapFilterSql } from './map-catalog.js';
 import { sql } from 'drizzle-orm';
 import type { Db } from './db/client.js';
 import { LEADERBOARD_MINIMUM_MATCHES, type BoardScope } from './leaderboard.js';
 
 /** Período e formato do leaderboard e, no radar do perfil, um mapa (OG-479). */
 export interface StyleScope extends BoardScope {
+  /** Família do mapa (OG-556): todas as revisões juntas; `mapRevision` separa uma. */
   map?: string | null;
+  mapRevision?: number | null;
 }
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
@@ -94,7 +97,7 @@ export async function styleRows(db: Db | Tx, scope: StyleScope, filter: ClanFilt
       sql`m.ranked AND NOT mp.is_bot AND mp.user_id IS NOT NULL`,
       ...(scope.seasonId !== null ? [sql`m.season_id = ${scope.seasonId}`] : []),
       ...(scope.format !== null ? [sql`m.format = ${scope.format}`] : []),
-      ...(scope.map ? [sql`m.map = ${scope.map}`] : []),
+      ...(scope.map ? [mapFilterSql(scope.map, scope.mapRevision)] : []),
       ...clanWhere(filter),
     ],
     sql` AND `,
@@ -195,7 +198,7 @@ export async function clanStyle(db: Db | Tx, clanId: string, scope: StyleScope, 
       sql`m.ranked AND NOT mp.is_bot`,
       ...(scope.seasonId !== null ? [sql`m.season_id = ${scope.seasonId}`] : []),
       ...(scope.format !== null ? [sql`m.format = ${scope.format}`] : []),
-      ...(scope.map ? [sql`m.map = ${scope.map}`] : []),
+      ...(scope.map ? [mapFilterSql(scope.map, scope.mapRevision)] : []),
       ...clanWhere(filter),
     ],
     sql` AND `,
@@ -233,7 +236,7 @@ export async function lineupStyle(db: Db | Tx, scope: StyleScope, players: reado
 export const MAP_MINIMUM_POPULATION = 3;
 
 /** Mapas das ranqueadas de uma conta no período (filtro do radar, OG-479), do mais jogado ao menos. */
-export async function playerMaps(db: Db | Tx, userId: string, scope: StyleScope): Promise<{ map: string; title: string; games: number }[]> {
+export async function playerMaps(db: Db | Tx, userId: string, scope: StyleScope): Promise<{ map: string; title: string; games: number; revisions: number[] }[]> {
   const where = sql.join(
     [
       sql`m.ranked AND mp.user_id = ${userId}`,
@@ -242,10 +245,14 @@ export async function playerMaps(db: Db | Tx, userId: string, scope: StyleScope)
     ],
     sql` AND `,
   );
-  const rows = await db.execute<{ map: string; title: string | null; games: number }>(
-    sql`SELECT m.map, max(m.details ->> 'mapTitle') AS title, count(*)::int AS games FROM match_players mp JOIN matches m ON m.id = mp.match_id WHERE ${where} GROUP BY m.map ORDER BY count(*) DESC, m.map`,
+  // revisões jogadas de cada mapa (OG-556): o seletor de revisão só aparece com mais de uma
+  const rows = await db.execute<{ map: string; title: string | null; games: number; revisions: number[] | null }>(
+    sql`SELECT ${MATCH_MAP_KEY} AS map, max(m.details ->> 'mapTitle') AS title, count(*)::int AS games,
+      array_remove(array_agg(DISTINCT r.number ORDER BY r.number), NULL) AS revisions
+      FROM match_players mp JOIN matches m ON m.id = mp.match_id LEFT JOIN map_revisions r ON r.id = m.map_revision_id
+      WHERE ${where} GROUP BY 1 ORDER BY count(*) DESC, 1`,
   );
-  return rows.map((r) => ({ map: r.map, title: r.title?.trim() || r.map, games: r.games }));
+  return rows.map((r) => ({ map: r.map, title: r.title?.trim() || r.map, games: r.games, revisions: r.revisions ?? [] }));
 }
 
 /** Abaixo disto de tempo jogado a partida não tem radar: "partida curta demais" (OG-475). */
@@ -281,7 +288,7 @@ const CACHE_MS = 60_000;
 const cache = new Map<string, { at: number; rows: StyleRow[]; profiles: Map<string, StyleProfile> }>();
 
 export async function stylePeriod(db: Db | Tx, scope: StyleScope): Promise<{ rows: StyleRow[]; profiles: Map<string, StyleProfile> }> {
-  const key = `${scope.seasonId ?? 'all'}:${scope.format ?? 'all'}:${scope.map ?? ''}`;
+  const key = `${scope.seasonId ?? 'all'}:${scope.format ?? 'all'}:${scope.map ?? ''}:${scope.mapRevision ?? ''}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) return hit;
   const rows = await styleRows(db, scope);

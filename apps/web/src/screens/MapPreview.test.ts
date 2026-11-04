@@ -12,14 +12,23 @@ const bytes = () => new Response(Uint8Array.from(TEXT, (c) => c.charCodeAt(0)));
 afterEach(() => vi.unstubAllGlobals());
 
 describe('prévia dos mapas (OG-368)', () => {
-  it('mapa do jogo vem dos assets; o da moderação, da API (uma vez só); gerados e random_map ficam sem', async () => {
+  it('revisão ativa de qualquer mapa vem da API (uma vez só); gerados e random_map ficam sem', async () => {
     const fetch = vi.fn<(url: string) => Promise<Response>>(async () => bytes());
     vi.stubGlobal('fetch', fetch);
     expect((await previewMap('outgun1'))?.title).toBe('Teste');
     expect((await previewMap('mapa novo'))?.author).toBe('Moderação');
     await previewMap('mapa novo');
-    expect(fetch.mock.calls.map((c) => c[0])).toEqual(['/assets/maps/outgun1.txt', '/api/maps/mapa%20novo']);
+    // revisão ativa pela API (OG-555): nativos revisados inclusive
+    expect(fetch.mock.calls.map((c) => c[0])).toEqual(['/api/maps/outgun1', '/api/maps/mapa%20novo']);
     expect([await previewMap('mapgen_3'), await previewMap('random_map 3 3')]).toEqual([null, null]);
+  });
+
+  it('API fora: nativo cai nos assets; revisão pedida vem da rota imutável (OG-555)', async () => {
+    const fetch = vi.fn<(url: string) => Promise<Response>>(async (url) => (url.startsWith('/api/maps/larhi') && !url.includes('/rev/') ? new Response(null, { status: 503 }) : bytes()));
+    vi.stubGlobal('fetch', fetch);
+    expect((await previewMap('outgun1', 2))?.title).toBe('Teste');
+    await previewMap('larhi');
+    expect(fetch.mock.calls.map((c) => c[0])).toEqual(['/api/maps/outgun1/rev/2.txt', '/api/maps/larhi']);
   });
 
   it('mapa desativado (404): sem prévia', async () => {

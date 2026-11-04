@@ -18,9 +18,10 @@
 // SEED: semente fixa das salas (capturas determinísticas do `pnpm visual:check`, OG-265); padrão aleatória.
 // ROOMS: salas fixas além da `main`, `id[:preset[:max_jogadores]]` separadas por vírgula (testes de carga, OG-101).
 // MAIN_ROOM (main): id da sala fixa sempre no ar; único entre os servidores (ex.: `main-es` no de Madrid, OG-546).
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listMaps, resolveRotation, type Rotations } from './maps.js';
+import { listMaps, loadMaps, resolveRotation, type Rotations } from './maps.js';
 import { GeneratedMaps } from './generated-maps.js';
 import { RoomManager } from './rooms.js';
 import { startServer } from './server.js';
@@ -40,10 +41,15 @@ const env = process.env;
 const generatedMaps = new GeneratedMaps(env.MAPGEN_DIR ?? `${repo}_legacy/mapgen`);
 // mapas publicados pela moderação (OG-367): o texto vem da API (Latin-1) quando o heartbeat os lista
 const apiUrl = (env.API_URL ?? 'http://localhost:7800').replace(/\/$/, '');
-const panelMaps = new PanelMaps(async (name) => {
-  const res = await fetch(`${apiUrl}/maps/${encodeURIComponent(name)}`);
-  return res.ok ? Buffer.from(await res.arrayBuffer()).toString('latin1') : undefined;
-});
+// e, com o catálogo (OG-553), as revisões novas dos nativos: `/maps/<chave>/rev/<n>.txt`
+const panelMaps = new PanelMaps(
+  async (name, rev) => {
+    const res = await fetch(`${apiUrl}/maps/${encodeURIComponent(name)}${rev !== undefined ? `/rev/${rev}.txt` : ''}`);
+    return res.ok ? Buffer.from(await res.arrayBuffer()).toString('latin1') : undefined;
+  },
+  (name) => folderEntry(name),
+  () => listMaps(mapsDir),
+);
 const production = env.NODE_ENV === 'production';
 const logger = createLogger({ service: 'game-server', level: env.LOG_LEVEL ?? 'info', ...(env.RELEASE ? { version: env.RELEASE } : {}) });
 // região e id do servidor nos erros: com satélites, diz de qual máquina veio (OG-550)
@@ -117,6 +123,7 @@ const manager = new RoomManager({
     ...(env.GAMEMOD ? { gamemod: env.GAMEMOD.split('|').join('\n') } : {}),
     generatedMaps,
     mapText: (file) => panelMaps.text(file),
+    mapEntry: (file) => mapEntry(file),
   },
 });
 const rotation = (env.ROTATION ?? 'outgun1').split(',');
@@ -126,7 +133,21 @@ const rotations: Rotations = { casual: rotation, ranked: env.RANKED_ROTATION ? e
 const mapsDir = env.MAPS_DIR ?? `${repo}_legacy/maps`;
 // `random_map L A ...` na rotação (OG-015): mapas gerados com os blocos de mapgen/
 const folderMap = mapLoader(mapsDir);
-const mapFile = (name: string) => folderMap(name) ?? panelMaps.map(name);
+/** Nativo da pasta com o texto (Latin-1), para a revisão 1 do catálogo e o replay (OG-553/554). */
+const folderEntry = (name: string) => {
+  const map = folderMap(name);
+  return map ? { map, text: readFileSync(join(mapsDir, `${name}.txt`)).toString('latin1') } : undefined;
+};
+// revisão ativa do catálogo primeiro (nativo revisado), depois a pasta; nativo desativado fica de fora
+// mapas fixos do treino (OG-568): o T4 do Treino de mira, fora do catálogo e das rotações
+const trainingMapsDir = env.TRAINING_MAPS_DIR ?? fileURLToPath(new URL('../training-maps', import.meta.url));
+for (const name of listMaps(trainingMapsDir)) {
+  const map = loadMaps(trainingMapsDir, [name])[0]!;
+  panelMaps.addStatic(name, map, readFileSync(join(trainingMapsDir, `${name}.txt`)).toString('latin1'));
+}
+const mapFile = (name: string) => (panelMaps.isHidden(name) ? undefined : (panelMaps.map(name) ?? folderMap(name)));
+/** Mapa, texto e revisão em vigor de uma entrada de rotação: a sala prende na troca de mapa (RN-MRV-04). */
+const mapEntry = (name: string) => (panelMaps.isHidden(name) ? undefined : (panelMaps.entry(name) ?? (folderEntry(name) && { ...folderEntry(name)!, rev: null })));
 const fixedRoom = (id: string, name: string, preset: string, maxPlayers: number) => {
   const slots = resolveRotation(rotation, mapFile, generatedMaps);
   if (slots.length === 0) throw new Error(`rotação sem mapas válidos: ${rotation.join(', ')}`);

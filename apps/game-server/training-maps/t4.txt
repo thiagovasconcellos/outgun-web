@@ -1,0 +1,16 @@
+; 27/05/2017
+
+P width 1
+P height 1
+P title T4
+P author Nosferatu & coiote
+S 16 12
+
+spawn 1 0 0 8 6
+
+C W 8 6 0.52 0.51 22 23
+C W 8 6 0.52 0.51 157 158
+C W 8 6 0.52 0.51 202 203
+C W 8 6 0.52 0.51 337 338
+
+C G 8 6 4.51 0 0 0 3

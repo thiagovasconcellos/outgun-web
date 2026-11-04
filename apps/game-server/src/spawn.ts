@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { GameMap } from '@outgun/sim';
-import { clampTraining, formatPlayers, isRankedFormat, isSeriesBestOf, TRAINING_MAPS, TRAINING_MAX_PLAYERS } from '@outgun/settings';
+import { clampTraining, formatPlayers, isRankedFormat, isSeriesBestOf, TRAINING_MAX_PLAYERS, trainingMapsFor } from '@outgun/settings';
 import type { RoomSpawn } from '@outgun/tickets';
 import { casualChoices, loadMaps, panelRotationKeys, resolveRotation, rotationFor, withinRotation, type Rotations } from './maps.js';
 import type { GeneratedMaps } from './generated-maps.js';
@@ -60,7 +60,7 @@ export function makeSpawner(manager: RoomManager, options: SpawnerOptions): (id:
     // sala de treino (OG-492, D-87): um dos mapas de treino, fora da rotação do painel
     const training = spec.mode === 'casual' && spec.training ? clampTraining(spec.training) : undefined;
     const chosen = training
-      ? (spec.maps ?? []).filter((m) => TRAINING_MAPS.includes(m)).slice(0, 1)
+      ? (spec.maps ?? []).filter((m) => trainingMapsFor(training.mode).includes(m)).slice(0, 1)
       : spec.mode === 'casual' && spec.maps
         ? panelRotationKeys.has('casual')
           ? withinRotation(spec.maps, casualChoices(options.rotations, spec.maxPlayers))

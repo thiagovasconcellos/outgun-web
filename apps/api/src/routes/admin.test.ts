@@ -80,8 +80,9 @@ describe.skipIf(!pgAdminUrl)('painel admin (OG-087)', () => {
       ['DELETE', '/admin/presets/permissao', 'moderator'],
       ['PUT', '/admin/rotations/ranked:5x5', 'moderator', { maps: ['outgun1'] }],
       ['GET', '/admin/maps', 'moderator'],
-      ['PUT', '/admin/maps/permissao', 'moderator', { text: 'P width 1\nP height 1\nP title P\nS 16 12\nflag 0 0 0 1 1\nspawn 0 0 0 8 6\nflag 1 0 0 15 11\nspawn 1 0 0 8 3\n' }],
-      ['DELETE', '/admin/maps/permissao', 'moderator'],
+      // sem efeito colateral: as rotas que gravam (novo mapa, revisão) usam o mesmo guarda de moderador
+      ['POST', '/admin/maps/check', 'moderator', { text: 'P width 1\nP height 1\nP title P\nS 16 12\nflag 0 0 0 1 1\nspawn 0 0 0 8 6\nflag 1 0 0 15 11\nspawn 1 0 0 8 3\n' }],
+      ['GET', '/admin/maps/drafts', 'moderator'],
       ['PUT', '/admin/users/Jogador1/role', 'admin', { role: 'player' }],
       ['GET', '/admin/users', 'admin'],
     ];
@@ -255,32 +256,43 @@ describe.skipIf(!pgAdminUrl)('painel admin (OG-087)', () => {
     await t.db.update(gameServers).set({ maps: [] }).where(eq(gameServers.id, 'gs-1'));
   });
 
-  it('mapas .txt da moderação (OG-366, D-70): conferidos pelo parser, publicados, na rotação e servidos em Latin-1', async () => {
+  it('mapas com revisões (OG-557/558, D-91): novo mapa, revisão com base, conflito, restaurar, desativar', async () => {
     const text = 'P width 1\nP height 1\nP title Teste\nP author Moderação\nS 16 12\nflag 0 0 0 1 1\nspawn 0 0 0 8 6\nflag 1 0 0 15 11\nspawn 1 0 0 8 3\n';
+    const v2 = text.replace('8 3', '8 4');
     await t.db.update(gameServers).set({ maps: ['outgun1', 'gun dance'] }).where(eq(gameServers.id, 'gs-1'));
-    expect((await call('POST', '/admin/maps/check', 'player', { name: 'teste', text })).statusCode).toBe(403);
-    expect((await call('POST', '/admin/maps/check', 'mod', { name: 'teste', text })).json()).toEqual({ ok: true, errors: [], preview: { title: 'Teste', author: 'Moderação', width: 1, height: 1, crc: expect.any(Number) } });
-    expect((await call('POST', '/admin/maps/check', 'mod', { name: 'teste', text: 'P width 1\nP height x\n' })).json()).toEqual({ ok: false, errors: ['Invalid map line: P height x'] });
-    expect((await call('PUT', '/admin/maps/outgun1', 'mod', { text })).json()).toMatchObject({ error: 'builtin_map' });
-    expect((await call('PUT', '/admin/maps/mapgen_1', 'mod', { text })).statusCode).toBe(422);
-    expect((await call('PUT', '/admin/maps/teste', 'mod', { text: 'P width 1\nP height x\n' })).json()).toMatchObject({ error: 'invalid_map', problems: ['Invalid map line: P height x'] });
-    const saved = await call('PUT', '/admin/maps/teste', 'mod', { text });
-    expect(saved.json()).toMatchObject({ name: 'teste', version: 1, title: 'Teste' });
-    expect(await lastAudit()).toMatchObject({ action: 'map', details: { map: 'teste', version: 1 } });
-    expect((await call('PUT', '/admin/maps/teste', 'mod', { text: text.replace('8 3', '8 4') })).json().version).toBe(2);
-    // servido em Latin-1, com o CRC; entra no catálogo e na rotação
-    const served = await app.inject('/maps/teste');
-    const crc = (await call('GET', '/admin/maps', 'mod')).json().maps.find((m: { name: string }) => m.name === 'teste').crc;
-    expect([served.statusCode, served.headers['x-map-crc'], served.rawPayload.toString('latin1')]).toEqual([200, String(crc), text.replace('8 3', '8 4')]);
-    expect((await call('GET', '/admin/rotations', 'mod')).json().catalog).toContain('teste');
-    // publicado entra na escolha livre de "Criar sala" (OG-377)
-    expect((await app.inject('/rotation')).json().published).toEqual(['teste']);
-    expect((await call('PUT', '/admin/rotations/casual', 'mod', { maps: ['outgun1', 'teste'] })).statusCode).toBe(200);
-    expect((await call('DELETE', '/admin/maps/teste', 'mod')).json()).toMatchObject({ error: 'map_in_rotation' });
+    expect((await call('POST', '/admin/maps/check', 'player', { text })).statusCode).toBe(403);
+    expect((await call('POST', '/admin/maps/check', 'mod', { text })).json()).toMatchObject({ ok: true, preview: { title: 'Teste', author: 'Moderação', width: 1, height: 1 } });
+    expect((await call('POST', '/admin/maps/check', 'mod', { text: 'P width 1\nP height x\n' })).json()).toMatchObject({ ok: false, errors: ['Invalid map line: P height x'] });
+    expect((await call('POST', '/admin/maps', 'mod', { text: 'P width 1\nP height x\n' })).json()).toMatchObject({ error: 'invalid_map' });
+    // sem campo de nome: a chave sai do P title
+    const saved = await call('POST', '/admin/maps', 'mod', { text });
+    expect(saved.json()).toMatchObject({ key: 'Teste', revision: 1, title: 'Teste' });
+    expect(await lastAudit()).toMatchObject({ action: 'map', details: { map: 'Teste', revision: 1 } });
+    // mesmo título de novo: outro mapa, nunca revisão sozinha (RN-MRV-03), e o aviso de duplicata
+    expect((await call('POST', '/admin/maps/check', 'mod', { text })).json().similar).toEqual([{ key: 'Teste', title: 'Teste' }]);
+    expect((await call('POST', '/admin/maps/Teste/revisions', 'mod', { text: v2, baseRevision: 1 })).json()).toMatchObject({ revision: 2 });
+    // base antiga: conflito até confirmar (RN-MRV-08)
+    const v3 = v2.replace('15 11', '14 11');
+    expect((await call('POST', '/admin/maps/Teste/revisions', 'mod', { text: v3, baseRevision: 1 })).json()).toMatchObject({ error: 'newer_revision', revision: 2 });
+    expect((await call('POST', '/admin/maps/Teste/revisions', 'mod', { text: v3, baseRevision: 1, force: true })).json()).toMatchObject({ revision: 3 });
+    // servido em Latin-1 (ativa e por revisão), no catálogo e na escolha livre de "Criar sala"
+    const served = await app.inject('/maps/Teste');
+    expect([served.statusCode, served.headers['x-map-revision'], served.rawPayload.toString('latin1')]).toEqual([200, '3', v3]);
+    expect((await app.inject('/maps/Teste/rev/1.txt')).rawPayload.toString('latin1')).toBe(text);
+    expect((await call('GET', '/admin/rotations', 'mod')).json().catalog).toEqual(expect.arrayContaining(['Teste', 'outgun1']));
+    expect((await app.inject('/rotation')).json().published).toEqual(['Teste']);
+    // restaurar a 1 (as outras ficam) e baixar o TXT, só moderador
+    expect((await call('POST', '/admin/maps/Teste/restore', 'mod', { revision: 1 })).statusCode).toBe(200);
+    expect((await call('GET', '/admin/maps/Teste/revisions', 'mod')).json().revisions.map((r: { number: number; active: boolean }) => [r.number, r.active])).toEqual([[3, false], [2, false], [1, true]]);
+    expect((await call('GET', '/admin/maps/Teste/revisions/2.txt', 'player')).statusCode).toBe(403);
+    expect((await call('GET', '/admin/maps/Teste/revisions/2.txt', 'mod')).rawPayload.toString('latin1')).toBe(v2);
+    // desativar: recusado na rotação; fora dela, some das novas partidas (nada se apaga)
+    expect((await call('PUT', '/admin/rotations/casual', 'mod', { maps: ['outgun1', 'Teste'] })).statusCode).toBe(200);
+    expect((await call('PUT', '/admin/maps/Teste/playable', 'mod', { playable: false })).json()).toMatchObject({ error: 'map_in_rotation' });
     await call('PUT', '/admin/rotations/casual', 'mod', { maps: ['outgun1', 'gun dance'] });
-    expect((await call('DELETE', '/admin/maps/teste', 'mod')).statusCode).toBe(204);
-    expect((await app.inject('/maps/teste')).statusCode).toBe(404);
-    expect((await call('GET', '/admin/maps/teste/versions', 'mod')).json().versions.map((v: { version: number; deleted: boolean }) => [v.version, v.deleted])).toEqual([[3, true], [2, false], [1, false]]);
+    expect((await call('PUT', '/admin/maps/Teste/playable', 'mod', { playable: false })).statusCode).toBe(204);
+    expect((await app.inject('/maps/Teste')).statusCode).toBe(404);
+    expect((await app.inject('/maps/Teste/rev/3.txt')).statusCode).toBe(200);
     await t.db.update(gameServers).set({ maps: [] }).where(eq(gameServers.id, 'gs-1'));
   });
 });

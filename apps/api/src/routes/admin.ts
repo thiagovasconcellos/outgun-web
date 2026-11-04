@@ -13,9 +13,10 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { AppDeps, Services } from '../app.js';
 import type { SessionUser } from '../auth/sessions.js';
 import { clanKey, usernameKey } from '../db/keys.js';
-import { adminActions, adminCommands, bans, betaInvites, botSettings, betaInviteUses, casualPresets, casualPresetVersions, clans, feedback, gameServers, mapRotations, panelMaps, panelMapVersions, playerReports, rooms, users } from '../db/schema.js';
+import { adminActions, adminCommands, bans, betaInvites, botSettings, betaInviteUses, casualPresets, casualPresetVersions, clans, feedback, gameServers, mapRevisions, mapRotations, maps, playerReports, rooms, users } from '../db/schema.js';
 import { nameBlocked } from '../name-filter.js';
-import { checkMapText, mapNameProblem } from '../panel-maps.js';
+import { checkMapText } from '../panel-maps.js';
+import { addRevision, catalogRows, draftMaps, ensureMap, findRevision, mapSha256, newMapKey, playableMaps, similarMaps } from '../map-catalog.js';
 import { botChat, botNamesConfig } from '../platform-config.js';
 import { BotChatSchema } from './internal.js';
 import { checkClanFields, ClanError, uniqueError, updateClan } from './clans.js';
@@ -354,23 +355,15 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
       return { versions: rows.map(({ v, by }) => ({ version: v.version, description: v.description, overrides: v.overrides, deleted: v.deleted, changedBy: by, changedAt: v.changedAt.toISOString() })) };
     });
 
-    // --- mapas da moderação (OG-366, D-70): .txt do formato do original, publicados na hora ---
-    /** Mapas da pasta dos game servers (os do jogo; vazio = nenhum servidor informou ainda). */
-    const builtinMaps = async () => [...new Set((await db.select({ maps: gameServers.maps }).from(gameServers)).flatMap((s) => s.maps))];
-    const activePanelMaps = async () => (await db.select({ name: panelMaps.name }).from(panelMaps).where(isNull(panelMaps.deletedAt))).map((m) => m.name);
-    const MapName = Type.String({ minLength: 1, maxLength: 64 });
+    // --- mapas com revisões (OG-557, D-91): novo mapa ou nova revisão de qualquer mapa, sem campo de nome ---
     const MapText = Type.String({ minLength: 1, maxLength: 64 * 1024 });
+    const MapKey = Type.String({ minLength: 1, maxLength: 64 });
+    /** Mapas da pasta dos game servers (vazio = nenhum servidor informou ainda). */
+    const builtinMaps = async () => [...new Set((await db.select({ maps: gameServers.maps }).from(gameServers)).flatMap((s) => s.maps))];
 
-    app.get('/maps', { schema: { tags: ['admin'], summary: 'Mapas enviados pela moderação (OG-366)' } }, async (request, reply) => {
+    app.get('/maps', { schema: { tags: ['admin'], summary: 'Catálogo de mapas (OG-557/558): um por mapa, com a revisão ativa' } }, async (request, reply) => {
       if (!(await guard(request, reply, 'moderator'))) return reply;
-      const rows = await db
-        .select({ m: panelMaps, by: users.username })
-        .from(panelMaps)
-        .leftJoin(users, eq(users.id, panelMaps.updatedBy))
-        .orderBy(panelMaps.name);
-      return {
-        maps: rows.map(({ m, by }) => ({ name: m.name, title: m.title, author: m.author, width: m.width, height: m.height, crc: m.crc, version: m.version, active: m.deletedAt === null, updatedBy: by, updatedAt: m.updatedAt.toISOString() })),
-      };
+      return { maps: await catalogRows(db) };
     });
 
     app.post(
@@ -378,85 +371,202 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
       {
         schema: {
           tags: ['admin'],
-          summary: 'Confere um mapa .txt sem publicar: erros do parser ou a prévia (título, autor, tamanho)',
-          body: Type.Object({ name: MapName, text: MapText }),
+          summary: 'Confere um mapa .txt sem publicar: erros do parser ou a prévia (título, autor, tamanho, CRC) e avisos de possível duplicação',
+          body: Type.Object({ text: MapText, target: Type.Optional(MapKey) }),
         },
       },
       async (request, reply) => {
         if (!(await guard(request, reply, 'moderator'))) return reply;
-        const problem = mapNameProblem(request.body.name);
         const checked = checkMapText(request.body.text);
-        const errors = [...(problem ? [problem] : []), ...(checked.ok ? [] : checked.errors)];
-        if ((await builtinMaps()).includes(request.body.name)) errors.unshift('name: already a map of the game');
-        return errors.length > 0 ? { ok: false, errors } : { ok: true, errors: [], preview: checked.ok ? checked.map : null };
+        if (!checked.ok) return { ok: false, errors: checked.errors, warnings: [] };
+        const similar = request.body.target ? [] : await similarMaps(db, checked.map.title);
+        return { ok: true, errors: [], warnings: [], preview: { ...checked.map, sha256: mapSha256(request.body.text) }, similar };
       },
     );
 
-    app.put(
-      '/maps/:name',
+    /** Publica revisão (nova ou primeira) e audita autor, publicador, base e SHA-256 (RN-MRV-07). */
+    const publishAudit = async (user: SessionUser, key: string, rev: { number: number; sha256: string; author: string; title: string; baseRevision: number | null }, extra: Record<string, unknown> = {}) =>
+      audit(user, 'map', { reason: rev.title, details: { map: key, revision: rev.number, base: rev.baseRevision, sha256: rev.sha256, author: rev.author, ...extra } });
+
+    app.post(
+      '/maps',
       {
         schema: {
           tags: ['admin'],
-          summary: 'Publica (ou atualiza, versionado) um mapa .txt da moderação; vale nas rotações e salas',
-          params: Type.Object({ name: MapName }),
-          body: Type.Object({ text: MapText }),
+          summary: 'Novo mapa (OG-557): a chave sai do `P title` (sem fundir com outro mapa); revisão 1 ativa',
+          body: Type.Object({ text: MapText, note: Type.Optional(Type.String({ maxLength: 500 })) }),
         },
       },
       async (request, reply) => {
         const user = await guard(request, reply, 'moderator');
         if (!user) return reply;
-        const { name } = request.params;
-        const problem = mapNameProblem(name);
-        if (problem) return reply.code(422).send({ error: 'invalid_map', message: problem, problems: [problem] });
-        if ((await builtinMaps()).includes(name)) return reply.code(409).send({ error: 'builtin_map', message: 'this name is already a map of the game' });
         const checked = checkMapText(request.body.text);
         if (!checked.ok) return reply.code(422).send({ error: 'invalid_map', message: checked.errors.join('; '), problems: checked.errors });
-        const { map } = checked;
-        const version = await db.transaction(async (tx) => {
-          const [current] = await tx.select({ version: panelMaps.version }).from(panelMaps).where(eq(panelMaps.name, name));
-          const v = current ? current.version + 1 : 1;
-          const values = { text: request.body.text, ...map, version: v, updatedBy: user.id, updatedAt: new Date(), deletedAt: null };
-          await tx.insert(panelMaps).values({ name, ...values }).onConflictDoUpdate({ target: panelMaps.name, set: values });
-          await tx.insert(panelMapVersions).values({ name, version: v, text: request.body.text, crc: map.crc, changedBy: user.id });
-          return v;
+        const result = await db.transaction(async (tx) => {
+          const key = await newMapKey(tx, checked.map.title, await builtinMaps());
+          const { map } = await ensureMap(tx, key, 'panel', user.id);
+          const { revision } = await addRevision(tx, map.id, { text: request.body.text, provenance: 'panel', publishedBy: user.id, note: request.body.note ?? null });
+          await tx.update(maps).set({ activeRevision: revision.number, playable: true }).where(eq(maps.id, map.id));
+          return { key, revision };
         });
-        await audit(user, 'map', { reason: map.title, details: { map: name, version, crc: map.crc, author: map.author } });
-        return { name, version, ...map };
+        await publishAudit(user, result.key, result.revision);
+        return { key: result.key, revision: result.revision.number, title: result.revision.title };
       },
     );
 
-    app.delete('/maps/:name', { schema: { tags: ['admin'], summary: 'Desativa um mapa da moderação (recusado enquanto estiver numa rotação)', params: Type.Object({ name: MapName }) } }, async (request, reply) => {
-      const user = await guard(request, reply, 'moderator');
-      if (!user) return reply;
-      const [current] = await db.select().from(panelMaps).where(and(eq(panelMaps.name, request.params.name), isNull(panelMaps.deletedAt)));
-      if (!current) return reply.code(404).send({ error: 'not_found', message: 'no such panel map' });
-      const inUse = (await db.select({ key: mapRotations.key, maps: mapRotations.maps }).from(mapRotations)).filter((r) => r.maps.includes(current.name)).map((r) => r.key);
-      if (inUse.length > 0) return reply.code(409).send({ error: 'map_in_rotation', message: `remove it from the rotations first: ${inUse.join(', ')}` });
-      const version = current.version + 1;
-      await db.transaction(async (tx) => {
-        await tx.update(panelMaps).set({ deletedAt: new Date(), version, updatedBy: user.id, updatedAt: new Date() }).where(eq(panelMaps.name, current.name));
-        await tx.insert(panelMapVersions).values({ name: current.name, version, text: current.text, crc: current.crc, deleted: true, changedBy: user.id });
-      });
-      await audit(user, 'map-delete', { details: { map: current.name, version } });
-      return reply.code(204).send(null);
+    app.post(
+      '/maps/:key/revisions',
+      {
+        schema: {
+          tags: ['admin'],
+          summary:
+            'Nova revisão de um mapa (nativo, de outro moderador ou importado, OG-557): exige a revisão-base; se outra saiu depois dela, 409 até confirmar (RN-MRV-08). Vale a partir da próxima troca de mapa',
+          params: Type.Object({ key: MapKey }),
+          body: Type.Object({
+            text: MapText,
+            baseRevision: Type.Integer({ minimum: 1 }),
+            note: Type.Optional(Type.String({ maxLength: 500 })),
+            /** Publicar mesmo com revisão mais nova que a base (depois de comparar). */
+            force: Type.Optional(Type.Boolean()),
+            /** Rascunho (OG-562): não vira a ativa; testável em sala privada de moderador. */
+            draft: Type.Optional(Type.Boolean()),
+          }),
+        },
+      },
+      async (request, reply) => {
+        const user = await guard(request, reply, 'moderator');
+        if (!user) return reply;
+        const checked = checkMapText(request.body.text);
+        if (!checked.ok) return reply.code(422).send({ error: 'invalid_map', message: checked.errors.join('; '), problems: checked.errors });
+        const outcome = await db.transaction(async (tx) => {
+          const [map] = await tx.select().from(maps).where(eq(maps.key, request.params.key)).for('update');
+          if (!map) return { error: 404 as const };
+          const base = await findRevision(tx, map.id, request.body.baseRevision);
+          if (!base) return { error: 404 as const };
+          const [latest] = await tx
+            .select({ r: mapRevisions, by: users.username })
+            .from(mapRevisions)
+            .leftJoin(users, eq(users.id, mapRevisions.publishedBy))
+            .where(eq(mapRevisions.mapId, map.id))
+            .orderBy(desc(mapRevisions.number))
+            .limit(1);
+          // outra revisão publicada (ou restaurada) depois da base em que se trabalhou (RN-MRV-08)
+          if (latest && map.activeRevision !== base.number && !request.body.force && !request.body.draft) {
+            const [active] = await tx.select({ r: mapRevisions, by: users.username }).from(mapRevisions).leftJoin(users, eq(users.id, mapRevisions.publishedBy)).where(and(eq(mapRevisions.mapId, map.id), eq(mapRevisions.number, map.activeRevision ?? latest.r.number)));
+            const c = active ?? latest;
+            return { conflict: { revision: c.r.number, by: c.by, at: c.r.publishedAt.toISOString() } };
+          }
+          const draft = request.body.draft ?? false;
+          const { revision, created } = await addRevision(tx, map.id, { text: request.body.text, provenance: 'panel', publishedBy: user.id, note: request.body.note ?? null, baseRevision: base.number, draft });
+          if (!created) return { same: revision.number };
+          if (!draft) await tx.update(maps).set({ activeRevision: revision.number }).where(eq(maps.id, map.id));
+          return { revision };
+        });
+        if ('error' in outcome) return reply.code(404).send({ error: 'not_found', message: 'no such map or base revision' });
+        if ('conflict' in outcome) {
+          const c = outcome.conflict!;
+          return reply.code(409).send({ error: 'newer_revision', message: `${c.by ?? '?'} published revision ${c.revision} at ${c.at}: compare before publishing`, revision: c.revision, by: c.by, at: c.at });
+        }
+        if ('same' in outcome) return reply.code(409).send({ error: 'same_revision', message: `this file is already revision ${outcome.same}`, revision: outcome.same });
+        await publishAudit(user, request.params.key, outcome.revision!, outcome.revision!.draft ? { draft: true } : {});
+        return { key: request.params.key, revision: outcome.revision!.number, title: outcome.revision!.title, draft: outcome.revision!.draft };
+      },
+    );
+
+    app.get('/maps/drafts', { schema: { tags: ['admin'], summary: 'Rascunhos de mapa ainda não ativados (OG-562), para a sala privada do moderador' } }, async (request, reply) => {
+      if (!(await guard(request, reply, 'moderator'))) return reply;
+      return { drafts: (await draftMaps(db)).map((d) => ({ name: d.name, title: d.title, revision: d.rev })) };
     });
 
-    app.get('/maps/:name/versions', { schema: { tags: ['admin'], summary: 'Histórico de um mapa da moderação', params: Type.Object({ name: MapName }) } }, async (request, reply) => {
+    // --- catálogo: histórico, baixar, restaurar, desativar (OG-558) ---
+    const findByKey = async (key: string) => (await db.select().from(maps).where(eq(maps.key, key)))[0];
+
+    app.get('/maps/:key/revisions', { schema: { tags: ['admin'], summary: 'Revisões de um mapa (OG-558), da mais nova para a mais antiga', params: Type.Object({ key: MapKey }) } }, async (request, reply) => {
       if (!(await guard(request, reply, 'moderator'))) return reply;
+      const map = await findByKey(request.params.key);
+      if (!map) return reply.code(404).send({ error: 'not_found', message: 'no such map' });
       const rows = await db
-        .select({ v: panelMapVersions, by: users.username })
-        .from(panelMapVersions)
-        .leftJoin(users, eq(users.id, panelMapVersions.changedBy))
-        .where(eq(panelMapVersions.name, request.params.name))
-        .orderBy(desc(panelMapVersions.version));
-      return { versions: rows.map(({ v, by }) => ({ version: v.version, crc: v.crc, deleted: v.deleted, changedBy: by, changedAt: v.changedAt.toISOString() })) };
+        .select({ r: mapRevisions, by: users.username })
+        .from(mapRevisions)
+        .leftJoin(users, eq(users.id, mapRevisions.publishedBy))
+        .where(eq(mapRevisions.mapId, map.id))
+        .orderBy(desc(mapRevisions.number));
+      return {
+        revisions: rows.map(({ r, by }) => ({
+          number: r.number, title: r.title, author: r.author, width: r.width, height: r.height, crc: r.crc, sha256: r.sha256, provenance: r.provenance,
+          note: r.note, baseRevision: r.baseRevision, publishedBy: by, publishedAt: r.publishedAt.toISOString(), active: r.number === map.activeRevision, draft: r.draft,
+        })),
+      };
     });
+
+    app.get(
+      '/maps/:key/revisions/:file',
+      { schema: { tags: ['admin'], summary: 'Baixa o TXT de uma revisão (bytes exatos, Latin-1), só para moderadores (RN-MRV-11)', params: Type.Object({ key: MapKey, file: Type.String({ pattern: '^[0-9]{1,6}\\.txt$' }) }) } },
+      async (request, reply) => {
+        if (!(await guard(request, reply, 'moderator'))) return reply;
+        const map = await findByKey(request.params.key);
+        const r = map ? await findRevision(db, map.id, Number.parseInt(request.params.file, 10)) : undefined;
+        if (!r) return reply.code(404).send({ error: 'not_found', message: 'no such revision' });
+        const file = `${request.params.key} (rev ${r.number}).txt`.replace(/[^A-Za-z0-9 _().,'+-]/g, '_');
+        return reply.header('content-type', 'text/plain; charset=iso-8859-1').header('content-disposition', `attachment; filename="${file}"`).send(Buffer.from(r.text, 'latin1'));
+      },
+    );
+
+    app.post(
+      '/maps/:key/restore',
+      {
+        schema: {
+          tags: ['admin'],
+          summary: 'Volta a uma revisão anterior (OG-558): ela vira a ativa a partir da próxima troca de mapa; as intermediárias ficam no histórico',
+          params: Type.Object({ key: MapKey }),
+          body: Type.Object({ revision: Type.Integer({ minimum: 1 }) }),
+        },
+      },
+      async (request, reply) => {
+        const user = await guard(request, reply, 'moderator');
+        if (!user) return reply;
+        const map = await findByKey(request.params.key);
+        const r = map ? await findRevision(db, map.id, request.body.revision) : undefined;
+        if (!map || !r) return reply.code(404).send({ error: 'not_found', message: 'no such revision' });
+        await db.update(maps).set({ activeRevision: r.number }).where(eq(maps.id, map.id));
+        await audit(user, 'map-restore', { reason: r.title, details: { map: map.key, revision: r.number, from: map.activeRevision, sha256: r.sha256 } });
+        return { key: map.key, revision: r.number };
+      },
+    );
+
+    app.put(
+      '/maps/:key/playable',
+      {
+        schema: {
+          tags: ['admin'],
+          summary: 'Ativa ou desativa um mapa para novas partidas (OG-558), nativos inclusive; desativar é recusado enquanto ele estiver numa rotação. Nada se apaga',
+          params: Type.Object({ key: MapKey }),
+          body: Type.Object({ playable: Type.Boolean() }),
+        },
+      },
+      async (request, reply) => {
+        const user = await guard(request, reply, 'moderator');
+        if (!user) return reply;
+        const map = await findByKey(request.params.key);
+        if (!map) return reply.code(404).send({ error: 'not_found', message: 'no such map' });
+        if (!request.body.playable) {
+          const inUse = (await db.select({ key: mapRotations.key, maps: mapRotations.maps }).from(mapRotations)).filter((r) => r.maps.includes(map.key)).map((r) => r.key);
+          if (inUse.length > 0) return reply.code(409).send({ error: 'map_in_rotation', message: `remove it from the rotations first: ${inUse.join(', ')}` });
+        }
+        await db.update(maps).set({ playable: request.body.playable }).where(eq(maps.id, map.id));
+        await audit(user, request.body.playable ? 'map-activate' : 'map-delete', { details: { map: map.key } });
+        return reply.code(204).send(null);
+      },
+    );
 
     // --- rotações (uma do Casual e uma por formato do Ranked, OG-251) ---
     /** Mapas que as rotações aceitam: os dos game servers e os da moderação (vazio = nenhum servidor informou ainda). */
     const mapCatalog = async () => {
-      const builtin = await builtinMaps();
-      return builtin.length === 0 ? [] : [...new Set([...builtin, ...(await activePanelMaps())])].sort((a, b) => a.localeCompare(b));
+      const playable = await playableMaps(db);
+      const keys = playable.map((m) => m.name);
+      // nativos ainda fora do catálogo (semente não rodou): os da pasta dos servidores também valem
+      const natives = playable.some((m) => m.origin === 'native') ? [] : await builtinMaps();
+      return [...new Set([...keys, ...natives])].sort((a, b) => a.localeCompare(b));
     };
 
     app.get(
