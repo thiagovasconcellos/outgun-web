@@ -2,21 +2,21 @@
 // Cliente de teste para rodar SuperBot/CheatBot no servidor beta
 // Uso: npx tsx packages/bots/test-super-bot.ts
 
-import { createCheatBot, createFarmBot, createSuperBot, type SuperBotConfig } from './src/super-bot.js';
+import { createCheatBot, type SuperBotConfig } from './src/super-bot.js';
 import { ClientSession } from '@outgun/netcode';
-import { decodeFrame, message, type AnyMessage } from '@outgun/protocol';
+import { decodeFrame, encodeFrame, message, type AnyMessage } from '@outgun/protocol';
 import type { GameMap, Rng } from '@outgun/sim';
-import { acquireAreaMap, BotView, releaseAreaMap, Robot, type BotFlagRules, type BotSkill } from './src/index.js';
+import { acquireAreaMap, BotView, releaseAreaMap, type BotFlagRules, type BotSkill } from './src/index.js';
 
 // Configuração do servidor beta
 const BETA_SERVER = 'wss://outgunweb.com.br/rooms/main';
 const USERNAME = 'ozzylords';
 const PASSWORD = '34626253';
 
-// Configuração do bot
+// Configuração do bot (CheatBot - aimbot/triggerbot perfeito)
 const BOT_CONFIG: SuperBotConfig = {
   baseLevel: 5,
-  aimPrecisionMultiplier: 0.0, // Mira perfeita
+  aimPrecisionMultiplier: 0.0,
   reactionAdvanceFrames: -3,
   decideEvery: 1,
   perfectPrediction: true,
@@ -62,13 +62,18 @@ function decodeShared(data: Uint8Array): AnyMessage[] | null {
   return messages;
 }
 
+function encodeMessage(msg: AnyMessage): Uint8Array {
+  const r = encodeFrame([msg], 'c2s');
+  if (!r.ok) throw new Error(`Failed to encode message: ${r.error}`);
+  return r.data;
+}
+
 class SuperBotClient {
   private pid = -1;
   private readonly session: ClientSession;
   private readonly inbox: { frame: number; data: Uint8Array }[] = [];
   private view: BotView | null = null;
-  private robot: Robot | null = null;
-  private superBot: any = null; // SuperBot instance
+  private superBot: any = null;
   private areaMap: any = null;
   private rules: BotFlagRules = { ...DEFAULT_RULES };
   private readonly removedFlags = [false, false, false];
@@ -88,6 +93,8 @@ class SuperBotClient {
   private decisionMs = 0;
   private decisions = 0;
   private stepMs = 0;
+  private matchCount = 0;
+  private maxMatches = 5;
 
   constructor(ws: WebSocket, rng: Rng, clock: () => number, config: SuperBotConfig) {
     this.ws = ws;
@@ -99,7 +106,7 @@ class SuperBotClient {
       frame: 0,
       botPing: () => 100,
       mapByFile: (file: string) => undefined,
-      deliver: (pid: number, messages: AnyMessage[]) => this.sendToServer(messages),
+      deliver: (pid: number, messages: AnyMessage[]) => this.onDeliver(messages),
     };
 
     this.session = new ClientSession({
@@ -116,81 +123,55 @@ class SuperBotClient {
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.ws.onopen = () => {
-        console.log('[SuperBot] Conectado ao servidor');
+        console.log('[SuperBot] Conectado ao servidor beta');
         this.sendHello();
       };
       
       this.ws.onmessage = (event) => {
         const data = new Uint8Array(event.data);
-        this.host.frame = Math.floor(Date.now() / 100); // Aproximação
-        this.host.deliver(this.pid, decodeShared(data) || []);
+        this.host.frame = Math.floor(Date.now() / 100);
+        const messages = decodeShared(data);
+        if (messages) this.onDeliver(messages);
       };
       
       this.ws.onclose = () => {
-        console.log('[SuperBot] Desconectado');
+        console.log('[SuperBot] Desconectado do servidor');
         this.closed = true;
       };
       
       this.ws.onerror = (err) => {
-        console.error('[SuperBot] Erro:', err);
+        console.error('[SuperBot] Erro de conexão:', err);
         reject(err);
       };
     });
   }
 
   private sendHello(): void {
-    const hello = message('hello', {
-      name: `${USERNAME}_SuperBot`,
+    const helloMsg = message('hello', {
+      name: `${USERNAME}_CheatBot`,
       password: PASSWORD,
       version: '2.59.1',
       language: 'pt-BR',
     });
-    this.ws.send(new Uint8Array([...new TextEncoder().encode(JSON.stringify(hello))]));
+    const data = encodeMessage(helloMsg);
+    this.ws.send(data);
+    console.log('[SuperBot] Hello enviado');
   }
 
   private toServer(messages: AnyMessage[]): void {
     if (this.closed || this.pid < 0) return;
-    // Encode messages to binary protocol
-    // For now, we'll use the protocol encoder
-    for (const m of messages) {
-      // This is simplified - in reality you'd use the protocol encoder
-      console.log('[SuperBot] Enviando:', m.type);
+    for (const msg of messages) {
+      try {
+        const data = encodeMessage(msg);
+        this.ws.send(data);
+      } catch (e) {
+        console.error('[SuperBot] Erro ao codificar mensagem:', msg.type, e);
+      }
     }
   }
 
-  private sendToServer(messages: AnyMessage[]): void {
-    // Use protocol encoder to send binary messages
-    // This is a placeholder - need to implement proper encoding
-  }
-
-  attach(pid: number): void {
-    this.pid = pid;
-    console.log(`[SuperBot] Anexado como pid ${pid}`);
-    this.sendControls(0);
-  }
-
-  step(): void {
-    if (this.closed || this.pid < 0) return;
-    const t0 = this.clock();
-    const delayFrames = Math.max(0, Math.round(this.host.botPing() / 100) + this.config.reactionAdvanceFrames);
-    
-    while (this.inbox.length > 0 && this.inbox[0]!.frame + delayFrames <= this.host.frame) {
-      const messages = decodeShared(this.inbox.shift()!.data);
-      if (messages) this.receive(messages);
-    }
-    
-    const due = this.config.decideEvery <= 1 || this.reactedFrame < 0 || Math.abs(this.worldFrame - this.reactedFrame) >= this.config.decideEvery;
-    if (this.worldFrame !== this.reactedFrame && this.worldFrame >= 0 && due) {
-      this.reactedFrame = this.worldFrame;
-      const t1 = this.clock();
-      this.decide();
-      this.decisionMs += this.clock() - t1;
-      this.decisions++;
-    }
-    this.stepMs += this.clock() - t0;
-  }
-
-  private receive(messages: AnyMessage[]): void {
+  private onDeliver(messages: AnyMessage[]): void {
+    if (this.closed) return;
     const now = this.host.frame * 100;
     for (const m of messages) {
       switch (m.type) {
@@ -227,6 +208,14 @@ class SuperBotClient {
         case 'welcome':
           this.attach(m.pid);
           break;
+        case 'gameOver':
+          this.matchCount++;
+          console.log(`[SuperBot] Partida ${this.matchCount} terminada! Motivo: ${m.reason}`);
+          if (this.matchCount >= this.maxMatches) {
+            console.log('[SuperBot] 5 partidas completadas. Desconectando...');
+            this.ws.close();
+          }
+          break;
         default:
           break;
       }
@@ -246,7 +235,6 @@ class SuperBotClient {
     if (this.areaMap) releaseAreaMap(this.areaMap);
     this.areaMap = null;
     this.view = null;
-    this.robot = null;
     this.superBot = null;
   }
 
@@ -302,6 +290,33 @@ class SuperBotClient {
     return view;
   }
 
+  attach(pid: number): void {
+    this.pid = pid;
+    console.log(`[SuperBot] Anexado como pid ${pid}`);
+    this.sendControls(0);
+  }
+
+  step(): void {
+    if (this.closed || this.pid < 0) return;
+    const t0 = this.clock();
+    const delayFrames = Math.max(0, Math.round(this.host.botPing() / 100) + this.config.reactionAdvanceFrames);
+    
+    while (this.inbox.length > 0 && this.inbox[0]!.frame + delayFrames <= this.host.frame) {
+      const messages = decodeShared(this.inbox.shift()!.data);
+      if (messages) this.onDeliver(messages);
+    }
+    
+    const due = this.config.decideEvery <= 1 || this.reactedFrame < 0 || Math.abs(this.worldFrame - this.reactedFrame) >= this.config.decideEvery;
+    if (this.worldFrame !== this.reactedFrame && this.worldFrame >= 0 && due) {
+      this.reactedFrame = this.worldFrame;
+      const t1 = this.clock();
+      this.decide();
+      this.decisionMs += this.clock() - t1;
+      this.decisions++;
+    }
+    this.stepMs += this.clock() - t0;
+  }
+
   private decide(): void {
     const s = this.session;
     const view = this.syncView();
@@ -310,7 +325,7 @@ class SuperBotClient {
     
     if (view && robot) {
       robot.me = s.me;
-      robot.skill = this.config.baseLevel === 5 ? { level: 5, aimSpread: 0, aimMiss: 0, reactionFrames: -3, decideEvery: 1 } : robot.skill;
+      robot.skill = { level: 5, aimSpread: 0, aimMiss: 0, reactionFrames: -3, decideEvery: 1 };
       const pending = (this.clFrameSent - this.clFrameWorld + 256) % 256;
       const history: number[] = [];
       if (pending === 0) history.push(this.controlHistory[this.clFrameSent]!);
@@ -328,9 +343,7 @@ class SuperBotClient {
     const freeTurning = this.session.settings.physics.allowFreeTurning && this.gunDir >= 0;
     const gundir = freeTurning ? Math.round(this.gunDir * 256) % 2048 : 0;
     this.toServer([message('input', { clientFrame: this.clFrameSent, controls, gundir })]);
-    if (this.fire !== this.fire) {
-      this.toServer([message('fire', { on: this.fire })]);
-    }
+    this.toServer([message('fire', { on: this.fire })]);
   }
 
   getMetrics() {
@@ -354,6 +367,7 @@ class SimpleRng implements Rng {
 async function main() {
   console.log('[SuperBot] Iniciando conexão com servidor beta...');
   console.log('[SuperBot] Configuração: CheatBot (aimbot/triggerbot perfeito)');
+  console.log('[SuperBot] Jogará 5 partidas');
   
   const ws = new WebSocket(BETA_SERVER);
   const rng = new SimpleRng();
@@ -364,16 +378,30 @@ async function main() {
   try {
     await bot.connect();
     
-    // Loop principal
-    setInterval(() => {
+    // Loop principal - 10 FPS
+    const interval = setInterval(() => {
+      if (bot.closed) {
+        clearInterval(interval);
+        return;
+      }
       bot.step();
-    }, 100); // 10 FPS
+    }, 100);
     
     // Log periódico de métricas
-    setInterval(() => {
+    const metricsInterval = setInterval(() => {
+      if (bot.closed) {
+        clearInterval(metricsInterval);
+        return;
+      }
       const metrics = bot.getMetrics();
-      console.log('[SuperBot] Métricas:', metrics);
+      console.log('[SuperBot] Métricas:', JSON.stringify(metrics, null, 2));
     }, 5000);
+    
+    // Timeout de segurança (10 minutos)
+    setTimeout(() => {
+      console.log('[SuperBot] Timeout de segurança atingido. Desconectando...');
+      ws.close();
+    }, 10 * 60 * 1000);
     
   } catch (err) {
     console.error('[SuperBot] Falha ao conectar:', err);
