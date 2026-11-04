@@ -49,6 +49,8 @@ export interface MatchReport {
   mode: GameMode;
   ranked: boolean;
   map: string;
+  /** Revisão do catálogo jogada (OG-555). */
+  mapRevision?: number;
   redScore: number;
   blueScore: number;
   startedAt: string;
@@ -141,6 +143,7 @@ export interface ReportInput {
   /** Sala Ranked com os mínimos cumpridos. */
   ranked: boolean;
   map: string;
+  mapRevision?: number | null;
   result: MatchResult;
   startedAt: number;
   endedAt: number;
@@ -189,6 +192,7 @@ export function matchReport(input: ReportInput): MatchReport {
     mode: input.mode,
     ranked: input.ranked,
     map: input.map.slice(0, 64),
+    ...(input.mapRevision != null ? { mapRevision: input.mapRevision } : {}),
     redScore: result.teams[0].score,
     blueScore: result.teams[1].score,
     startedAt: new Date(input.startedAt).toISOString(),

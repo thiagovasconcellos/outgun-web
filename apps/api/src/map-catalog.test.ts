@@ -37,7 +37,7 @@ describe.skipIf(!pgAdminUrl)('catálogo de mapas (OG-552)', () => {
   });
 
   it('rodar a semente de novo não cria nada', async () => {
-    expect(await seedMaps(t.db, dir)).toEqual({ maps: 0, revisions: 0 });
+    expect(await seedMaps(t.db, dir)).toEqual({ maps: 0, revisions: 0, matches: 0 });
     expect((await t.db.select().from(maps)).length).toBe(21);
   });
 

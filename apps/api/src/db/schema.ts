@@ -235,6 +235,10 @@ export const matches = pgTable(
     mode: gameMode('mode').notNull(),
     ranked: boolean('ranked').notNull(),
     map: text('map').notNull(),
+    /** Mapa e revisão jogada (OG-555); nulos em mapas gerados. `inferred` = preenchida sem prova. */
+    mapId: integer('map_id').references((): AnyPgColumn => maps.id),
+    mapRevisionId: integer('map_revision_id').references((): AnyPgColumn => mapRevisions.id),
+    mapRevisionInferred: boolean('map_revision_inferred').notNull().default(false),
     redScore: smallint('red_score').notNull(),
     blueScore: smallint('blue_score').notNull(),
     startedAt: tstz('started_at').notNull(),

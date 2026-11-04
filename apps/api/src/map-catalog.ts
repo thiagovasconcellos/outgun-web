@@ -145,9 +145,41 @@ export function nativeMapsDir(): string | undefined {
   return existsSync(dir) ? dir : undefined;
 }
 
+/** Mapa e revisão de uma partida nova (OG-555): pela chave e o número que o game server mandou. */
+export async function matchMapRefs(db: Conn, key: string, revision: number | undefined): Promise<{ mapId: number | null; mapRevisionId: number | null }> {
+  const m = await findMap(db, key);
+  if (!m) return { mapId: null, mapRevisionId: null };
+  const r = revision !== undefined ? await findRevision(db, m.id, revision) : undefined;
+  return { mapId: m.id, mapRevisionId: r?.id ?? null };
+}
+
+/**
+ * Preenche mapa e revisão das partidas anteriores ao OG-555 (idempotente; não toca em placar, rating
+ * nem estatística): nativo → revisão 1 (comprovada, os arquivos nunca mudaram); da moderação → a
+ * revisão vigente no início da partida, marcada como inferida; gerado fica sem nada. Só partidas
+ * terminadas antes da migração 0056: as depois dela já chegam com a revisão do game server.
+ */
+export async function backfillMatchRevisions(db: Conn): Promise<number> {
+  const rows = await db.execute(sql`
+    UPDATE matches m SET
+      map_id = mp.id,
+      map_revision_id = (
+        SELECT r.id FROM map_revisions r
+        WHERE r.map_id = mp.id AND (CASE WHEN mp.origin = 'native' THEN r.number = 1 ELSE r.published_at <= m.started_at END)
+        ORDER BY r.number DESC LIMIT 1),
+      map_revision_inferred = mp.origin <> 'native'
+    FROM maps mp
+    WHERE m.map_id IS NULL AND mp.key = m.map
+      AND m.ended_at < (SELECT applied_at FROM schema_migrations WHERE version = 56)
+    RETURNING m.id`);
+  return rows.length;
+}
+
 export interface SeedReport {
   maps: number;
   revisions: number;
+  /** Partidas antigas ligadas à revisão (OG-555). */
+  matches: number;
 }
 
 /**
@@ -156,7 +188,7 @@ export interface SeedReport {
  * data). Rodar de novo não cria nada. Sem `nativeDir`, só os do painel.
  */
 export async function seedMaps(db: Db, nativeDir?: string): Promise<SeedReport> {
-  const report: SeedReport = { maps: 0, revisions: 0 };
+  const report: SeedReport = { maps: 0, revisions: 0, matches: 0 };
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(80081)`);
     for (const native of nativeDir ? nativeMaps(nativeDir) : []) {
@@ -188,6 +220,7 @@ export async function seedMaps(db: Db, nativeDir?: string): Promise<SeedReport> 
       }
       await tx.update(maps).set({ activeRevision: active, playable: panel.deletedAt === null }).where(eq(maps.id, map.id));
     }
+    report.matches = await backfillMatchRevisions(tx);
   });
   return report;
 }

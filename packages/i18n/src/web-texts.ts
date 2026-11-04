@@ -874,6 +874,7 @@ export const WEB_TEXTS: Partial<Record<Locale, Readonly<Record<string, string>>>
     'Copy broadcast link': 'Copiar link de transmissão',
     'Broadcast link copied: open it in the OBS browser source.': 'Link de transmissão copiado: abra na fonte de navegador do OBS.',
     'Click to turn on the sound.': 'Clique para ligar o som.',
+    'Current map: the match may have had other walls.': 'Mapa atual: a partida pode ter tido outras paredes.',
     'The map of this match was not found; the walls may be different.': 'O mapa desta partida não foi encontrado; a geometria pode estar diferente.',
     'Disconnected': 'Desconectado',
     'My matches': 'Minhas partidas',

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Prévia do mapa em SVG (OG-214), com o mesmo desenho do `tools/map-preview`: chão e paredes com as
-// cores aproximadas das texturas padrão e as bandeiras dos times. Os mapas do jogo vêm dos assets; os
-// publicados pela moderação, da API (OG-368). Mapas gerados na hora (OG-015) ficam sem prévia.
+// cores aproximadas das texturas padrão e as bandeiras dos times. A revisão ativa vem da API (nativos
+// revisados inclusive, OG-555), com os assets de reserva; `revision` desenha uma revisão exata (a de
+// uma partida antiga). Mapas gerados na hora (OG-015) ficam sem prévia.
 import { parseMapFile } from '@outgun/content';
 import type { GameMap, Wall } from '@outgun/sim';
 import { useEffect, useState } from 'react';
@@ -42,39 +43,44 @@ function Shape({ wall, fill }: { wall: Wall; fill: string }) {
 
 const cache = new Map<string, Promise<GameMap | null>>();
 
-/** Mapa para a prévia: dos assets do jogo ou, fora deles, publicado pela moderação (API); com cache. */
-export function previewMap(name: string): Promise<GameMap | null> {
-  let hit = cache.get(name);
+/** Mapa para a prévia: a revisão pedida, ou a ativa da API, ou os assets do jogo; com cache. */
+export function previewMap(name: string, revision?: number): Promise<GameMap | null> {
+  const key = revision === undefined ? name : `${name}#${revision}`;
+  let hit = cache.get(key);
   if (!hit) {
     hit = (async () => {
       if (/^mapgen_\d+$/.test(name) || name === 'random' || name.startsWith('random_map')) return null;
-      const entry = (await loadManifest())?.maps[name];
-      const res = await fetch(entry ? ASSETS + entry.file : `${API_URL}/maps/${encodeURIComponent(name)}`);
-      if (!res.ok) return null;
+      const api = `${API_URL}/maps/${encodeURIComponent(name)}${revision === undefined ? '' : `/rev/${revision}.txt`}`;
+      let res = await fetch(api).catch(() => null);
+      if (!res?.ok && revision === undefined) {
+        const entry = (await loadManifest())?.maps[name];
+        if (entry) res = await fetch(ASSETS + entry.file);
+      }
+      if (!res?.ok) return null;
       const result = parseMapFile(name, new Uint8Array(await res.arrayBuffer()));
       return result.ok ? result.map : null;
     })().catch(() => null);
-    cache.set(name, hit);
+    cache.set(key, hit);
   }
   return hit;
 }
 
-function useMap(name: string): GameMap | null {
+function useMap(name: string, revision?: number): GameMap | null {
   const [map, setMap] = useState<GameMap | null>(null);
   useEffect(() => {
     let alive = true;
     setMap(null);
-    void previewMap(name).then((m) => alive && setMap(m));
+    void previewMap(name, revision).then((m) => alive && setMap(m));
     return () => {
       alive = false;
     };
-  }, [name]);
+  }, [name, revision]);
   return map;
 }
 
 /** Prévia pelo nome do mapa; `thumb` = miniatura (listas de escolha de mapas). */
-export function MapPreview({ name, label, thumb = false }: { readonly name: string; readonly label: string; readonly thumb?: boolean }) {
-  const map = useMap(name);
+export function MapPreview({ name, label, thumb = false, revision }: { readonly name: string; readonly label: string; readonly thumb?: boolean; readonly revision?: number | undefined }) {
+  const map = useMap(name, revision);
   return map ? <MapDrawing map={map} label={label} thumb={thumb} /> : thumb ? <span className="map-thumb map-thumb-empty" aria-hidden /> : null;
 }
 

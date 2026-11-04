@@ -439,7 +439,9 @@ export function MatchScreen() {
       </div>
       <div className="report-grid">
         <Panel title={t('Map')}>
-          <MapPreview name={m.match.map} label={d.mapTitle ?? m.match.map} />
+          {/* revisão jogada (OG-555); sem ela, a atual com a nota */}
+          <MapPreview name={m.match.map} label={d.mapTitle ?? m.match.map} revision={m.mapRevision?.number} />
+          {!m.mapRevision && !/^mapgen_/.test(m.match.map) && <small className="ui-muted">{t('Current map: the match may have had other walls.')}</small>}
           {rules && (
             <dl className="ui-pairs">
               <div>

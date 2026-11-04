@@ -2119,6 +2119,7 @@ export class Room {
         ranked: this.rankingEnabled(),
         rules: (({ captureLimit, winScoreDifference, timeLimit, extraTime, extraTimePeriods, suddenDeath }) => ({ captureLimit, winScoreDifference, timeLimit, extraTime, extraTimePeriods, suddenDeath }))(this.settings.world),
         map: this.mapFile(this.mapIndex),
+        mapRevision: this.mapRevision,
         result,
         startedAt,
         endedAt,
