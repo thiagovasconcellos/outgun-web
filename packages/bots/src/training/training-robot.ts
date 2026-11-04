@@ -4,7 +4,7 @@
 // papel, de uma lista fechada. O `Robot` do Casual não sabe que este arquivo existe (OG-513).
 import { FLAG_RADIUS, PLAYER_RADIUS, ROOM_HEIGHT, ROOM_WIDTH, Vec, type Rng, type WorldCoords } from '@outgun/sim';
 import type { Area, AreaMap } from '../areamap.js';
-import { Robot } from '../brain.js';
+import { Robot, type BotDecision } from '../brain.js';
 import { moveTo, moveToNoAggregate, setDestination } from '../navigation.js';
 import { Ctl, DestinationType } from '../robot-core.js';
 import { basesOf } from '../situation.js';
@@ -13,11 +13,12 @@ import type { BotPlayer, BotView } from '../view.js';
 /**
  * Papéis do treino: **guard** guarda a base do próprio time; **attack** vai à bandeira do outro time e
  * tenta sair com ela; **chase** persegue o portador; **carry** leva a bandeira do outro time para casa;
- * **escort** escolta o portador do próprio time.
+ * **escort** escolta o portador do próprio time; **target** é o alvo do Treino de mira (OG-568): fica
+ * parado e não atira.
  */
-export type TrainingRole = 'guard' | 'attack' | 'chase' | 'carry' | 'escort';
+export type TrainingRole = 'guard' | 'attack' | 'chase' | 'carry' | 'escort' | 'target';
 
-export const TRAINING_ROLES: readonly TrainingRole[] = ['guard', 'attack', 'chase', 'carry', 'escort'];
+export const TRAINING_ROLES: readonly TrainingRole[] = ['guard', 'attack', 'chase', 'carry', 'escort', 'target'];
 
 /** Só quem ataca ou leva a bandeira pode pegar uma (a trava do servidor usa a mesma regra). */
 export function roleMayTakeFlag(role: TrainingRole): boolean {
@@ -37,6 +38,12 @@ export class TrainingRobot extends Robot {
     public role: TrainingRole,
   ) {
     super(view, areaMap, me, rng);
+  }
+
+  /** Alvo do Treino de mira (OG-568): parado, sem atirar (a gaiola do T4 o segura no centro). */
+  override decide(hidden: boolean, controls: readonly number[], pending: number): BotDecision {
+    if (this.role === 'target') return { controls: 0, fire: false };
+    return super.decide(hidden, controls, pending);
   }
 
   /** Ponto da patrulha do guarda na sala da base (local) e quantas decisões ainda espera nele. */

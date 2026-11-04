@@ -28,6 +28,8 @@ export class PanelMaps {
   private readonly maps = new Map<string, CatalogEntry>();
   /** Texto de cada revisão já carregada, por `nome#crc` (nunca sai: o mapa pode estar em jogo). */
   private readonly texts = new Map<string, string>();
+  /** Mapas fixos do servidor fora do catálogo (T4 do Treino de mira, OG-568): o heartbeat não os tira. */
+  private readonly statics = new Map<string, CatalogEntry>();
   /** Nativos fora da lista de jogáveis (desativados no painel, OG-558); vazio sem catálogo de nativos. */
   private hidden = new Set<string>();
 
@@ -41,17 +43,24 @@ export class PanelMaps {
     private readonly folderNames: () => readonly string[] = () => [],
   ) {}
 
+  /** Mapa fixo do servidor, fora do catálogo (Treino de mira, OG-568): servido ao cliente como os outros. */
+  addStatic(name: string, map: GameMap, text: string): void {
+    this.statics.set(name, { map, text, rev: null });
+  }
+
   /** Revisão ativa do mapa (a que entra na próxima troca de mapa). */
   entry(name: string): CatalogEntry | undefined {
-    return this.maps.get(name);
+    return this.maps.get(name) ?? this.statics.get(name);
   }
 
   map(name: string): GameMap | undefined {
-    return this.maps.get(name)?.map;
+    return this.entry(name)?.map;
   }
 
   /** Texto da revisão ativa, ou da revisão com aquele CRC (partida em andamento, replay). */
   text(name: string, crc?: number): string | undefined {
+    const fixed = this.statics.get(name);
+    if (fixed) return crc === undefined || crc === fixed.map.crc ? fixed.text : undefined;
     if (crc !== undefined) return this.texts.get(`${name}#${crc}`);
     return this.maps.get(name)?.text;
   }

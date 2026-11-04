@@ -21,7 +21,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { listMaps, resolveRotation, type Rotations } from './maps.js';
+import { listMaps, loadMaps, resolveRotation, type Rotations } from './maps.js';
 import { GeneratedMaps } from './generated-maps.js';
 import { RoomManager } from './rooms.js';
 import { startServer } from './server.js';
@@ -139,6 +139,12 @@ const folderEntry = (name: string) => {
   return map ? { map, text: readFileSync(join(mapsDir, `${name}.txt`)).toString('latin1') } : undefined;
 };
 // revisão ativa do catálogo primeiro (nativo revisado), depois a pasta; nativo desativado fica de fora
+// mapas fixos do treino (OG-568): o T4 do Treino de mira, fora do catálogo e das rotações
+const trainingMapsDir = env.TRAINING_MAPS_DIR ?? fileURLToPath(new URL('../training-maps', import.meta.url));
+for (const name of listMaps(trainingMapsDir)) {
+  const map = loadMaps(trainingMapsDir, [name])[0]!;
+  panelMaps.addStatic(name, map, readFileSync(join(trainingMapsDir, `${name}.txt`)).toString('latin1'));
+}
 const mapFile = (name: string) => (panelMaps.isHidden(name) ? undefined : (panelMaps.map(name) ?? folderMap(name)));
 /** Mapa, texto e revisão em vigor de uma entrada de rotação: a sala prende na troca de mapa (RN-MRV-04). */
 const mapEntry = (name: string) => (panelMaps.isHidden(name) ? undefined : (panelMaps.entry(name) ?? (folderEntry(name) && { ...folderEntry(name)!, rev: null })));

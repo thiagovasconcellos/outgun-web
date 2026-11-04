@@ -519,6 +519,8 @@ export class Room {
               const role = this.botRoles.get(pid);
               return role === undefined || roleMayTakeFlag(role); // humanos pegam; bots só pelo papel
             },
+            // alvo do Treino de mira (OG-568): imortal; o acerto conta mesmo sem dano
+            mayTakeDamage: (pid: number) => this.botRoles.get(pid) !== 'target',
           }
         : {}),
       screenSample: (pid, sample) => {
@@ -561,6 +563,8 @@ export class Room {
     // OutCup (OG-525): só os jogadores do confronto, no lado da dupla
     const cupSide = this.options.cup && identity.accountId !== null ? this.options.cup.sides[identity.accountId] : undefined;
     if (this.options.cup && !opts.bot && cupSide === undefined) return { ok: false, reason: 'roomClosed', text: 'Sala da OutCup: só os jogadores do confronto.' };
+    // Treino de mira (OG-568): só quem treina; o alvo não tem vaga para outra pessoa assumir
+    if (this.options.training?.mode === 'aim' && !opts.bot && [...this.clients.values()].some((c) => !c.bot && (identity.accountId === null || c.identity.accountId !== identity.accountId))) return { ok: false, reason: 'roomClosed', text: 'Treino de mira: sala só para quem treina.' };
     // quem saiu no meio do jogo Ranked volta à vaga, sem prazo (OG-563, D-92)
     const back = this.lobby?.playing && this.inGame && identity.accountId !== null ? this.away.get(identity.accountId) : undefined;
     // lobby Ranked (OG-252, D-43): em jogo ou com a série acabada ninguém entra; entre jogos, se houver vaga
@@ -942,12 +946,17 @@ export class Room {
           if (!f) return null;
           return { pos: f.pos, atBase: f.status === 'base', carrier: f.status === 'carried' ? f.carrier : -1 };
         },
+        shotStats: (pid) => {
+          const st = this.world.players[pid]?.stats;
+          return { shots: st?.shots ?? 0, hits: st?.hits ?? 0 };
+        },
       },
       {
         setBots: (slots) => this.setTrainingBots(slots),
         place: (pid, pos, safeUntil, fresh) => this.placeTrainee(pid, pos, safeUntil, fresh),
         resetFlags: () => this.sim.returnAllFlags(),
         announce: (state) => this.broadcast(this.trainingMessage(state)),
+        announceAim: (state) => this.broadcast(message('trainingAim', state)),
         holdRespawn: (pid) => {
           const pl = this.world.players[pid];
           if (pl?.dead) pl.framesToRespawn = 1_000_000;

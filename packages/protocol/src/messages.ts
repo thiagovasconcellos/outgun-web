@@ -939,16 +939,25 @@ export const MESSAGES = {
     'Tentativa da sala de treino: fase (contagem, em jogo ou resultado), modo, segundos da contagem, resultado e motivo do fim, duração da tentativa (décimos de s), sucessos e tentativas da sessão, nível dos bots e se ele mudou (dificuldade progressiva, OG-499).',
     {
       phase: enumOf('countdown', 'playing', 'result'),
-      mode: enumOf('attack', 'defense', 'escape', 'capture'),
+      // valores novos só no fim da lista: clientes antigos seguem lendo os modos que conhecem (OG-568)
+      mode: enumOf('attack', 'defense', 'escape', 'capture', 'aim'),
       seconds: u8,
       result: enumOf('none', 'success', 'fail'),
-      reason: enumOf('none', 'died', 'defendersDown', 'flagOut', 'attackersDown', 'captured', 'delivered', 'returned', 'timeout'),
+      reason: enumOf('none', 'died', 'defendersDown', 'flagOut', 'attackersDown', 'captured', 'delivered', 'returned', 'timeout', 'aimGoal', 'aimShots', 'aimAccuracy'),
       tenths: u16,
       successes: u16,
       attempts: u16,
       level: u8,
       levelChange: enumOf('none', 'up', 'down'),
     },
+  ),
+  trainingAim: msg(
+    136,
+    's2c',
+    'event',
+    '— (web, OG-568)',
+    'Treino de mira (D-93): tiros e acertos de quem treina na tentativa, décimos de segundo que faltam e o lado da gaiola (0 esquerda, 1 direita). Vem quando muda (no máximo uma vez por segundo, fora tiro e acerto) e no resultado.',
+    { shots: u16, hits: u16, tenthsLeft: u16, side: u8 },
   ),
   // --- números de jogador (OG-410, D-79): sem equivalente no original ---
   playerNumber: msg(132, 's2c', 'event', '— (web, OG-410)', 'Número do jogador (1 a 99), no centro do boneco, e o estilo dele (OG-413: 0 Bloco, 1 Corrida, 2 Contorno, 3 Estêncil; nos bits 4–5, a medalha do pódio do mês anterior, OG-532: `packNumberStyle`). Logo depois do `playerJoined`; sem número (convidado, bot), não vem.', {

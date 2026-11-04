@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Os modos de treino (OG-493 a OG-496): quem joga, onde começa e quando a tentativa acaba (RN-TRN-04).
+// Os modos de treino (OG-493 a OG-496 e o de mira, OG-568): quem joga, onde começa e quando a tentativa acaba (RN-TRN-04).
+import { aimMode } from './training-aim.js';
 import { attackMode } from './training-attack.js';
 import { captureMode } from './training-capture.js';
 import { defenseMode } from './training-defense.js';
@@ -11,4 +12,5 @@ export const TRAINING_MODES: Record<TrainingModeId, TrainingModeDef> = {
   defense: defenseMode,
   escape: escapeMode,
   capture: captureMode,
+  aim: aimMode,
 };

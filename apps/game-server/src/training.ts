@@ -8,11 +8,12 @@ import type { TrainingOptions } from '@outgun/settings';
 import { GlibcRand, PLAYER_RADIUS, Position, ROOM_HEIGHT, ROOM_WIDTH, type GameMap, type WorldCoords } from '@outgun/sim';
 
 export { clampTraining, TRAINING_LIMITS, type TrainingModeId } from '@outgun/settings';
+import { AIM_TRAINING } from '@outgun/settings';
 /** Papel fixo de um bot de treino (RN-TRN-03); o comportamento fica no `TrainingRobot` (OG-491). */
 export type { TrainingRole };
 /** Opções da sala de treino (OG-492). */
 export type TrainingConfig = TrainingOptions;
-export type TrainingReason = 'died' | 'defendersDown' | 'flagOut' | 'attackersDown' | 'captured' | 'delivered' | 'returned' | 'timeout';
+export type TrainingReason = 'died' | 'defendersDown' | 'flagOut' | 'attackersDown' | 'captured' | 'delivered' | 'returned' | 'timeout' | 'aimGoal' | 'aimShots' | 'aimAccuracy';
 
 /** Time de quem treina (humanos do lado de treino); os bots do outro lado ficam no outro time. */
 export const TRAINEE_TEAM = 0;
@@ -43,6 +44,8 @@ export interface TrainingWorld {
   players(): TrainingPlayer[];
   /** Posição atual da bandeira do time (a primeira) e se está no ponto. */
   flag(team: 0 | 1): { pos: Position; atBase: boolean; carrier: number } | null;
+  /** Tiros disparados e acertos do jogador até agora (Treino de mira, OG-568). */
+  shotStats?(pid: number): { shots: number; hits: number };
 }
 
 export interface TrainingPlayer {
@@ -73,6 +76,10 @@ export interface PlacementContext {
   spot(room: { x: number; y: number }, near?: WorldCoords): Position;
   /** Ponto da bandeira do time. */
   flagSpot(team: 0 | 1): Position;
+  /** Lado de quem treina (Treino de mira, OG-568): 0 = esquerda, 1 = direita; troca no sucesso. */
+  readonly side: 0 | 1;
+  /** A tentativa em andamento: frames desde o fim da contagem, tiros e acertos de quem treina nela. */
+  readonly attempt: { frames: number; shots: number; hits: number };
 }
 
 /** Evento do jogo que pode encerrar a tentativa. */
@@ -96,6 +103,10 @@ export interface TrainingModeDef {
   pickup?(ctx: PlacementContext, players: TrainingPlayer[]): Map<number, Position>;
   /** Fim da tentativa, ou null para seguir. */
   judge(world: TrainingWorld, ev: TrainingEvent, ctx: PlacementContext): TrainingOutcome | null;
+  /** Sucesso troca o lado da próxima tentativa (Treino de mira, D-93); falha repete o lado. */
+  switchSideOnSuccess?: boolean;
+  /** Conta tiros e acertos de quem treina ao vivo (`trainingAim`, OG-568). */
+  tallyShots?: boolean;
 }
 
 /** Sai do quadrado da base (RN-TRN-02): está fora da sala da bandeira do time. */
@@ -164,11 +175,13 @@ export function roomDistances(map: GameMap, from: { x: number; y: number }): num
 export class Placement implements PlacementContext {
   private readonly taken: Position[] = [];
   private readonly distCache = new Map<number, number[]>();
+  readonly attempt = { frames: 0, shots: 0, hits: 0 };
 
   constructor(
     readonly map: GameMap,
     readonly rng: GlibcRand,
     readonly config: TrainingConfig,
+    readonly side: 0 | 1 = 0,
   ) {}
 
   baseRoom(team: 0 | 1): { x: number; y: number } {
@@ -277,6 +290,8 @@ export interface TrainingRoomOps {
   resetFlags(): void;
   /** Avisa os clientes do estado (`trainingState`). */
   announce(state: TrainingAnnouncement): void;
+  /** Tiros, acertos, tempo e lado da tentativa do Treino de mira (`trainingAim`, OG-568). */
+  announceAim?(state: AimAnnouncement): void;
   /** Jogador morto não renasce dentro da tentativa. */
   holdRespawn(pid: number): void;
 }
@@ -291,6 +306,14 @@ export interface TrainingAnnouncement {
   attempts: number;
   level: number;
   levelChange: 'none' | 'up' | 'down';
+}
+
+export interface AimAnnouncement {
+  shots: number;
+  hits: number;
+  /** Décimos de segundo que faltam na tentativa (0 fora do jogo). */
+  tenthsLeft: number;
+  side: 0 | 1;
 }
 
 /** Juiz da tentativa: a máquina de fases da sala de treino. */
@@ -312,6 +335,11 @@ export class TrainingSession {
   private levelChange: 'none' | 'up' | 'down' = 'none';
   /** Sucessos (positivo) ou falhas (negativo) seguidos, para o nível progressivo (OG-499). */
   private streak = 0;
+  /** Lado de quem treina (Treino de mira): troca a cada sucesso. */
+  private side: 0 | 1 = 0;
+  /** Tiros e acertos de cada humano no fim da contagem: a tentativa conta a partir daí. */
+  private baseline = new Map<number, { shots: number; hits: number }>();
+  private lastAim = '';
 
   constructor(
     readonly config: TrainingConfig,
@@ -329,7 +357,7 @@ export class TrainingSession {
   begin(): void {
     // "mesmo início": o sorteio recomeça igual a cada tentativa (OG-500)
     const rng = this.config.sameStart ? new GlibcRand(this.seed) : this.rng;
-    const ctx = new Placement(this.world.map, rng, this.config);
+    const ctx = new Placement(this.world.map, rng, this.config, this.side);
     this.ctx = ctx;
     this.ops.setBots(this.mode.roster(ctx));
     const ready = this.world.players().filter((p) => p.ready);
@@ -340,6 +368,7 @@ export class TrainingSession {
     for (const [pid, pos] of this.starts) this.ops.place(pid, grab.get(pid) ?? pos, this.phaseUntil, true);
     this.ops.resetFlags();
     this.announce();
+    this.announceAim();
   }
 
   /** Todos no ponto de partida, parados e sem tiro até o fim da contagem. */
@@ -358,7 +387,9 @@ export class TrainingSession {
       if (frame >= this.phaseUntil) {
         this.phase = 'playing';
         this.startFrame = frame;
+        this.baseline = new Map(trainees(this.world).map((p) => [p.pid, (this.world.shotStats?.(p.pid) ?? { shots: 0, hits: 0 })]));
         this.announce();
+        this.tally();
         return;
       }
       this.hold();
@@ -371,8 +402,39 @@ export class TrainingSession {
       if (frame >= this.phaseUntil) this.begin();
       return;
     }
+    this.tally();
     if (frame - this.startFrame >= ATTEMPT_LIMIT_FRAMES) return this.finish({ success: false, reason: 'timeout' });
     this.event({ kind: 'frame' });
+  }
+
+  /** Tiros e acertos de quem treina desde o fim da contagem (OG-568); avisa quando mudam ou a cada segundo. */
+  private tally(): void {
+    if (!this.mode.tallyShots || !this.ctx) return;
+    const a = this.ctx.attempt;
+    a.frames = this.phase === 'playing' ? this.world.frame - this.startFrame : a.frames;
+    if (this.phase === 'playing') {
+      a.shots = 0;
+      a.hits = 0;
+      for (const p of trainees(this.world)) {
+        const now = (this.world.shotStats?.(p.pid) ?? { shots: 0, hits: 0 });
+        const base = this.baseline.get(p.pid) ?? now;
+        a.shots += Math.max(0, now.shots - base.shots);
+        a.hits += Math.max(0, now.hits - base.hits);
+      }
+    }
+    this.announceAim();
+  }
+
+  private announceAim(): void {
+    if (!this.mode.tallyShots || !this.ctx || !this.ops.announceAim) return;
+    const a = this.ctx.attempt;
+    const limit = AIM_TRAINING.seconds * 10;
+    const tenthsLeft = this.phase === 'playing' ? Math.max(0, limit - a.frames) : this.phase === 'countdown' ? limit : 0;
+    const state: AimAnnouncement = { shots: a.shots, hits: Math.min(a.hits, a.shots), tenthsLeft, side: this.ctx.side };
+    const key = `${state.shots}:${state.hits}:${Math.ceil(tenthsLeft / 10)}:${state.side}:${this.phase}`;
+    if (key === this.lastAim) return;
+    this.lastAim = key;
+    this.ops.announceAim(state);
   }
 
   /** Evento do jogo (morte, captura, devolução) durante a tentativa. */
@@ -391,10 +453,13 @@ export class TrainingSession {
     if (outcome.success) this.successes++;
     this.last = outcome;
     this.lastTenths = this.world.frame - this.startFrame;
+    // Treino de mira (D-93): sucesso troca o lado da gaiola na próxima tentativa; falha repete
+    if (outcome.success && this.mode.switchSideOnSuccess) this.side = this.side === 0 ? 1 : 0;
     this.levelChange = this.config.level === 0 ? this.progress(outcome.success) : 'none';
     this.phase = 'result';
     this.phaseUntil = this.world.frame + RESULT_FRAMES;
     this.announce();
+    this.announceAim();
   }
 
   /**

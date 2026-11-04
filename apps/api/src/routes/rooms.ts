@@ -2,7 +2,7 @@
 // Lista pública de salas (substitui a lista do master server do original), criação de sala
 // privada Casual (OG-086, RN-CFG-03) e de sala de lobby Ranked (OG-252, RN-RKL-05/06, D-44).
 import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { clampTraining, formatPlayers, isSeriesBestOf, PRESETS, settingsOf, TRAINING_MAPS, TRAINING_MAX_PLAYERS } from '@outgun/settings';
+import { clampTraining, formatPlayers, isSeriesBestOf, PRESETS, settingsOf, TRAINING_MAX_PLAYERS, trainingMapsFor } from '@outgun/settings';
 import { casualRotation, findPreset, panelPresets, rotationMaps } from '../platform-config.js';
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
@@ -35,12 +35,12 @@ const RoomSummary = Type.Object({
   bestOf: Type.Union([Type.Null(), SeriesBestOfSchema]),
   phase: Type.Union([Type.Null(), LobbyPhaseSchema]),
   /** Sala de treino (OG-492): o modo; null nas outras. No lobby aparece como "Treino · <modo>" e conta como privada. */
-  training: Type.Union([Type.Null(), Type.Literal('attack'), Type.Literal('defense'), Type.Literal('escape'), Type.Literal('capture')]),
+  training: Type.Union([Type.Null(), Type.Literal('attack'), Type.Literal('defense'), Type.Literal('escape'), Type.Literal('capture'), Type.Literal('aim')]),
 });
 
 /** Opções da sala de treino na criação (OG-492, RN-TRN-04/06). */
 const TrainingSchema = Type.Object({
-  mode: Type.Union([Type.Literal('attack'), Type.Literal('defense'), Type.Literal('escape'), Type.Literal('capture')]),
+  mode: Type.Union([Type.Literal('attack'), Type.Literal('defense'), Type.Literal('escape'), Type.Literal('capture'), Type.Literal('aim')]),
   bots: Type.Integer({ minimum: 0, maximum: 5 }),
   allies: Type.Integer({ minimum: 0, maximum: 2 }),
   /** 1 a 5; 0 = progressivo (OG-499). */
@@ -265,8 +265,10 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
         const training = body.training ? clampTraining(body.training) : null;
         if (training) {
           // mapas de treino (D-87): um só, da lista fixa, fora da rotação do painel
-          if (!body.maps || body.maps.length !== 1 || !TRAINING_MAPS.includes(body.maps[0]!)) {
-            return reply.code(422).send({ error: 'invalid_training_map', message: `training rooms take one of: ${TRAINING_MAPS.join(', ')}` });
+          // Treino de mira (OG-568): só o T4
+          const allowed = trainingMapsFor(training.mode);
+          if (!body.maps || body.maps.length !== 1 || !allowed.includes(body.maps[0]!)) {
+            return reply.code(422).send({ error: 'invalid_training_map', message: `training rooms take one of: ${allowed.join(', ')}` });
           }
           // uma sala de treino aberta por conta (RN-TRN-06): a fora do ar ou vazia sai; com gente nela, recusa
           const mine = await db.select().from(rooms).where(and(eq(rooms.ownerId, user.id), isNotNull(rooms.training)));

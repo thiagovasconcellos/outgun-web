@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S60 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-490, OG-491, OG-492, OG-498 |
 | Regras de negócio | RN-TRN-04, RN-TRN-06, RN-TRN-09, D-93 |
 | Skills | `outgun-card-workflow`, `outgun-asset-pipeline` |
@@ -33,10 +33,14 @@ Como jogador, quero treinar a mira atirando por 1 minuto num bot preso, com meta
 - Continua fora de estatísticas, ranking, radar, relatórios e marcos (OG-498).
 
 ## Critérios de aceite
-- [ ] Sala privada com o preset Mira abre no T4, com o bot preso no centro, imortal e sem atirar.
-- [ ] Tentativa de 60 s; 70 tiros com 90 % ou mais dão sucesso e trocam o lado; qualquer outro resultado é falha e repete o lado.
-- [ ] Tiros e acertos da tentativa chegam ao cliente ao vivo e no resultado.
-- [ ] Os bots do Casual não mudam (gravação de referência do OG-513 igual).
-- [ ] Testes do juiz do Mira (meta, troca de lado, motivo da falha) em `training.test.ts`.
+- [x] Sala privada com o preset Mira abre no T4, com o bot preso no centro, imortal e sem atirar.
+- [x] Tentativa de 60 s; 70 tiros com 90 % ou mais dão sucesso e trocam o lado; qualquer outro resultado é falha e repete o lado.
+- [x] Tiros e acertos da tentativa chegam ao cliente ao vivo e no resultado.
+- [x] Os bots do Casual não mudam (gravação de referência do OG-513 igual).
+- [x] Testes do juiz do Mira (meta, troca de lado, motivo da falha) em `training.test.ts`.
 
 ## Notas de implementação
+- Alvo (papel `target`): **parado**, sem atirar — a gaiola do T4 tem raio ~15 px, o mesmo do boneco, então ele não teria para onde andar; o nível não muda nada no Mira. Imortal pelo gancho opcional `mayTakeDamage` da sim (D-93; sem ele nada muda): o acerto conta (`stats.hits`) mesmo sem dano.
+- T4 em `apps/game-server/training-maps/` (entra na imagem pelos `files`), carregado como mapa fixo do `PanelMaps` (fora do catálogo; o cliente baixa do game server como os da moderação). Quem treina nasce num ponto sorteado do lado da vez (esquerda/direita).
+- `trainingState` ganhou `aim` e os motivos `aimGoal/aimShots/aimAccuracy` no fim das listas (sem trocar `PROTOCOL_VERSION`); mensagem nova `trainingAim` (136): tiros, acertos, décimos restantes e lado. Sala de Mira recusa outro humano (reconexão da mesma conta passa).
+- Testes: `training-aim.test.ts` (meta, troca de lado no sucesso, falha repete o lado); os testes de treino existentes seguem passando.
