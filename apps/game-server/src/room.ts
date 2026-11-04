@@ -318,6 +318,8 @@ export class Room {
   });
   /** Contas que saíram no meio do jogo Ranked: recebem o resultado do time no rating (OG-349, RN-SKL-03). */
   private readonly departed = new Map<string, 0 | 1>();
+  /** Quem saiu do jogo Ranked com o time seguindo um a menos: volta ao mesmo lado a qualquer momento do jogo (OG-563, D-92). */
+  private readonly away = new Map<string, 0 | 1>();
   /** Pedidos de troca de lado no lobby (OG-253): quem pediu → com quem. */
   private readonly swapRequests = new Map<number, number>();
   /** Série em andamento (OG-250): numerada por sala; ao acabar, o jogo seguinte abre a próxima. */
@@ -548,8 +550,10 @@ export class Room {
     // OutCup (OG-525): só os jogadores do confronto, no lado da dupla
     const cupSide = this.options.cup && identity.accountId !== null ? this.options.cup.sides[identity.accountId] : undefined;
     if (this.options.cup && !opts.bot && cupSide === undefined) return { ok: false, reason: 'roomClosed', text: 'Sala da OutCup: só os jogadores do confronto.' };
+    // quem saiu no meio do jogo Ranked volta à vaga, sem prazo (OG-563, D-92)
+    const back = this.lobby?.playing && this.inGame && identity.accountId !== null ? this.away.get(identity.accountId) : undefined;
     // lobby Ranked (OG-252, D-43): em jogo ou com a série acabada ninguém entra; entre jogos, se houver vaga
-    if (this.lobby && !this.lobby.acceptsJoins) {
+    if (this.lobby && !this.lobby.acceptsJoins && back === undefined) {
       return this.lobby.members.size >= this.lobby.capacity ? { ok: false, reason: 'serverFull', text: 'Sala cheia.' } : { ok: false, reason: 'roomClosed', text: 'Partida em andamento.' };
     }
     if (this.clients.size >= this.world.maxPlayers) {
@@ -561,6 +565,7 @@ export class Room {
     const team =
       opts.team ??
       cupSide ??
+      back ??
       (this.training
         ? TRAINEE_TEAM
         : this.lobby
@@ -619,6 +624,11 @@ export class Room {
     if (this.lobby) {
       this.lobby.join(pid, this.world.frame);
       this.lobbyDirty = true;
+      if (back !== undefined) {
+        this.away.delete(identity.accountId!);
+        this.departed.delete(identity.accountId!);
+        this.pause?.brief(team as 0 | 1, pid, this.uptimeFrames); // volta com a contagem de 3 s, como na volta da queda
+      }
       return { ok: true, pid };
     }
     if (this.training) {
@@ -1533,6 +1543,8 @@ export class Room {
   private goShort(pid: number): void {
     if (!this.clients.has(pid)) return;
     this.substitutions.push({ kind: 'short', team: this.world.teamOf(pid) as 0 | 1, atSeconds: Math.trunc(this.world.mapTime() / 10) });
+    const account = this.clients.get(pid)!.identity.accountId;
+    if (account) this.away.set(account, this.world.teamOf(pid) as 0 | 1); // pode voltar até o fim do jogo (OG-563)
     this.leave(pid);
   }
 
@@ -1541,6 +1553,7 @@ export class Room {
     for (const [pid, c] of [...this.clients]) if (c.replaced || c.departing) this.leave(pid);
     this.substitutes = 0;
     this.substitutions = [];
+    this.away.clear(); // entre jogos a vaga reabre no lobby (D-43)
   }
 
   /** Ninguém fica com tecla presa durante a pausa. */
@@ -2063,6 +2076,7 @@ export class Room {
     this.substitutes = 0;
     this.substitutions = [];
     this.departed.clear();
+    this.away.clear();
     this.lobby!.gameEnded(false, this.world.frame);
     this.gameOverUntil = this.world.frame + 1;
     this.broadcast(message('text', { kind: 'warning', from: 255, text: CANCELLED_TEXT }));
@@ -2320,6 +2334,7 @@ export class Room {
     }
     this.matchStartedAt = this.wallClock();
     this.departed.clear();
+    this.away.clear();
     this.events.reset();
     this.chatTally.reset();
     this.chatter?.event('match_start');
@@ -2481,6 +2496,11 @@ export class Room {
       bot: c.bot,
       muted: c.muted,
     }));
+  }
+
+  /** Contas que saíram do jogo Ranked em andamento e podem voltar (OG-563): a API deixa essas entrarem. */
+  awayAccounts(): string[] {
+    return this.inGame ? [...this.away.keys()] : [];
   }
 
   /**

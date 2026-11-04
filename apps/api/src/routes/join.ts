@@ -174,7 +174,8 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
         if (room.mode === 'ranked' && !user) return reply.code(401).send({ error: 'account_required', message: 'ranked rooms require an account' });
         // sala de confronto da OutCup (OG-525): só as contas das duas duplas; os outros assistem
         if (room.cup && user && room.cup.sides[user.id] === undefined) return reply.code(403).send({ error: 'cup_room', message: 'only the players of this OutCup match can join; you can watch it' });
-        const returning = room.phase === 'game' && user !== undefined && room.roster.some((r) => r.accountId === user.id || r.replacedAccountId === user.id);
+        // quem saiu do jogo com o time seguindo um a menos também volta, sem prazo (OG-563, D-92)
+        const returning = room.phase === 'game' && user !== undefined && (room.roster.some((r) => r.accountId === user.id || r.replacedAccountId === user.id) || room.away.includes(user.id));
         if (room.format && roomOnline(room) && (room.phase === 'game' || room.phase === 'finished') && !returning) {
           return reply.code(409).send({ error: 'room_in_game', message: 'the match is in progress' });
         }

@@ -65,6 +65,8 @@ const Heartbeat = Type.Object({
           { maxItems: 32 },
         ),
       ),
+      /** Contas que saíram do jogo Ranked em andamento e podem voltar à vaga (OG-563, D-92). */
+      away: Type.Optional(Type.Array(Type.String({ format: 'uuid' }), { maxItems: 32 })),
     }),
     { maxItems: 64 },
   ),
@@ -397,11 +399,12 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
                 map: r.map,
                 lastHeartbeatAt: now,
                 roster: r.roster ?? [],
+                away: r.away ?? [],
                 phase: r.phase ?? null,
               })
               .onConflictDoUpdate({
                 target: rooms.id,
-                set: { serverId, wsUrl: r.wsUrl, players: r.players, map: r.map, lastHeartbeatAt: now, roster: r.roster ?? [], phase: r.phase ?? null },
+                set: { serverId, wsUrl: r.wsUrl, players: r.players, map: r.map, lastHeartbeatAt: now, roster: r.roster ?? [], away: r.away ?? [], phase: r.phase ?? null },
               });
           }
           // Salas que este servidor encerrou saem do ar na hora (o último heartbeat recua para fora
@@ -410,7 +413,7 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
           const ids = hosted.map((r) => r.id);
           await tx
             .update(rooms)
-            .set({ players: 0, roster: [], lastHeartbeatAt: new Date(now.getTime() - ONLINE_MS) })
+            .set({ players: 0, roster: [], away: [], lastHeartbeatAt: new Date(now.getTime() - ONLINE_MS) })
             .where(and(eq(rooms.serverId, serverId), gt(rooms.lastHeartbeatAt, new Date(now.getTime() - ONLINE_MS)), ids.length ? notInArray(rooms.id, ids) : undefined));
           // Salas privadas abandonadas (fora do ar, ou nunca abertas, há uma hora) são apagadas.
           const old = new Date(now.getTime() - ABANDONED_MS);

@@ -86,6 +86,8 @@ export interface HostedRoom {
   map: string;
   /** Jogadores, para o painel admin (OG-087). */
   roster: ReturnType<Room['roster']>;
+  /** Contas que saíram do jogo Ranked e podem voltar (OG-563). */
+  away?: string[];
   /** Fase do lobby Ranked (OG-252). */
   phase?: LobbyPhase;
 }
@@ -169,6 +171,7 @@ export class RoomManager {
       players: room.playerCount,
       map: room.world.map.title,
       roster: room.roster(),
+      ...(room.awayAccounts().length > 0 ? { away: room.awayAccounts() } : {}),
       ...(room.lobby ? { phase: room.lobby.phase } : {}),
     }));
   }

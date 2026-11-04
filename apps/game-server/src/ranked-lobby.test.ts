@@ -341,4 +341,25 @@ describe('sala Ranked 3x3 com lobby (OG-252)', () => {
       expect([r.lobby?.phase, cancelled(c.conn)]).toEqual(['game', false]);
     });
   });
+
+  it('quem saiu com o time seguindo um a menos volta à vaga a qualquer momento do jogo; outros não entram (OG-563, D-92)', () => {
+    const r = new Room({ id: 'r-3', preset: 'ranked', maps, mapFiles: ['outgun1', '2 versus 2 (duel)'], maxPlayers: 6, seed: 3, ranked: { format: '3x3', bestOf: 3 } });
+    const players = [1, 2, 3, 4, 5, 6].map((n) => join(r, n));
+    run(r, 1);
+    play(r, players);
+    for (const p of players) r.handle(p.pid, [message('clientReady', {})]);
+    run(r, 30);
+    const a = players[0]!;
+    const team = r.world.teamOf(a.pid);
+    const account = '00000000-0000-4000-8000-000000000001'; // J1
+    r.disconnect(a.pid, a.conn, true);
+    for (const p of players) if (p !== a && r.world.teamOf(p.pid) === team) r.handle(p.pid, [message('substituteVote', { bot: false })]);
+    run(r, 1);
+    expect([r.playerCount, r.bots(), r.awayAccounts()]).toEqual([5, [], [account]]);
+    run(r, 600); // um minuto depois
+    expect(r.join(new TestConnection(), { name: 'J7', accountId: '00000000-0000-4000-8000-000000000007' })).toMatchObject({ ok: false, reason: 'roomClosed' });
+    const back = r.join(new TestConnection(), { name: 'J1', accountId: account });
+    expect(back).toMatchObject({ ok: true });
+    expect([r.world.teamOf((back as { pid: number }).pid), r.playerCount, r.awayAccounts(), r.lobby?.phase]).toEqual([team, 6, [], 'game']);
+  });
 });

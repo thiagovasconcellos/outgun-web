@@ -155,6 +155,8 @@ export const rooms = pgTable('rooms', {
   maps: text('maps').array(),
   /** Jogadores na sala, do último heartbeat (painel admin, OG-087). */
   roster: jsonb('roster').$type<RosterEntry[]>().notNull().default([]),
+  /** Contas que saíram do jogo Ranked em andamento e podem voltar (OG-563, D-92), do último heartbeat. */
+  away: jsonb('away').$type<string[]>().notNull().default([]),
   /** Formato e série da sala Ranked (OG-250); nulos nas salas sem formato. */
   format: rankedFormat('format'),
   bestOf: smallint('best_of'),

@@ -70,7 +70,7 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
     await t.db.update(rooms).set({ serverId: null, wsUrl: null, players: 0, map: null, lastHeartbeatAt: null });
   });
 
-  const heartbeat = (server: string, hosted: { id: string; players: number; mode?: string; preset?: string; persistent?: boolean; maxPlayers?: number; phase?: string; roster?: { uid: number; name: string; team: number; accountId?: string; replacedAccountId?: string; bot: boolean; muted: number }[] }[], region = 'eu', maxRooms = 10) => {
+  const heartbeat = (server: string, hosted: { id: string; players: number; mode?: string; preset?: string; persistent?: boolean; maxPlayers?: number; phase?: string; roster?: { uid: number; name: string; team: number; accountId?: string; replacedAccountId?: string; bot: boolean; muted: number }[]; away?: string[] }[], region = 'eu', maxRooms = 10) => {
     const base = `ws://${server}.test`;
     const body = JSON.stringify({
       server: { wsBaseUrl: base, region, maxRooms },
@@ -86,6 +86,7 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
         wsUrl: `${base}/rooms/${r.id}`,
         ...(r.phase ? { phase: r.phase } : {}),
         ...(r.roster ? { roster: r.roster } : {}),
+        ...(r.away ? { away: r.away } : {}),
       })),
     });
     const url = '/internal/rooms/heartbeat';
@@ -304,6 +305,11 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
     expect((await post(`/rooms/${room.id}/join`, { password: 'segredo' }, true)).statusCode).toBe(200);
     await inGame([{ uid: 2, name: 'BOT-Jogador1', team: 0, replacedAccountId: me!.id, bot: true, muted: 0 }]);
     expect((await post(`/rooms/${room.id}/join`, { password: 'segredo' }, true)).statusCode).toBe(200);
+    // saiu e o time seguiu com um a menos: volta sem prazo enquanto o jogo durar (OG-563, D-92)
+    await heartbeat('gs-1', [{ id: room.id, players: 5, mode: 'ranked', preset: 'ranked', persistent: false, maxPlayers: 6, phase: 'game', roster: [], away: [me!.id] }]);
+    expect((await post(`/rooms/${room.id}/join`, { password: 'segredo' }, true)).statusCode).toBe(200);
+    await heartbeat('gs-1', [{ id: room.id, players: 5, mode: 'ranked', preset: 'ranked', persistent: false, maxPlayers: 6, phase: 'game', roster: [] }]);
+    expect((await post(`/rooms/${room.id}/join`, { password: 'segredo' }, true)).json().error).toBe('room_in_game');
     await heartbeat('gs-1', [{ id: room.id, players: 6, mode: 'ranked', preset: 'ranked', persistent: false, maxPlayers: 6, phase: 'finished', roster: [{ uid: 1, name: 'Jogador1', team: 0, accountId: me!.id, bot: false, muted: 0 }] }]);
     expect((await post(`/rooms/${room.id}/join`, { password: 'segredo' }, true)).json().error).toBe('room_in_game');
     // "Jogar agora" do Ranked não cai em sala de lobby (RN-RKL-05: entra-se pela lista)
