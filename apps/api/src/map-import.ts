@@ -39,7 +39,7 @@ export interface ImportReport {
 
 /** Lê o CSV do pacote (BOM, `;`, aspas). Só as linhas do zip (as do "[nativo Web V2]" ficam intocadas). */
 export function readInventory(csv: string): { rows: ImportRow[]; untouched: string[] } {
-  const lines = csv.replace(/^﻿/, '').split(/\r?\n/).filter((l) => l.trim());
+  const lines = csv.replace(/^\uFEFF/, '').split(/\r?\n/).filter((l) => l.trim());
   const split = (line: string) => {
     const out: string[] = [];
     let cur = '';

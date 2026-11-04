@@ -562,9 +562,11 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
     // --- rotações (uma do Casual e uma por formato do Ranked, OG-251) ---
     /** Mapas que as rotações aceitam: os dos game servers e os da moderação (vazio = nenhum servidor informou ainda). */
     const mapCatalog = async () => {
-      const keys = (await playableMaps(db)).map((m) => m.name);
-      // catálogo ainda vazio (semente não rodou): os da pasta dos servidores
-      return (keys.length > 0 ? keys : await builtinMaps()).sort((a, b) => a.localeCompare(b));
+      const playable = await playableMaps(db);
+      const keys = playable.map((m) => m.name);
+      // nativos ainda fora do catálogo (semente não rodou): os da pasta dos servidores também valem
+      const natives = playable.some((m) => m.origin === 'native') ? [] : await builtinMaps();
+      return [...new Set([...keys, ...natives])].sort((a, b) => a.localeCompare(b));
     };
 
     app.get(

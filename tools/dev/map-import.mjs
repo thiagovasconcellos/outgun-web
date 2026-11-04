@@ -11,5 +11,8 @@ import { fileURLToPath } from 'node:url';
 const api = fileURLToPath(new URL('../../apps/api/', import.meta.url));
 const args = process.argv.slice(2);
 const dir = args[0] && !args[0].startsWith('--') ? args.shift() : 'map-imports/nosferatu-2026-11';
-const r = spawnSync(process.execPath, ['dist/cli.js', 'map-import', dir, ...args], { cwd: api, stdio: 'inherit' });
+const r = spawnSync(process.execPath, ['dist/cli.js', 'map-import', dir, ...args], {
+  cwd: api,
+  stdio: 'inherit',
+});
 process.exit(r.status ?? 1);

@@ -477,6 +477,12 @@
                                 "enum": [
                                   "capture"
                                 ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "aim"
+                                ]
                               }
                             ]
                           }
@@ -595,6 +601,12 @@
                             "type": "string",
                             "enum": [
                               "capture"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "aim"
                             ]
                           }
                         ]
@@ -873,6 +885,12 @@
                               "type": "string",
                               "enum": [
                                 "capture"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "aim"
                               ]
                             }
                           ]
@@ -1263,6 +1281,12 @@
                               "enum": [
                                 "capture"
                               ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "aim"
+                              ]
                             }
                           ]
                         }
@@ -1438,7 +1462,41 @@
     },
     "/maps/{name}": {
       "get": {
-        "summary": "Texto de um mapa publicado pela moderação (OG-366), em Latin-1, para os game servers e o cliente",
+        "summary": "Texto da revisão ativa de um mapa jogável (OG-552), em Latin-1, pela chave ou por um nome antigo (`.txt` opcional); `?crc=` dá a revisão com aquele CRC (replays antigos, OG-554)",
+        "tags": [
+          "salas"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "in": "query",
+            "name": "crc",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 68
+            },
+            "in": "path",
+            "name": "name",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/maps/{name}/rev/{file}": {
+      "get": {
+        "summary": "Texto de uma revisão de um mapa (OG-552), imutável: `N.txt`; para os game servers, replays e miniaturas",
         "tags": [
           "salas"
         ],
@@ -1451,6 +1509,15 @@
             },
             "in": "path",
             "name": "name",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,6}\\.txt$"
+            },
+            "in": "path",
+            "name": "file",
             "required": true
           }
         ],
@@ -1795,6 +1862,12 @@
                               "type": "string",
                               "enum": [
                                 "capture"
+                              ]
+                            },
+                            {
+                              "type": "string",
+                              "enum": [
+                                "aim"
                               ]
                             }
                           ]
@@ -3405,6 +3478,15 @@
           },
           {
             "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "query",
+            "name": "mapRevision",
+            "required": false
+          },
+          {
+            "schema": {
               "type": "string",
               "minLength": 1,
               "maxLength": 32
@@ -3785,7 +3867,8 @@
                         "required": [
                           "map",
                           "title",
-                          "games"
+                          "games",
+                          "revisions"
                         ],
                         "properties": {
                           "map": {
@@ -3796,6 +3879,12 @@
                           },
                           "games": {
                             "type": "integer"
+                          },
+                          "revisions": {
+                            "type": "array",
+                            "items": {
+                              "type": "integer"
+                            }
                           }
                         }
                       }
@@ -6626,6 +6715,28 @@
                         },
                         {
                           "type": "null"
+                        }
+                      ]
+                    },
+                    "mapRevision": {
+                      "anyOf": [
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "number",
+                            "inferred"
+                          ],
+                          "properties": {
+                            "number": {
+                              "type": "integer"
+                            },
+                            "inferred": {
+                              "type": "boolean"
+                            }
+                          }
                         }
                       ]
                     }
@@ -22490,7 +22601,10 @@
                             "type": "object",
                             "required": [
                               "name",
-                              "crc"
+                              "crc",
+                              "rev",
+                              "sha256",
+                              "origin"
                             ],
                             "properties": {
                               "name": {
@@ -22498,6 +22612,15 @@
                               },
                               "crc": {
                                 "type": "integer"
+                              },
+                              "rev": {
+                                "type": "integer"
+                              },
+                              "sha256": {
+                                "type": "string"
+                              },
+                              "origin": {
+                                "type": "string"
                               }
                             }
                           }
@@ -22711,6 +22834,10 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 64
+                  },
+                  "mapRevision": {
+                    "type": "integer",
+                    "minimum": 1
                   },
                   "redScore": {
                     "type": "integer",
@@ -24571,10 +24698,45 @@
     },
     "/admin/maps": {
       "get": {
-        "summary": "Mapas enviados pela moderação (OG-366)",
+        "summary": "Catálogo de mapas (OG-557/558): um por mapa, com a revisão ativa",
         "tags": [
           "admin"
         ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Novo mapa (OG-557): a chave sai do `P title` (sem fundir com outro mapa); revisão 1 ativa",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "text"
+                ],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 65536
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Default Response"
@@ -24584,7 +24746,7 @@
     },
     "/admin/maps/check": {
       "post": {
-        "summary": "Confere um mapa .txt sem publicar: erros do parser ou a prévia (título, autor, tamanho)",
+        "summary": "Confere um mapa .txt sem publicar: erros do parser ou a prévia (título, autor, tamanho, CRC) e avisos de possível duplicação",
         "tags": [
           "admin"
         ],
@@ -24595,19 +24757,18 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "name",
                   "text"
                 ],
                 "properties": {
-                  "name": {
-                    "type": "string",
-                    "minLength": 1,
-                    "maxLength": 64
-                  },
                   "text": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 65536
+                  },
+                  "target": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
                   }
                 }
               }
@@ -24621,9 +24782,9 @@
         }
       }
     },
-    "/admin/maps/{name}": {
-      "put": {
-        "summary": "Publica (ou atualiza, versionado) um mapa .txt da moderação; vale nas rotações e salas",
+    "/admin/maps/{key}/revisions": {
+      "post": {
+        "summary": "Nova revisão de um mapa (nativo, de outro moderador ou importado, OG-557): exige a revisão-base; se outra saiu depois dela, 409 até confirmar (RN-MRV-08). Vale a partir da próxima troca de mapa",
         "tags": [
           "admin"
         ],
@@ -24634,13 +24795,28 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "text"
+                  "text",
+                  "baseRevision"
                 ],
                 "properties": {
                   "text": {
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 65536
+                  },
+                  "baseRevision": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "force": {
+                    "type": "boolean"
+                  },
+                  "draft": {
+                    "type": "boolean"
                   }
                 }
               }
@@ -24655,7 +24831,7 @@
               "maxLength": 64
             },
             "in": "path",
-            "name": "name",
+            "name": "key",
             "required": true
           }
         ],
@@ -24665,8 +24841,8 @@
           }
         }
       },
-      "delete": {
-        "summary": "Desativa um mapa da moderação (recusado enquanto estiver numa rotação)",
+      "get": {
+        "summary": "Revisões de um mapa (OG-558), da mais nova para a mais antiga",
         "tags": [
           "admin"
         ],
@@ -24678,7 +24854,7 @@
               "maxLength": 64
             },
             "in": "path",
-            "name": "name",
+            "name": "key",
             "required": true
           }
         ],
@@ -24689,9 +24865,22 @@
         }
       }
     },
-    "/admin/maps/{name}/versions": {
+    "/admin/maps/drafts": {
       "get": {
-        "summary": "Histórico de um mapa da moderação",
+        "summary": "Rascunhos de mapa ainda não ativados (OG-562), para a sala privada do moderador",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/maps/{key}/revisions/{file}": {
+      "get": {
+        "summary": "Baixa o TXT de uma revisão (bytes exatos, Latin-1), só para moderadores (RN-MRV-11)",
         "tags": [
           "admin"
         ],
@@ -24703,7 +24892,103 @@
               "maxLength": 64
             },
             "in": "path",
-            "name": "name",
+            "name": "key",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,6}\\.txt$"
+            },
+            "in": "path",
+            "name": "file",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/maps/{key}/restore": {
+      "post": {
+        "summary": "Volta a uma revisão anterior (OG-558): ela vira a ativa a partir da próxima troca de mapa; as intermediárias ficam no histórico",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "revision"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "in": "path",
+            "name": "key",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/maps/{key}/playable": {
+      "put": {
+        "summary": "Ativa ou desativa um mapa para novas partidas (OG-558), nativos inclusive; desativar é recusado enquanto ele estiver numa rotação. Nada se apaga",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "playable"
+                ],
+                "properties": {
+                  "playable": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "in": "path",
+            "name": "key",
             "required": true
           }
         ],
