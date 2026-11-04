@@ -12,7 +12,8 @@ import { areaLabels, frequencyLabels, severityLabels, type BugReport } from '../
 import { usePrefs } from '../app/prefs.js';
 import { Badge, Button } from '../ui/Button.js';
 import { CupTab } from './admin-cup.js';
-import { TextAreaField, TextField } from '../ui/Field.js';
+import { ChoiceField, TextAreaField, TextField } from '../ui/Field.js';
+import { MapHistory } from './admin-map-history.js';
 import { Dialog } from '../ui/Dialog.js';
 import { Page } from '../ui/Page.js';
 import { RegionCell } from '../ui/Flag.js';
@@ -852,41 +853,66 @@ function PresetsTab({ canEdit }: { canEdit: boolean }) {
   );
 }
 
-interface PanelMapRow {
-  name: string;
+/** Uma linha do catálogo de mapas (OG-557/558): um por mapa, com a revisão ativa. */
+interface CatalogRow {
+  key: string;
+  origin: 'native' | 'panel' | 'import';
+  playable: boolean;
+  activeRevision: number | null;
+  revisions: number;
   title: string;
   author: string;
   width: number;
   height: number;
   crc: number;
-  version: number;
-  active: boolean;
-  updatedBy: string | null;
+  publishedBy: string | null;
+  publishedAt: string | null;
 }
 
 /**
- * Texto de um .txt de mapa: UTF-8 se for válido, senão Latin-1 (o "ANSI" dos arquivos da comunidade);
- * a API guarda em Latin-1, como os mapas do jogo.
+ * Texto de um .txt de mapa: UTF-8 se for válido (e tiver algo fora do ASCII), senão Latin-1 (o "ANSI"
+ * dos arquivos da comunidade); a API guarda em Latin-1, como os mapas do jogo. `utf8` avisa que houve
+ * conversão (OG-557: `gavea.txt` do pacote veio em UTF-8).
  */
 export function mapFileText(bytes: Uint8Array): string {
+  return readMapFile(bytes).text;
+}
+
+export function readMapFile(bytes: Uint8Array): { text: string; utf8: boolean } {
   try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    return { text, utf8: bytes.some((b) => b >= 0x80) };
   } catch {
-    return decodeMapFile(bytes); // byte a byte (o TextDecoder 'latin1' do navegador é o windows-1252)
+    return { text: decodeMapFile(bytes), utf8: false }; // byte a byte (o TextDecoder 'latin1' do navegador é o windows-1252)
   }
 }
 
-/** Mapas .txt da moderação (OG-366, D-70): conferir (erros do parser ou prévia), publicar e desativar. */
+interface MapCheck {
+  ok: boolean;
+  errors: string[];
+  preview?: { title: string; author: string; width: number; height: number; crc: number; sha256: string } | null;
+  similar?: { key: string; title: string }[];
+}
+
+/**
+ * Mapas com revisões (OG-557, D-91): sobe o .txt, escolhe **Novo mapa** ou **Nova revisão de…**
+ * (qualquer mapa, nativos inclusive), confere (erros do parser, prévia, aviso de título parecido) e
+ * publica. Sem campo de nome: o título vem do `P title`. A revisão leva a base em que se trabalhou;
+ * se outra saiu depois, o painel avisa e pede confirmação (RN-MRV-08).
+ */
 function MapsTab() {
   const { t } = usePrefs();
-  const list = useLoad<{ maps: PanelMapRow[] }>('/admin/maps');
+  const list = useLoad<{ maps: CatalogRow[] }>('/admin/maps');
   const rotations = useLoad<RotationsData>('/admin/rotations');
   const [status, setStatus] = useState<{ text?: string; error?: string }>({});
-  const [form, setForm] = useState({ name: '', text: '' });
+  const [form, setForm] = useState({ text: '', utf8: false, target: '', note: '' });
+  const [conflict, setConflict] = useState<string | null>(null);
+  const [history, setHistory] = useState<CatalogRow | null>(null);
   // atalho (OG-378): põe o mapa publicado na rotação em uso, sem redigitar os outros
   const RANKED_KEYS = RANKED_FORMATS.map((f) => `ranked:${f}`);
   const inCasual = (name: string) => rotationInUse(rotations.data, 'casual').maps.includes(name);
   const inRanked = (name: string) => RANKED_KEYS.every((k) => rotationInUse(rotations.data, k).maps.includes(name));
+  const rotationsOf = (name: string) => ['casual', ...RANKED_KEYS].filter((k) => rotationInUse(rotations.data, k).maps.includes(name));
   const add = (name: string, keys: string[]) =>
     keys.reduce<Promise<unknown>>((p, k) => p.then(() => addToRotation(rotations.data, k, name)), Promise.resolve()).then(
       () => {
@@ -895,40 +921,55 @@ function MapsTab() {
       },
       (e: unknown) => setStatus({ error: errorText(e) }),
     );
-  const [check, setCheck] = useState<{ ok: boolean; errors: string[]; preview?: { title: string; author: string; width: number; height: number } | null } | null>(null);
+  const [check, setCheck] = useState<MapCheck | null>(null);
+  const maps = list.data?.maps ?? [];
+  const target = maps.find((m) => m.key === form.target);
   // prévia do arquivo antes de publicar (OG-368): desenhada do texto, com o mesmo parser
   const draft = useMemo(() => {
-    const r = form.text ? parseMapFile(`${form.name}.txt`, Uint8Array.from(form.text, (c) => c.charCodeAt(0) & 0xff)) : null;
+    const r = form.text ? parseMapFile('map.txt', Uint8Array.from(form.text, (c) => c.charCodeAt(0) & 0xff)) : null;
     return r?.ok ? r.map : null;
-  }, [form]);
+  }, [form.text]);
+  const reset = () => {
+    setCheck(null);
+    setConflict(null);
+  };
   const pick = (file: File | undefined) => {
     if (!file) return;
-    setCheck(null);
-    void file.arrayBuffer().then((buf) => setForm({ name: file.name.replace(/\.txt$/i, '').slice(0, 64), text: mapFileText(new Uint8Array(buf)) }));
+    reset();
+    void file.arrayBuffer().then((buf) => {
+      const read = readMapFile(new Uint8Array(buf));
+      setForm((f) => ({ ...f, text: read.text, utf8: read.utf8 }));
+    });
   };
   const verify = () =>
-    api<NonNullable<typeof check>>('/admin/maps/check', { body: form }).then(setCheck, (e: unknown) => setStatus({ error: errorText(e) }));
-  const publish = () =>
-    api<{ version: number }>(`/admin/maps/${encodeURIComponent(form.name)}`, { method: 'PUT', body: { text: form.text } }).then(
-      (r) => {
-        setStatus({ text: t('Map published (version $1).', String(r.version)) });
-        setCheck(null);
-        list.reload();
-      },
-      (e: unknown) => setStatus({ error: errorText(e) }),
-    );
-  const remove = (name: string) =>
-    api(`/admin/maps/${encodeURIComponent(name)}`, { method: 'DELETE' }).then(
+    api<MapCheck>('/admin/maps/check', { body: { text: form.text, ...(form.target ? { target: form.target } : {}) } }).then(setCheck, (e: unknown) => setStatus({ error: errorText(e) }));
+  const published = (r: { key: string; revision: number }) => {
+    setStatus({ text: t('$1: revision $2 published. It applies from the next map change.', r.key, String(r.revision)) });
+    reset();
+    setForm({ text: '', utf8: false, target: '', note: '' });
+    list.reload();
+  };
+  const publish = (force = false) => {
+    const note = form.note.trim() ? { note: form.note.trim() } : {};
+    const call = target
+      ? api<{ key: string; revision: number }>(`/admin/maps/${encodeURIComponent(target.key)}/revisions`, { body: { text: form.text, baseRevision: target.activeRevision ?? 1, ...note, ...(force ? { force: true } : {}) } })
+      : api<{ key: string; revision: number }>('/admin/maps', { body: { text: form.text, ...note } });
+    return call.then(published, (e: unknown) => {
+      if (e instanceof ApiError && e.code === 'newer_revision') setConflict(e.message);
+      else setStatus({ error: errorText(e) });
+    });
+  };
+  const setPlayable = (m: CatalogRow, playable: boolean) =>
+    api(`/admin/maps/${encodeURIComponent(m.key)}/playable`, { method: 'PUT', body: { playable } }).then(
       () => {
-        setStatus({ text: t('Map deactivated.') });
+        setStatus({ text: playable ? t('Map activated for new matches.') : t('Map deactivated.') });
         list.reload();
       },
       (e: unknown) => setStatus({ error: errorText(e) }),
     );
-  const maps = list.data?.maps ?? [];
   return (
     <section className="admin-tab">
-      {/* envio à esquerda (arquivo → conferir → prévia → publicar); mapas publicados à direita */}
+      {/* envio à esquerda (arquivo → novo ou revisão → conferir → prévia → publicar); catálogo à direita */}
       <div className="admin-maps">
         <form
           className="admin-panel"
@@ -938,24 +979,26 @@ function MapsTab() {
           }}
         >
           <h3>{t('Send a map')}</h3>
-          <p className="admin-muted">{t('Send a map .txt in the Outgun format. Once published it can go into the rotations and private rooms, without a new release.')}</p>
+          <p className="admin-muted">{t('Send a map .txt in the Outgun format: a new map or a new revision of any map. The title comes from the file (P title).')}</p>
           <label className="admin-file">
             <span>{t('Map file (.txt)')}</span>
             <input type="file" accept=".txt,text/plain" onChange={(e) => pick(e.target.files?.[0])} />
           </label>
-          <TextField
-            label={t('Map')}
-            value={form.name}
-            maxLength={64}
-            hint={t('The name players see in "Create room" and in the vote.')}
+          <ChoiceField
+            label={t('This file is')}
+            value={form.target}
             onChange={(v) => {
-              setCheck(null);
-              setForm({ ...form, name: v });
+              reset();
+              setForm({ ...form, target: v });
             }}
+            options={[{ value: '', label: t('A new map') }, ...maps.map((m) => ({ value: m.key, label: t('A new revision of $1', `${m.title} (${m.key})`) }))]}
+            hint={target ? t('Based on revision $1, the active one.', String(target.activeRevision ?? 1)) : undefined}
           />
-          <Button type="submit" disabled={!form.name || !form.text}>
+          <TextField label={t('Revision note (optional)')} value={form.note} maxLength={500} onChange={(v) => setForm({ ...form, note: v })} />
+          <Button type="submit" disabled={!form.text}>
             {t('Check')}
           </Button>
+          {form.utf8 && <p className="admin-muted">{t('The file was in UTF-8 and was converted to Latin-1, like the game maps.')}</p>}
           {check && !check.ok && (
             <ul className="stats-note error" role="alert">
               {check.errors.map((e) => (
@@ -963,28 +1006,44 @@ function MapsTab() {
               ))}
             </ul>
           )}
-          {check?.ok && draft && <MapDrawing map={draft} label={check.preview?.title ?? form.name} />}
+          {check?.ok && draft && <MapDrawing map={draft} label={check.preview?.title ?? ''} />}
+          {check?.ok && !!check.similar?.length && (
+            <p className="stats-note" role="status">
+              {t('Possible duplicate of: $1. If it is the same map, choose "A new revision of" instead.', check.similar.map((m) => `${m.title} (${m.key})`).join(', '))}
+            </p>
+          )}
           {check?.ok && check.preview && (
             <>
               <p className="admin-muted" role="status">
                 {t('$1 by $2, $3×$4 rooms.', check.preview.title, check.preview.author || '-', String(check.preview.width), String(check.preview.height))}
               </p>
-              <Button variant="primary" onClick={() => void publish()}>
-                {t('Publish map')}
-              </Button>
+              {conflict ? (
+                <>
+                  <p className="stats-note error" role="alert">
+                    {conflict}
+                  </p>
+                  <Button variant="danger" onClick={() => void publish(true)}>
+                    {t('Publish anyway')}
+                  </Button>
+                </>
+              ) : (
+                <Button variant="primary" onClick={() => void publish()}>
+                  {target ? t('Publish revision') : t('Publish map')}
+                </Button>
+              )}
             </>
           )}
         </form>
         <div className="admin-tab">
           <div className="admin-summary">
-            <Badge>{t('$1 published maps', String(maps.filter((m) => m.active).length))}</Badge>
+            <Badge>{t('$1 maps', String(maps.length))}</Badge>
             <Status text={status.text} error={status.error ?? list.error} />
           </div>
           <Table
             phoneCards
             caption={t('Maps')}
             rows={maps}
-            rowKey={(m) => m.name}
+            rowKey={(m) => m.key}
             empty={t('No maps sent yet.')}
             columns={[
               {
@@ -992,51 +1051,60 @@ function MapsTab() {
                 header: t('Map'),
                 cell: (m) => (
                   <span className="admin-map-name">
-                    {m.active && <MapPreview name={m.name} label={m.title} thumb />}
+                    <MapPreview name={m.key} label={m.title} thumb revision={m.activeRevision ?? undefined} />
                     <span>
-                      <strong>{m.name}</strong>
+                      <strong>{m.title}</strong>
                       <br />
                       <span className="admin-muted">
-                        {m.title} · {m.author || '—'}
+                        {m.key} · {m.author || '—'} · {m.origin === 'native' ? t('game') : m.origin === 'import' ? t('imported') : t('panel')}
                       </span>
                     </span>
                   </span>
                 ),
               },
               { key: 'size', header: t('Size'), cell: (m) => `${m.width}×${m.height}`, align: 'end' },
-              { key: 'version', header: t('Version'), cell: (m) => (m.active ? m.version : <Badge>{t('inactive')}</Badge>), align: 'end' },
-              { key: 'by', header: t('By'), cell: (m) => m.updatedBy ?? '—' },
+              { key: 'revision', header: t('Revision'), cell: (m) => `${m.activeRevision ?? '—'} / ${m.revisions}`, align: 'end' },
+              { key: 'playable', header: t('Playable'), cell: (m) => (m.playable ? t('yes') : <Badge>{t('inactive')}</Badge>) },
+              { key: 'rotations', header: t('Rotations'), cell: (m) => rotationsOf(m.key).map((k) => (k === 'casual' ? 'Casual' : k.slice(7))).join(', ') || '—' },
               {
                 key: 'actions',
                 header: '',
                 align: 'end',
-                cell: (m) =>
-                  m.active && (
-                    <span className="admin-row-actions">
-                      {rotations.data && !inCasual(m.name) && (
-                        <Button variant="ghost" onClick={() => void add(m.name, ['casual'])}>
-                          {t('Add to Casual')}
-                        </Button>
-                      )}
-                      {rotations.data && !inRanked(m.name) && (
-                        <Button variant="ghost" onClick={() => void add(m.name, RANKED_KEYS)}>
-                          {t('Add to Ranked')}
-                        </Button>
-                      )}
-                      <Button variant="danger" onClick={() => void remove(m.name)}>
+                cell: (m) => (
+                  <span className="admin-row-actions">
+                    <Button variant="ghost" onClick={() => setHistory(m)}>
+                      {t('History')}
+                    </Button>
+                    {m.playable && rotations.data && !inCasual(m.key) && (
+                      <Button variant="ghost" onClick={() => void add(m.key, ['casual'])}>
+                        {t('Add to Casual')}
+                      </Button>
+                    )}
+                    {m.playable && rotations.data && !inRanked(m.key) && (
+                      <Button variant="ghost" onClick={() => void add(m.key, RANKED_KEYS)}>
+                        {t('Add to Ranked')}
+                      </Button>
+                    )}
+                    {m.playable ? (
+                      <Button variant="danger" onClick={() => void setPlayable(m, false)}>
                         {t('Deactivate')}
                       </Button>
-                    </span>
-                  ),
+                    ) : (
+                      <Button variant="ghost" onClick={() => void setPlayable(m, true)}>
+                        {t('Activate')}
+                      </Button>
+                    )}
+                  </span>
+                ),
               },
             ]}
           />
         </div>
       </div>
+      {history && <MapHistory map={history} onClose={() => setHistory(null)} onChanged={() => list.reload()} />}
     </section>
   );
 }
-
 
 interface RotationRow {
   key: string;
@@ -1075,7 +1143,7 @@ const ROTATION_FORMAT_KEYS = RANKED_FORMATS.map((f) => `ranked:${f}`);
 function RotationsTab({ canEdit }: { canEdit: boolean }) {
   const { t } = usePrefs();
   const list = useLoad<RotationsData>('/admin/rotations');
-  const panel = useLoad<{ maps: PanelMapRow[] }>('/admin/maps');
+  const panel = useLoad<{ maps: CatalogRow[] }>('/admin/maps');
   const [status, setStatus] = useState<{ text?: string; error?: string }>({});
   const [mode, setMode] = useState<'casual' | 'ranked'>('casual');
   const [format, setFormat] = useState<RankedFormat>(RANKED_FORMATS[0]);
@@ -1086,7 +1154,7 @@ function RotationsTab({ canEdit }: { canEdit: boolean }) {
   const marked = current(key);
   const all = [...new Set([...(list.data?.catalog ?? []), ...['casual', ...ROTATION_FORMAT_KEYS].flatMap(current)])].sort((a, b) => a.localeCompare(b));
   // mapa publicado que ainda não está em nenhuma rotação
-  const fresh = new Set((panel.data?.maps ?? []).filter((m) => m.active && !['casual', ...ROTATION_FORMAT_KEYS].some((k) => inUse(k).includes(m.name))).map((m) => m.name));
+  const fresh = new Set((panel.data?.maps ?? []).filter((m) => m.playable && m.origin !== 'native' && !['casual', ...ROTATION_FORMAT_KEYS].some((k) => inUse(k).includes(m.key))).map((m) => m.key));
   const set = (maps: string[]) => setDrafts({ ...drafts, [key]: maps });
   // a ordem da rotação é mantida: mapa marcado entra no fim
   const toggle = (map: string) => set(marked.includes(map) ? marked.filter((m) => m !== map) : [...marked, map]);

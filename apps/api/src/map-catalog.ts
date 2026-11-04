@@ -238,3 +238,83 @@ export async function seedMaps(db: Db, nativeDir?: string): Promise<SeedReport> 
   });
   return report;
 }
+
+/**
+ * Título para comparar (OG-557): sem caixa, acentos, espaços, pontuação nem sufixo numérico — só para
+ * **avisar** de possível duplicação; nunca liga mapas sozinho (RN-MRV-03).
+ */
+export function titleKey(title: string): string {
+  return title
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, '')
+    .replace(/[^a-z0-9]/g, '')
+    .replace(/\d+$/, '');
+}
+
+/** Mapas com título ou chave parecidos com o título (aviso no envio de mapa novo). */
+export async function similarMaps(db: Conn, title: string): Promise<{ key: string; title: string }[]> {
+  const want = titleKey(title);
+  if (!want) return [];
+  const rows = await catalogRows(db);
+  return rows.filter((m) => titleKey(m.title) === want || titleKey(m.key) === want).map((m) => ({ key: m.key, title: m.title }));
+}
+
+/** Chave nova a partir do título (OG-557): caracteres do formato de nome, única sem caixa; " 2", " 3"... se repetir. */
+export async function newMapKey(db: Conn, title: string, reserved: readonly string[] = []): Promise<string> {
+  const base =
+    title
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^A-Za-z0-9 _().,'+-]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/^[^A-Za-z0-9]+/, '')
+      .slice(0, 58) || 'map';
+  const taken = new Set([...(await db.select({ key: maps.key }).from(maps)).map((m) => m.key.toLowerCase()), ...(await db.select({ alias: mapAliases.alias }).from(mapAliases)).map((a) => a.alias.toLowerCase()), ...reserved.map((r) => r.toLowerCase())]);
+  const reservedName = (k: string) => /^mapgen_\d+$/.test(k) || k.startsWith('random_map');
+  for (let n = 1; ; n++) {
+    const key = n === 1 ? base : `${base} ${n}`;
+    if (!taken.has(key.toLowerCase()) && !reservedName(key)) return key;
+  }
+}
+
+/** Uma linha por mapa no painel (OG-558): revisão ativa, total de revisões, jogável e quem publicou a ativa. */
+export async function catalogRows(db: Conn) {
+  const rows = await db.execute<{
+    key: string;
+    origin: MapOrigin;
+    playable: boolean;
+    active_revision: number | null;
+    revisions: number;
+    title: string | null;
+    author: string | null;
+    width: number | null;
+    height: number | null;
+    crc: number | null;
+    published_by: string | null;
+    published_at: Date | string | null;
+  }>(sql`
+    SELECT mp.key, mp.origin, mp.playable, mp.active_revision,
+      (SELECT count(*)::int FROM map_revisions x WHERE x.map_id = mp.id) AS revisions,
+      r.title, r.author, r.width, r.height, r.crc, u.username AS published_by, r.published_at
+    FROM maps mp
+    LEFT JOIN map_revisions r ON r.map_id = mp.id AND r.number = mp.active_revision
+    LEFT JOIN users u ON u.id = r.published_by
+    ORDER BY lower(coalesce(r.title, mp.key)), mp.key`);
+  return rows.map((r) => ({
+    key: r.key,
+    origin: r.origin,
+    playable: r.playable,
+    activeRevision: r.active_revision,
+    revisions: Number(r.revisions),
+    title: r.title ?? r.key,
+    author: r.author ?? '',
+    width: r.width ?? 0,
+    height: r.height ?? 0,
+    crc: r.crc ?? 0,
+    publishedBy: r.published_by,
+    publishedAt: r.published_at ? new Date(r.published_at).toISOString() : null,
+  }));
+}

@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S60 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-552 |
 | Regras de negócio | RN-MRV-01, RN-MRV-07, RN-MRV-08 |
 | Skills | `outgun-card-workflow` |
@@ -30,8 +30,11 @@ Como moderador, quero subir um TXT e escolher se é um mapa novo ou uma revisão
 - Título exibido (P2): sempre o `P title` da revisão ativa, em todo o jogo.
 
 ## Critérios de aceite
-- [ ] Moderador publica revisão de um nativo e de um mapa de outro moderador; a autoria (`P author`) fica a do arquivo e o publicador fica registrado.
-- [ ] Duas publicações concorrentes sobre a mesma base: a segunda recebe o conflito.
-- [ ] Subir "Attack 2" não vira revisão de "Attack" (só aviso).
+- [x] Moderador publica revisão de um nativo e de um mapa de outro moderador; a autoria (`P author`) fica a do arquivo e o publicador fica registrado.
+- [x] Duas publicações concorrentes sobre a mesma base: a segunda recebe o conflito.
+- [x] Subir "Attack 2" não vira revisão de "Attack" (só aviso).
 
 ## Notas de implementação
+- Rotas novas: `POST /admin/maps` (mapa novo; chave sai do `P title`, única sem caixa, " 2" se repetir) e `POST /admin/maps/:key/revisions` (exige `baseRevision`; 409 `newer_revision` com quem/quando se a ativa não é a base, `force` para publicar mesmo assim). `/admin/maps/check` sem nome, com prévia, SHA-256 e aviso de título parecido (`titleKey`: sem caixa/acentos/espaços/parênteses/sufixo numérico). Rotas antigas `PUT/DELETE /admin/maps/:name` saíram; `panel_maps` só leitura.
+- UTF-8: o painel já decodificava UTF-8 válido; agora avisa que converteu para Latin-1. Auditoria grava mapa, revisão, base, SHA-256 e autor.
+- Rotações validam pelo catálogo (`playableMaps`), com a pasta dos servidores de reserva se a semente ainda não rodou.

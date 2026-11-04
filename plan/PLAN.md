@@ -1038,8 +1038,8 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-554](cards/OG-554-replays-com-o-mapa-exato.md) | Replays com o mapa exato da partida (inclusive nativos) | E17 | 3 | Must | S60 | OG-552, OG-553 | Em revisão |
 | [OG-555](cards/OG-555-partida-ligada-a-revisao.md) | Partida ligada à revisão: relatório e miniatura históricos | E17 | 3 | Must | S60 | OG-552, OG-553 | Em revisão |
 | [OG-556](cards/OG-556-estatisticas-pela-identidade-do-mapa.md) | Estatísticas, filtros e marcos pela identidade do mapa | E17 | 3 | Should | S60 | OG-555 | Em revisão |
-| [OG-557](cards/OG-557-painel-novo-mapa-ou-revisao.md) | Painel: novo mapa ou nova revisão, sem campo de nome | E17 | 3 | Must | S60 | OG-552 | Pronto |
-| [OG-558](cards/OG-558-painel-catalogo-historico-comparar.md) | Painel: catálogo único, histórico, baixar, comparar e restaurar | E17 | 3 | Must | S60 | OG-557 | Pronto |
+| [OG-557](cards/OG-557-painel-novo-mapa-ou-revisao.md) | Painel: novo mapa ou nova revisão, sem campo de nome | E17 | 3 | Must | S60 | OG-552 | Em revisão |
+| [OG-558](cards/OG-558-painel-catalogo-historico-comparar.md) | Painel: catálogo único, histórico, baixar, comparar e restaurar | E17 | 3 | Must | S60 | OG-557 | Em revisão |
 | [OG-559](cards/OG-559-importacao-pacote-nosferatu.md) | Importação do pacote de Nosferatu (14 revisões + 9 mapas novos) | E17 | 3 | Must | S60 | OG-552, OG-557 | Pronto |
 | [OG-560](cards/OG-560-conciliar-duplicatas-de-mapas.md) | Conciliar duplicatas já existentes (mooca × Mooca, Pari2) | E17 | 1 | Should | S60 | OG-552 | Pronto |
 | [OG-561](cards/OG-561-backup-ensaio-implantacao-mapas.md) | Backup, ensaio da migração e implantação recuperável dos mapas | E17 | 3 | Must | S60 | OG-552, OG-553, OG-554, OG-555, OG-559 | Pronto |

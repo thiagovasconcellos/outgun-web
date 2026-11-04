@@ -2707,3 +2707,10 @@
   justify-content: center;
   margin: 0;
 }
+
+/* Comparação de duas revisões de um mapa (OG-558): miniaturas lado a lado */
+.admin-map-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
