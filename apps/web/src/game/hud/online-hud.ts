@@ -2,6 +2,7 @@
 // Estado do HUD da partida no servidor: junta a sessão (`@outgun/netcode`), o mundo extrapolado, as
 // mensagens e o chat (`calculateVisibilities`, `ConstDisappearedFlagIterator`, destaque ao nascer;
 // src/guiclient.cpp:378-389, 3735-3858).
+import { AIM_TRAINING } from '@outgun/settings';
 import type { ClientSession } from '@outgun/netcode';
 import { message } from '@outgun/protocol';
 import { CarriedFlag, type WorldCoords, type WorldState } from '@outgun/sim';
@@ -111,13 +112,21 @@ export class OnlineHud {
    * Sala de treino (OG-490, RN-UI-05): a mesma caixa da pausa, só na contagem e no resultado da
    * tentativa; com a tentativa em jogo, nada na tela.
    */
+  /** Treino de mira (OG-569): "Tiros 35/70 · Precisão 92% (meta 90%)". */
+  private aimLine(aim: { shots: number; hits: number }): string {
+    const pct = aim.shots === 0 ? 0 : Math.floor((100 * aim.hits) / aim.shots);
+    return this.t('Shots $1/$2 - accuracy $3% (goal $4%)', String(aim.shots), String(AIM_TRAINING.shots), String(pct), String(AIM_TRAINING.accuracy));
+  }
+
   private trainingOverlay(): NonNullable<HudState['pause']> | null {
     const tr = this.session.training;
     if (!tr || tr.phase === 'playing') return null;
     const t = this.t;
-    const mode = { attack: t('Attack training'), defense: t('Defense training'), escape: t('Escape training'), capture: t('Capture training') }[tr.mode];
-    const footer = t('Successes: $1 of $2 - bots level $3', String(tr.successes), String(tr.attempts), String(tr.level));
-    if (tr.phase === 'countdown') return { title: mode, detail: t('Starting in $1', String(tr.seconds)), options: null, footer, hint: null };
+    const mode = { attack: t('Attack training'), defense: t('Defense training'), escape: t('Escape training'), capture: t('Capture training'), aim: t('Aim training') }[tr.mode];
+    const aim = tr.mode === 'aim' ? this.session.trainingAim : null;
+    const side = aim ? (aim.side === 0 ? t('from the left') : t('from the right')) : '';
+    const footer = tr.mode === 'aim' ? t('Successes: $1 of $2', String(tr.successes), String(tr.attempts)) : t('Successes: $1 of $2 - bots level $3', String(tr.successes), String(tr.attempts), String(tr.level));
+    if (tr.phase === 'countdown') return { title: mode, detail: `${t('Starting in $1', String(tr.seconds))} ${side}`.trim(), options: null, footer, hint: tr.mode === 'aim' ? t('Goal: $1 shots and $2% accuracy in $3 s.', String(AIM_TRAINING.shots), String(AIM_TRAINING.accuracy), String(AIM_TRAINING.seconds)) : null };
     const reason = {
       none: '',
       died: t('You died.'),
@@ -128,7 +137,11 @@ export class OnlineHud {
       delivered: t('The flag was delivered.'),
       returned: t('Flag returned.'),
       timeout: t('Out of time.'),
+      aimGoal: t('Goal reached: switching sides.'),
+      aimShots: t('Fewer than $1 shots.', String(AIM_TRAINING.shots)),
+      aimAccuracy: t('Accuracy below $1%.', String(AIM_TRAINING.accuracy)),
     }[tr.reason];
+    if (tr.mode === 'aim') return { title: tr.result === 'success' ? t('SUCCESS') : t('FAILED'), detail: reason, options: null, footer, hint: aim ? this.aimLine(aim) : null };
     const time = t('Time: $1 s', (tr.tenths / 10).toFixed(1));
     const level = tr.levelChange === 'none' ? null : t('Bots now at level $1', String(tr.level));
     return { title: tr.result === 'success' ? t('SUCCESS') : t('FAILED'), detail: `${reason} ${time}`.trim(), options: null, footer, hint: level };
@@ -334,6 +347,8 @@ export class OnlineHud {
     this.scoreOrder = ordered.map((p) => p.pid);
     const hiddenGame = s.skipped || s.gameOver !== null || !opts.fd;
     const playing = players.length > 1;
+    // Treino de mira em jogo (OG-569): o tempo da tentativa no relógio e tiros/precisão logo abaixo
+    const aim = s.training?.mode === 'aim' && s.training.phase === 'playing' ? s.trainingAim : null;
     // celular: o chat fica numa página própria (deslizando o minimapa) e mostra as últimas linhas, sem sumir
     const allChat = this.showAll || opts.screen.mode === 'celular';
     const chatCount = chatLines(opts.screen, allChat);
@@ -365,7 +380,8 @@ export class OnlineHud {
             pos: coords(meP.pos),
           }
         : null,
-      mapTime: s.mapEnd !== null && s.gameOver === null && playing ? { seconds: s.mapEnd - Math.trunc(time), extra: s.extraTime } : null,
+      mapTime: aim ? { seconds: Math.ceil(aim.tenthsLeft / 10), extra: false } : s.mapEnd !== null && s.gameOver === null && playing ? { seconds: s.mapEnd - Math.trunc(time), extra: s.extraTime } : null,
+      aimLine: aim ? this.aimLine(aim) : null,
       fps: opts.fps,
       chat: this.feed.visible(chatCount, time, allChat, opts.screen.chatChars),
       prompt: chatPrompt(this.chat, this.t),

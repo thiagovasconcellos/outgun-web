@@ -106,6 +106,8 @@ export interface HudState {
     pos: WorldCoords;
   } | null;
   readonly mapTime: { seconds: number; extra: boolean } | null;
+  /** Treino de mira (OG-569): tiros e precisão, numa linha logo abaixo do tempo (nada do HUD se move). */
+  readonly aimLine?: string | null;
   readonly fps: number;
   readonly chat: readonly FeedLine[];
   readonly prompt: { text: string; cursor: number };
@@ -272,6 +274,7 @@ export class HudRenderer {
         const sec = Math.max(0, s.mapTime.seconds);
         const str = `${s.mapTime.extra ? this.t('ET') + ' ' : ''}${Math.trunc(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
         this.text(str, L.timeX - this.fw(str), L.timeY, this.c('map_time'));
+        if (s.aimLine) this.text(s.aimLine, L.timeX - this.fw(s.aimLine), L.timeY + fh + 2 * L.ui, this.c('map_time'));
       }
 
       if (s.self && phone) {

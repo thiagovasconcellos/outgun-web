@@ -174,6 +174,8 @@ export class ClientSession {
   pause: MessageOf<'pauseState'> | null = null;
   /** Sala de treino (OG-490): último `trainingState`; null fora do treino. */
   training: MessageOf<'trainingState'> | null = null;
+  /** Treino de mira (OG-569): tiros, acertos, tempo e lado da tentativa (`trainingAim`). */
+  trainingAim: MessageOf<'trainingAim'> | null = null;
   mapVoteCounts: number[] = [];
   currentMapIndex = -1;
   /** Preset da sala (`serverSettings`). */
@@ -446,6 +448,9 @@ export class ClientSession {
         break;
       case 'trainingState':
         this.training = m;
+        break;
+      case 'trainingAim':
+        this.trainingAim = m;
         break;
       case 'currentMap':
         this.currentMapIndex = m.mapIndex;

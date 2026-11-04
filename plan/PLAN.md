@@ -1050,7 +1050,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-566](cards/OG-566-vultos-de-jogadores-mortos.md) | "Vultos" de jogadores mortos durante a partida (issue #33) | E11 | 2 | Should | — | — | Backlog |
 | [OG-567](cards/OG-567-toque-de-tiro-durante-a-recarga.md) | Toque rápido de tiro durante a recarga se perde (issue #33; decisão do PO) | E11 | 2 | Should | — | — | Backlog |
 | [OG-568](cards/OG-568-treino-de-mira.md) | Treino de mira: 1 minuto atirando no bot preso no T4 (70 tiros, 90 % de precisão, troca de lado no sucesso) | E11 | 5 | Must | S60 | OG-490, OG-491, OG-492, OG-498 | Em revisão |
-| [OG-569](cards/OG-569-treino-de-mira-no-cliente.md) | Treino de mira no cliente: preset na sala privada e placar da tentativa | E11 | 3 | Must | S60 | OG-568 | Em andamento |
+| [OG-569](cards/OG-569-treino-de-mira-no-cliente.md) | Treino de mira no cliente: preset na sala privada e placar da tentativa | E11 | 3 | Must | S60 | OG-568 | Em revisão |
 
 **Total:** 406 cards, 1280 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 337 cards, 985 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 

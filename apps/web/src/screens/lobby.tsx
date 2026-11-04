@@ -11,6 +11,7 @@ import {
   TRAINING_LIMITS,
   TRAINING_MAPS,
   TRAINING_MODES_LIST,
+  AIM_TRAINING_MAP,
   type TrainingModeId,
 } from '@outgun/settings';
 import { useEffect, useMemo, useState } from 'react';
@@ -61,6 +62,7 @@ export const TRAINING_MODE_NAMES: Record<TrainingModeId, string> = {
   defense: 'Defense',
   escape: 'Escape',
   capture: 'Capture',
+  aim: 'Aim',
 };
 /** O que os bots do outro lado são em cada modo (rótulo da quantidade). */
 const TRAINING_BOTS_LABEL: Record<TrainingModeId, string> = {
@@ -68,6 +70,7 @@ const TRAINING_BOTS_LABEL: Record<TrainingModeId, string> = {
   defense: 'Attackers',
   escape: 'Chasers',
   capture: 'Maximum escort',
+  aim: 'Targets',
 };
 const TRAINING_HINT: Record<TrainingModeId, string> = {
   attack: 'Get into the defended base and leave the base room with the flag. The bots only defend.',
@@ -75,6 +78,7 @@ const TRAINING_HINT: Record<TrainingModeId, string> = {
   escape:
     'Start with the enemy flag in their base and capture it at yours, with chasers on your tail.',
   capture: 'A bot takes your flag home, with an escort: catch the carrier and return the flag.',
+  aim: '1 minute shooting the bot caged in the middle of T4: at least 70 shots and 90% accuracy. Hit the goal and you switch sides.',
 };
 const TRAINING_PREFIX = 'training:';
 
@@ -487,7 +491,8 @@ export function CreateRoomScreen() {
           name: name.trim(),
           preset: 'classic',
           ...(password ? { password } : {}),
-          maps: [trainingMap],
+          // Treino de mira (OG-569): mapa fixo T4
+          maps: [trainingMode === 'aim' ? AIM_TRAINING_MAP : trainingMap],
           training: clampTraining({ ...training, mode: trainingMode }),
         }
       : {
@@ -562,7 +567,15 @@ export function CreateRoomScreen() {
           onChange={setPassword}
           maxLength={15}
         />
-        {trainingMode ? (
+        {trainingMode === 'aim' ? (
+          // Treino de mira (OG-569): T4 fixo, um alvo, sem nível nem power-ups; só o início
+          <ToggleField
+            label={t('Same start every attempt')}
+            checked={training.sameStart}
+            onChange={(v) => setTraining({ ...training, sameStart: v })}
+            hint={t('The aim training is solo: no guests in this room.')}
+          />
+        ) : trainingMode ? (
           <>
             <ChoiceField
               label={t('Map')}
@@ -660,7 +673,7 @@ export function CreateRoomScreen() {
           </>
         )}
       </Form>
-      {trainingMode && <MapPreview name={trainingMap} label={trainingMap} thumb />}
+      {trainingMode && trainingMode !== 'aim' && <MapPreview name={trainingMap} label={trainingMap} thumb />}
       {!trainingMode && (
         <details className="lobby-maps" onToggle={(e) => setMapsOpen(e.currentTarget.open)}>
           <summary>
