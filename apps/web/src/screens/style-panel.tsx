@@ -23,7 +23,8 @@ interface SeasonRef {
 
 export interface StyleResponse {
   username: string;
-  maps: { map: string; title: string; games: number }[];
+  /** Revisões jogadas de cada mapa (OG-556). */
+  maps: { map: string; title: string; games: number; revisions: number[] }[];
   fewOnMap: boolean;
   clanTag: string | null;
   clan: { tag: string; name: string; color: string | null } | null;
@@ -125,11 +126,13 @@ export function StylePanel({ name, format, seasons, me }: { name: string; format
   const [period, setPeriod] = useStylePeriod();
   const [vs, setVs] = useTextParam('vs');
   const [map, setMap] = useTextParam('map');
+  const [revision, setRevision] = useTextParam('rev');
   const [typed, setTyped] = useState('');
   // sombra de referência (OG-476): nenhuma, mediana do clã do jogador ou do top 10 do período
   const [reference, setReference] = useState<'' | 'clan' | 'top10'>('');
   const params = statScope(period, format);
   if (map) params.set('map', map);
+  if (map && revision) params.set('mapRevision', revision);
   const scope = params.toString();
   const res = useApi<StyleResponse>(`/players/${encodeURIComponent(name)}/style?${scope}${reference && !vs ? `&reference=${reference}` : ''}`, true, 'matches');
   const d = res.data;
@@ -153,8 +156,15 @@ export function StylePanel({ name, format, seasons, me }: { name: string; format
           options={[{ value: 'current', label: t('Current season') }, ...past.map((x) => ({ value: String(x.id), label: x.name })), { value: 'all', label: t('All time') }]}
         />
         {(d?.maps.length ?? 0) > 0 && (
-          <ChoiceField label={t('Map')} value={map} onChange={setMap} options={[{ value: '', label: t('All maps') }, ...(d?.maps ?? []).map((m) => ({ value: m.map, label: m.title }))]} />
+          <ChoiceField label={t('Map')} value={map} onChange={(v) => { setMap(v); setRevision(''); }} options={[{ value: '', label: t('All maps') }, ...(d?.maps ?? []).map((m) => ({ value: m.map, label: m.title }))]} />
         )}
+        {(() => {
+          // revisões do mapa (OG-556): juntas por padrão; o filtro separa uma
+          const revs = d?.maps.find((m) => m.map === map)?.revisions ?? [];
+          return revs.length > 1 ? (
+            <ChoiceField label={t('Revision')} value={revision} onChange={setRevision} options={[{ value: '', label: t('All revisions') }, ...revs.map((n) => ({ value: String(n), label: t('Revision $1', String(n)) }))]} />
+          ) : null;
+        })()}
         <TextField label={t('Compare with')} value={typed} onChange={setTyped} maxLength={32} placeholder={t('Player name')} onEnter={() => typed.trim() && compare(typed)} />
         <Button disabled={!typed.trim()} onClick={() => compare(typed)}>
           {t('Compare')}

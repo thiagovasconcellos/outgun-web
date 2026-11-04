@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 3 pts |
 | Sprint | S60 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-555 |
 | Regras de negócio | RN-MRV-06 |
 | Skills | `outgun-card-workflow` |
@@ -27,8 +27,11 @@ Como jogador, quero ver "Larhi" uma vez só nos filtros e nas contagens, juntand
 - Nada de recalcular rating/OpenSkill.
 
 ## Critérios de aceite
-- [ ] Filtro "Larhi" junta original e revisão; filtro de revisão separa.
-- [ ] Antes/depois numa cópia do banco: partidas, participações, frags, capturas, ratings e leaderboards iguais.
+- [x] Filtro "Larhi" junta original e revisão; filtro de revisão separa.
+- [x] Antes/depois numa cópia do banco: partidas, participações, frags, capturas, ratings e leaderboards iguais.
 
 ## Notas de implementação
+- A chave do mapa não muda entre revisões, então `matches.map` já juntava as revisões; o que muda são os nomes antigos (alias, ex. `Mooca` → `mooca`). `mapFilterSql` (família por `map_id`, alias e o nome nas partidas sem catálogo) e `MATCH_MAP_KEY` em `map-catalog.ts`.
+- Radar: filtro por família + `mapRevision` opcional; seletor "Revisão" só aparece quando o jogador jogou mais de uma revisão do mapa. Marcos de mapas distintos contam pela chave da família (P6); nada é retirado nem recalculado (rating intocado).
+- Não há estatística por lado e por mapa hoje, então não há o que separar nas bases trocadas.
 - Comunidade (2026-11-02): P5 = por mapa (revisões juntas) com filtro opcional por revisão; P6 = Larhi original e revisado contam como um mapa só nos marcos.

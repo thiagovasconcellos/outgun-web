@@ -79,6 +79,8 @@ export function styleRoutes({ database }: AppDeps): FastifyPluginAsyncTypebox {
             reference: Type.Optional(Type.Union([Type.Literal('clan'), Type.Literal('top10')])),
             /** Arquivo do mapa (OG-479): percentil contra quem jogou aquele mapa no período. */
             map: Type.Optional(Type.String({ minLength: 1, maxLength: 64 })),
+            /** Revisão do mapa (OG-556): sem ela, todas as revisões juntas. */
+            mapRevision: Type.Optional(Type.Integer({ minimum: 1 })),
           }),
           response: {
             200: Type.Object({
@@ -94,7 +96,7 @@ export function styleRoutes({ database }: AppDeps): FastifyPluginAsyncTypebox {
               /** Temporada anterior à pedida (contorno tracejado); null em "sempre" ou sem temporada anterior. */
               previous: Type.Union([Type.Null(), Type.Object({ season: Season, radar: StyleRadarSchema })]),
               /** Mapas das ranqueadas do jogador no período (sem o filtro de mapa), para o seletor. */
-              maps: Type.Array(Type.Object({ map: Type.String(), title: Type.String(), games: Type.Integer() })),
+              maps: Type.Array(Type.Object({ map: Type.String(), title: Type.String(), games: Type.Integer(), revisions: Type.Array(Type.Integer()) })),
               /** Com mapa: menos de 3 ativos nele no período, sem base para o percentil. */
               fewOnMap: Type.Boolean(),
               /** Eixos com contadores novos (RN-LDB-03): data da primeira ranqueada que os tem. */
@@ -112,11 +114,12 @@ export function styleRoutes({ database }: AppDeps): FastifyPluginAsyncTypebox {
         if (season === undefined) return reply.code(404).send({ error: 'season_not_found', message: 'season not found' });
         const fmt: RankedFormat | null = format ?? null;
         const map = request.query.map ?? null;
-        const radar = await playerRadar(db, user.id, { seasonId: season?.id ?? null, format: fmt, map });
+        const mapRevision = map ? (request.query.mapRevision ?? null) : null;
+        const radar = await playerRadar(db, user.id, { seasonId: season?.id ?? null, format: fmt, map, mapRevision });
         const [before] = season ? await db.select().from(seasons).where(lt(seasons.startsAt, season.startsAt)).orderBy(desc(seasons.startsAt)).limit(1) : [];
-        const previous = before ? { season: seasonOut(before), radar: await playerRadar(db, user.id, { seasonId: before.id, format: fmt, map }) } : null;
+        const previous = before ? { season: seasonOut(before), radar: await playerRadar(db, user.id, { seasonId: before.id, format: fmt, map, mapRevision }) } : null;
         const [defense, team] = await Promise.all([statSince(db, 'defenses'), statSince(db, 'trades')]);
-        const scope = { seasonId: season?.id ?? null, format: fmt, map };
+        const scope = { seasonId: season?.id ?? null, format: fmt, map, mapRevision };
         const maps = await playerMaps(db, user.id, { seasonId: scope.seasonId, format: fmt });
         const fewOnMap = !!map && radar.population < MAP_MINIMUM_POPULATION;
         let reference: { kind: string; members: number; axes: { axis: StyleAxis; percentile: number }[] } | null = null;

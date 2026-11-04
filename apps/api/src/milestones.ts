@@ -6,6 +6,7 @@
 // OG-390 também mortes, tempo jogado, placar sofrido e os stats da partida (jsonb inteiro); desde o
 // OG-391, modo, formato, mapa, dia, companheiros, série e os eventos. Os eventos são pesados: ao fim
 // de cada partida só os dela (os marcos de evento são de uma partida só); o retroativo lê todos.
+import { MATCH_MAP_KEY } from './map-catalog.js';
 import { MILESTONES, milestoneProgress, milestonesFrom, type Bilingual, type MilestoneEvent, type MilestoneMatch } from '@outgun/content';
 import { SECRET_MILESTONES, secretMilestonesFrom } from '@outgun/content/secret';
 import { sql } from 'drizzle-orm';
@@ -64,7 +65,8 @@ async function histories(tx: Db | Tx, userIds: readonly string[], scope: EventSc
       CASE WHEN mp.team = 0 THEN m.red_score ELSE m.blue_score END AS scored,
       coalesce(m.clan_war AND rs.best_of >= 3 AND rs.finished_at IS NOT NULL AND m.game_no = rs.games AND rs.winner = mp.team, false) AS series_won,
       coalesce(least(rs.red_wins, rs.blue_wins) = 0, false) AS sweep,
-      m.ranked, m.format, m.map, mp.team, m.series_id, rs.best_of,
+      -- família do mapa (OG-556, P6): revisões e nomes antigos contam como um mapa só
+      m.ranked, m.format, ${MATCH_MAP_KEY} AS map, mp.team, m.series_id, rs.best_of,
       to_char(m.ended_at AT TIME ZONE 'America/Sao_Paulo', 'YYYY-MM-DD') AS day,
       extract(hour FROM m.ended_at AT TIME ZONE 'America/Sao_Paulo')::int AS hour,
       (m.details ->> 'mapTime')::int AS map_time,

@@ -8,7 +8,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, sql, type SQL } from 'drizzle-orm';
 import type { Db } from './db/client.js';
 import { mapAliases, mapRevisions, maps, panelMaps, panelMapVersions } from './db/schema.js';
 import { checkMapText } from './panel-maps.js';
@@ -144,6 +144,20 @@ export function nativeMapsDir(): string | undefined {
   const dir = process.env.MAPS_DIR ?? fileURLToPath(new URL('../../../_legacy/maps', import.meta.url));
   return existsSync(dir) ? dir : undefined;
 }
+
+/**
+ * Filtro de partidas (alias `m`) pela família do mapa (OG-556, RN-MRV-06): todas as revisões juntas,
+ * pela chave ou por um nome antigo; partidas sem `map_id` (gerados) caem no nome. Com `revision`, só
+ * as partidas daquela revisão.
+ */
+export function mapFilterSql(map: string, revision?: number | null): SQL {
+  const family = sql`(SELECT id FROM maps WHERE key = ${map} UNION ALL SELECT map_id FROM map_aliases WHERE lower(alias) = lower(${map}) LIMIT 1)`;
+  const base = sql`(m.map_id = ${family} OR (m.map_id IS NULL AND m.map = ${map}))`;
+  return revision ? sql`${base} AND m.map_revision_id = (SELECT r.id FROM map_revisions r WHERE r.map_id = ${family} AND r.number = ${revision})` : base;
+}
+
+/** Chave da família de uma partida (alias `m`): a do catálogo, ou o nome gravado (OG-556). */
+export const MATCH_MAP_KEY = sql`coalesce((SELECT mk.key FROM maps mk WHERE mk.id = m.map_id), m.map)`;
 
 /** Mapa e revisão de uma partida nova (OG-555): pela chave e o número que o game server mandou. */
 export async function matchMapRefs(db: Conn, key: string, revision: number | undefined): Promise<{ mapId: number | null; mapRevisionId: number | null }> {
