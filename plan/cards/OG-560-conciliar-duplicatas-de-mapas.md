@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 1 pts |
 | Sprint | S60 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-552 |
 | Regras de negócio | RN-MRV-03 |
 | Skills | `outgun-card-workflow` |
@@ -30,7 +30,9 @@ Como moderador, quero que mapas que já entraram duplicados no painel passem a c
 - Executar antes do OG-556 contar marcos.
 
 ## Critérios de aceite
-- [ ] Depois da conciliação, `mooca`/`Mooca` contam como um mapa nos filtros e marcos; partidas e replays dos dois continuam abrindo.
-- [ ] A revisão ativa de cada família conciliada é a de Nosferatu; as versões duplicadas aparecem no histórico.
+- [x] Depois da conciliação, `mooca`/`Mooca` contam como um mapa nos filtros e marcos; partidas e replays dos dois continuam abrindo.
+- [x] A revisão ativa de cada família conciliada é a de Nosferatu; as versões duplicadas aparecem no histórico.
 
 ## Notas de implementação
+- Na mesma transação do OG-559, antes das revisões de Nosferatu: mapa do painel com a chave sem caixa (ou o título normalizado, sem cortar sufixo numérico) igual a um alvo do pacote é absorvido: revisões movidas para a família com número seguinte (data e publicador originais; o gatilho do OG-552 deixa mudar só `map_id`/`number`), alias, `matches.map_id` e rotações trocados. A identidade vazia sai da tabela `maps` (nenhuma revisão se apaga). A semente pula nomes do painel que viraram alias.
+- Duplicatas fora do pacote: só no relatório (`otherDuplicates`).

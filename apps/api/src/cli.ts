@@ -8,6 +8,8 @@ import { connect } from './db/client.js';
 import { appliedVersions, loadMigrations, migrateDown, migrateUp } from './db/migrate.js';
 import { ensureAppRole, ensureMonitorRole } from './db/app-role.js';
 import { seed } from './db/seed.js';
+import { importMaps } from './map-import.js';
+import { fileURLToPath } from 'node:url';
 import { nativeMapsDir, seedMaps } from './map-catalog.js';
 import { backfillMilestones, calibrateMilestones } from './milestones.js';
 import { recloseSeason, startSeason } from './ranking.js';
@@ -135,6 +137,23 @@ try {
       console.error(`conta não encontrada: ${arg1}`);
       process.exitCode = 1;
     } else console.log(`${rows[0]!.username}: ${arg2}`);
+  } else if (command === 'map-import' && arg1) {
+    // OG-559/560: node dist/cli.js map-import PASTA [--dry-run] [--publisher NOME] [--provenance TEXTO]
+    const flags = process.argv.slice(3);
+    const value = (name: string) => {
+      const i = flags.indexOf(name);
+      return i >= 0 ? flags[i + 1] : undefined;
+    };
+    const dir = arg1.startsWith('/') ? arg1 : fileURLToPath(new URL(`../${arg1}`, import.meta.url));
+    const report = await importMaps(database.db, dir, {
+      publisher: value('--publisher') ?? 'Nosf',
+      provenance: value('--provenance') ?? 'import:nosferatu-2026-11',
+      dryRun: flags.includes('--dry-run'),
+    });
+    console.log(JSON.stringify(report, null, 2));
+    console.log(
+      `${report.dryRun ? 'ENSAIO (nada gravado)' : 'GRAVADO'}: ${report.revisions.length} revisões (${report.revisions.filter((r) => r.created).length} novas), ${report.created.length} mapas novos (${report.created.filter((r) => r.created).length} criados), ${report.untouched.length} intocados, ${report.absorbed.length} duplicatas absorvidas, ${report.problems.length} avisos`,
+    );
   } else if (command === 'alert-test') {
     // Um e-mail de teste de cada alerta (OG-313) para ALERT_EMAIL, pelo MAILER do ambiente.
     if (!config.alertEmail) {

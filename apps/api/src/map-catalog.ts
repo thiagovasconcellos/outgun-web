@@ -214,7 +214,9 @@ export async function seedMaps(db: Db, nativeDir?: string): Promise<SeedReport> 
       if (r.created) report.revisions++;
       await tx.update(maps).set({ activeRevision: r.revision.number }).where(eq(maps.id, map.id));
     }
+    const aliases = new Set((await tx.select({ alias: mapAliases.alias }).from(mapAliases)).map((a) => a.alias));
     for (const panel of await tx.select().from(panelMaps).orderBy(asc(panelMaps.name))) {
+      if (aliases.has(panel.name)) continue; // absorvido por outra família (OG-560)
       const { map, created } = await ensureMap(tx, panel.name, 'panel', panel.updatedBy);
       if (created) report.maps++;
       else if (map.origin !== 'panel' || map.activeRevision !== null) continue; // já semeado (ou é outro mapa)

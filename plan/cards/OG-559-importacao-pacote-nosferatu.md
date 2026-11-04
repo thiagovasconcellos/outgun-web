@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S60 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-552, OG-557 |
 | Regras de negócio | RN-MRV-09 |
 | Skills | `outgun-card-workflow` |
@@ -30,9 +30,13 @@ Como comunidade, queremos as 23 versões revisadas por Nosferatu no ar de uma ve
 - `gavea.txt` convertido de UTF-8 para Latin-1 (título "Gávea").
 
 ## Critérios de aceite
-- [ ] `--dry-run` em cópia do banco lista 14 vínculos, 9 novos, 6 intocados e 0 colisões não resolvidas.
-- [ ] Segunda execução não cria nada.
-- [ ] Nova partida em Larhi usa os cantos retos e o nome continua "Larhi".
-- [ ] Os 9 novos aparecem na rotação Casual e em nenhuma rotação Ranked.
+- [x] `--dry-run` em cópia do banco lista 14 vínculos, 9 novos, 6 intocados e 0 colisões não resolvidas.
+- [x] Segunda execução não cria nada.
+- [x] Nova partida em Larhi usa os cantos retos e o nome continua "Larhi".
+- [x] Os 9 novos aparecem na rotação Casual e em nenhuma rotação Ranked.
 
 ## Notas de implementação
+- O importador vive na API (`apps/api/src/map-import.ts`, comando `node dist/cli.js map-import PASTA [--dry-run] [--publisher Nosf]`), porque precisa do catálogo e do banco; `tools/dev/map-import.mjs` é só o atalho local. O pacote (23 TXT + CSV) foi para `apps/api/map-imports/nosferatu-2026-11/` e entra na imagem (`files` do package.json).
+- Vínculo só pela coluna `identificador_nativo` do CSV; chave dos 9 novos = nome do arquivo, como os nativos (`the_small_ud.txt` → `the small ud`). `--dry-run` roda tudo na transação e desfaz. Publicador exato `Nosf`, recusado se não for admin/moderador.
+- Os 9 novos entram no Casual (cria a linha com a rotação do servidor + os 9 se o painel não tiver); Ranked intocado. `gavea.txt` convertido de UTF-8 (título "Gávea").
+- `map-import.test.ts` (banco): ensaio com 14/9/6 e Mooca absorvida; gravação idempotente. "Nova partida em Larhi" fica para o beta (roteiro do OG-561).

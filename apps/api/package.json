@@ -13,7 +13,8 @@
   },
   "files": [
     "dist",
-    "migrations"
+    "migrations",
+    "map-imports"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
