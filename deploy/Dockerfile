@@ -33,9 +33,11 @@ RUN pnpm --filter @outgun/api deploy --prod --legacy /out/api \
 
 # --- API ---
 FROM node:22.20.0-bookworm-slim AS api
-ENV NODE_ENV=production PORT=7800 MIGRATE=0
+ENV NODE_ENV=production PORT=7800 MIGRATE=0 MAPS_DIR=/app/maps
 WORKDIR /app
 COPY --from=build --chown=node:node /out/api /app
+# nativos para a semente do catálogo de mapas (OG-552)
+COPY --from=build --chown=node:node /repo/_legacy/maps /app/maps
 USER node
 EXPOSE 7800
 STOPSIGNAL SIGTERM

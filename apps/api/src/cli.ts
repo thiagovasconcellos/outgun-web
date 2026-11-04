@@ -8,6 +8,7 @@ import { connect } from './db/client.js';
 import { appliedVersions, loadMigrations, migrateDown, migrateUp } from './db/migrate.js';
 import { ensureAppRole, ensureMonitorRole } from './db/app-role.js';
 import { seed } from './db/seed.js';
+import { nativeMapsDir, seedMaps } from './map-catalog.js';
 import { backfillMilestones, calibrateMilestones } from './milestones.js';
 import { recloseSeason, startSeason } from './ranking.js';
 import { createInvites } from './beta.js';
@@ -28,6 +29,8 @@ const database = connect(config.databaseUrl, 1);
 try {
   if (command === 'migrate' && arg1 === 'up') {
     console.log('aplicadas:', (await migrateUp(database.sql)).join(', ') || 'nenhuma');
+    // catálogo de mapas (OG-552): nativos e mapas antigos do painel, idempotente
+    console.log('mapas semeados:', await seedMaps(database.db, nativeMapsDir()));
     // OG-308: a API usa um papel sem DDL; as migrations (este comando) seguem com o dono do schema
     if (process.env.APP_DB_PASSWORD) {
       const role = process.env.APP_DB_USER ?? 'outgun_app';

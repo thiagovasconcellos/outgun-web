@@ -1033,17 +1033,17 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-549](cards/OG-549-replays-de-outro-servidor.md) | Replays e espectador de partidas em outro servidor | E16 | 2 | Should | S59 | OG-548 | Concluído |
 | [OG-550](cards/OG-550-observabilidade-por-regiao.md) | Observabilidade com vários servidores | E16 | 3 | Should | S59 | OG-548 | Concluído |
 | [OG-551](cards/OG-551-servidor-oficial-em-madrid.md) | Servidor oficial em Madrid (Oracle Always Free do PO) | E16 | 3 | Must | — | OG-545, OG-546, OG-547, OG-548 | Backlog |
-| [OG-552](cards/OG-552-identidade-de-mapa-e-revisoes.md) | Identidade de mapa e revisões imutáveis | E17 | 5 | Must | S60 | — | Backlog |
-| [OG-553](cards/OG-553-partida-presa-a-revisao.md) | Partidas presas à revisão: servidores e cliente carregam por revisão | E17 | 5 | Must | S60 | OG-552 | Backlog |
-| [OG-554](cards/OG-554-replays-com-o-mapa-exato.md) | Replays com o mapa exato da partida (inclusive nativos) | E17 | 3 | Must | S60 | OG-552, OG-553 | Backlog |
-| [OG-555](cards/OG-555-partida-ligada-a-revisao.md) | Partida ligada à revisão: relatório e miniatura históricos | E17 | 3 | Must | S60 | OG-552, OG-553 | Backlog |
-| [OG-556](cards/OG-556-estatisticas-pela-identidade-do-mapa.md) | Estatísticas, filtros e marcos pela identidade do mapa | E17 | 3 | Should | S60 | OG-555 | Backlog |
-| [OG-557](cards/OG-557-painel-novo-mapa-ou-revisao.md) | Painel: novo mapa ou nova revisão, sem campo de nome | E17 | 3 | Must | S60 | OG-552 | Backlog |
-| [OG-558](cards/OG-558-painel-catalogo-historico-comparar.md) | Painel: catálogo único, histórico, baixar, comparar e restaurar | E17 | 3 | Must | S60 | OG-557 | Backlog |
-| [OG-559](cards/OG-559-importacao-pacote-nosferatu.md) | Importação do pacote de Nosferatu (14 revisões + 9 mapas novos) | E17 | 3 | Must | S60 | OG-552, OG-557 | Backlog |
-| [OG-560](cards/OG-560-conciliar-duplicatas-de-mapas.md) | Conciliar duplicatas já existentes (mooca × Mooca, Pari2) | E17 | 1 | Should | S60 | OG-552 | Backlog |
-| [OG-561](cards/OG-561-backup-ensaio-implantacao-mapas.md) | Backup, ensaio da migração e implantação recuperável dos mapas | E17 | 3 | Must | S60 | OG-552, OG-553, OG-554, OG-555, OG-559 | Backlog |
-| [OG-562](cards/OG-562-rascunho-testavel-em-sala-privada.md) | Rascunho testável: revisão jogável só em sala privada antes de ativar | E17 | 3 | Should | S60 | OG-553, OG-557 | Backlog |
+| [OG-552](cards/OG-552-identidade-de-mapa-e-revisoes.md) | Identidade de mapa e revisões imutáveis | E17 | 5 | Must | S60 | — | Em revisão |
+| [OG-553](cards/OG-553-partida-presa-a-revisao.md) | Partidas presas à revisão: servidores e cliente carregam por revisão | E17 | 5 | Must | S60 | OG-552 | Pronto |
+| [OG-554](cards/OG-554-replays-com-o-mapa-exato.md) | Replays com o mapa exato da partida (inclusive nativos) | E17 | 3 | Must | S60 | OG-552, OG-553 | Pronto |
+| [OG-555](cards/OG-555-partida-ligada-a-revisao.md) | Partida ligada à revisão: relatório e miniatura históricos | E17 | 3 | Must | S60 | OG-552, OG-553 | Pronto |
+| [OG-556](cards/OG-556-estatisticas-pela-identidade-do-mapa.md) | Estatísticas, filtros e marcos pela identidade do mapa | E17 | 3 | Should | S60 | OG-555 | Pronto |
+| [OG-557](cards/OG-557-painel-novo-mapa-ou-revisao.md) | Painel: novo mapa ou nova revisão, sem campo de nome | E17 | 3 | Must | S60 | OG-552 | Pronto |
+| [OG-558](cards/OG-558-painel-catalogo-historico-comparar.md) | Painel: catálogo único, histórico, baixar, comparar e restaurar | E17 | 3 | Must | S60 | OG-557 | Pronto |
+| [OG-559](cards/OG-559-importacao-pacote-nosferatu.md) | Importação do pacote de Nosferatu (14 revisões + 9 mapas novos) | E17 | 3 | Must | S60 | OG-552, OG-557 | Pronto |
+| [OG-560](cards/OG-560-conciliar-duplicatas-de-mapas.md) | Conciliar duplicatas já existentes (mooca × Mooca, Pari2) | E17 | 1 | Should | S60 | OG-552 | Pronto |
+| [OG-561](cards/OG-561-backup-ensaio-implantacao-mapas.md) | Backup, ensaio da migração e implantação recuperável dos mapas | E17 | 3 | Must | S60 | OG-552, OG-553, OG-554, OG-555, OG-559 | Pronto |
+| [OG-562](cards/OG-562-rascunho-testavel-em-sala-privada.md) | Rascunho testável: revisão jogável só em sala privada antes de ativar | E17 | 3 | Should | S60 | OG-553, OG-557 | Pronto |
 | [OG-563](cards/OG-563-volta-sem-prazo-no-ranked.md) | Ranked: quem saiu do jogo volta à vaga sem prazo, mesmo com o time seguindo um a menos (incidente do 5x5 de 04/11, v2.59.1) | E11 | 2 | Must | — | OG-262, OG-332 | Em revisão |
 | [OG-564](cards/OG-564-tiro-na-diagonal-sai-na-direcao-antiga.md) | Tiro na diagonal sai na direção antiga: seta e tiro chegavam fora de ordem (issue #33, v2.59.1) | E11 | 2 | Must | — | OG-371, OG-372 | Em revisão |
 | [OG-565](cards/OG-565-power-ups-atrasados-ao-entrar-na-sala.md) | Power-ups aparecem atrasados ao entrar numa sala do mapa (issue #33) | E11 | 3 | Should | — | OG-460 | Backlog |

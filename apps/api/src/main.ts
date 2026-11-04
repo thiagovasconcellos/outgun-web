@@ -5,6 +5,7 @@ import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { connect } from './db/client.js';
 import { migrateUp } from './db/migrate.js';
+import { nativeMapsDir, seedMaps } from './map-catalog.js';
 import { rollSeason } from './ranking.js';
 import { connectRedis } from './redis.js';
 import { releaseIdleNumbers } from './player-numbers.js';
@@ -12,6 +13,8 @@ import { releaseIdleNumbers } from './player-numbers.js';
 const config = loadConfig();
 const database = connect(config.databaseUrl);
 if (process.env.MIGRATE !== '0') await migrateUp(database.sql);
+// catálogo de mapas (OG-552): semente idempotente dos nativos e dos mapas antigos do painel
+await seedMaps(database.db, nativeMapsDir()).catch((err: unknown) => console.error('semente dos mapas falhou', err));
 const redis = connectRedis(config.redisUrl);
 const lifecycle = { stopping: false };
 

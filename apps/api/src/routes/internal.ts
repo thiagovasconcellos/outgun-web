@@ -135,8 +135,8 @@ const HeartbeatReply = Type.Object({
     version: Type.String(),
     presets: Type.Array(Type.Object({ id: Type.String(), description: Type.String(), overrides: Type.String() })),
     rotations: Type.Object(Object.fromEntries(ROTATION_KEYS.map((k) => [k, Type.Optional(Type.Array(Type.String()))])) as Record<RotationKey, TOptional<TArray<TString>>>),
-    /** Mapas publicados pela moderação (OG-367): nome e CRC; o texto sai de `GET /maps/:name`. */
-    maps: Type.Array(Type.Object({ name: Type.String(), crc: Type.Integer() })),
+    /** Mapas jogáveis com a revisão ativa (OG-553); o texto sai de `GET /maps/:key/rev/:n.txt`. */
+    maps: Type.Array(Type.Object({ name: Type.String(), crc: Type.Integer(), rev: Type.Integer(), sha256: Type.String(), origin: Type.String() })),
     /** Nomes e prefixos ativos dos bots (OG-403). */
     bots: Type.Object({ prefixes: Type.Array(Type.String()), names: Type.Array(Type.String()) }),
     /** Chat dos bots (OG-404). */

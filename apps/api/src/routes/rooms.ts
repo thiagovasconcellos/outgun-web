@@ -4,11 +4,12 @@
 import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { clampTraining, formatPlayers, isSeriesBestOf, PRESETS, settingsOf, TRAINING_MAPS, TRAINING_MAX_PLAYERS } from '@outgun/settings';
 import { casualRotation, findPreset, panelPresets, rotationMaps } from '../platform-config.js';
-import { and, asc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
 import { hashPassword } from '../auth/password.js';
-import { gameServers, panelMaps, rooms } from '../db/schema.js';
+import { gameServers, rooms } from '../db/schema.js';
+import { findMap, findRevision, playableMaps } from '../map-catalog.js';
 import { canSpawnRoom, onlineServers, pickServer, regionFallback, roomHumans, roomListed, roomOnline } from '../registry.js';
 import { ErrorSchema, GameModeSchema, LobbyPhaseSchema, RankedFormatSchema, RoomId, SeriesBestOfSchema } from './schemas.js';
 
@@ -172,7 +173,7 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
         maps: await casualRotation(db),
         /** Rotação 2x2 (OG-519): mapas do atalho 2x2, que valem em sala de 4 vagas. */
         duo: (await rotationMaps(db, 'ranked:2x2')) ?? [],
-        published: (await db.select({ name: panelMaps.name }).from(panelMaps).where(isNull(panelMaps.deletedAt)).orderBy(asc(panelMaps.name))).map((m) => m.name),
+        published: (await playableMaps(db)).filter((m) => m.origin !== 'native').map((m) => m.name),
       }),
     );
 
@@ -181,14 +182,42 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
       {
         schema: {
           tags: ['salas'],
-          summary: 'Texto de um mapa publicado pela moderação (OG-366), em Latin-1, para os game servers e o cliente',
+          summary: 'Texto da revisão ativa de um mapa jogável (OG-552), em Latin-1, pela chave ou por um nome antigo',
           params: Type.Object({ name: Type.String({ minLength: 1, maxLength: 64 }) }),
         },
       },
       async (request, reply) => {
-        const [m] = await db.select({ text: panelMaps.text, crc: panelMaps.crc }).from(panelMaps).where(and(eq(panelMaps.name, request.params.name), isNull(panelMaps.deletedAt)));
-        if (!m) return reply.code(404).send({ error: 'map_not_found', message: 'map not found' });
-        return reply.header('content-type', 'text/plain; charset=iso-8859-1').header('x-map-crc', String(m.crc)).header('cache-control', 'public, max-age=60').send(Buffer.from(m.text, 'latin1'));
+        const m = await findMap(db, request.params.name);
+        const r = m && m.playable && m.activeRevision !== null ? await findRevision(db, m.id, m.activeRevision) : undefined;
+        if (!r) return reply.code(404).send({ error: 'map_not_found', message: 'map not found' });
+        return reply
+          .header('content-type', 'text/plain; charset=iso-8859-1')
+          .header('x-map-crc', String(r.crc))
+          .header('x-map-revision', String(r.number))
+          .header('cache-control', 'public, max-age=60')
+          .send(Buffer.from(r.text, 'latin1'));
+      },
+    );
+
+    app.get(
+      '/maps/:name/rev/:file',
+      {
+        schema: {
+          tags: ['salas'],
+          summary: 'Texto de uma revisão de um mapa (OG-552), imutável: `N.txt`; para os game servers, replays e miniaturas',
+          params: Type.Object({ name: Type.String({ minLength: 1, maxLength: 64 }), file: Type.String({ pattern: '^[0-9]{1,6}\\.txt$' }) }),
+        },
+      },
+      async (request, reply) => {
+        const m = await findMap(db, request.params.name);
+        const r = m ? await findRevision(db, m.id, Number.parseInt(request.params.file, 10)) : undefined;
+        if (!r) return reply.code(404).send({ error: 'map_not_found', message: 'map revision not found' });
+        return reply
+          .header('content-type', 'text/plain; charset=iso-8859-1')
+          .header('x-map-crc', String(r.crc))
+          .header('x-map-sha256', r.sha256)
+          .header('cache-control', 'public, max-age=31536000, immutable')
+          .send(Buffer.from(r.text, 'latin1'));
       },
     );
 

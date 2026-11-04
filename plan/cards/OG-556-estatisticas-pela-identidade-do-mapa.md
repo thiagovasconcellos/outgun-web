@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 3 pts |
 | Sprint | S60 |
-| Status | Backlog |
+| Status | Pronto |
 | Dependências | OG-555 |
 | Regras de negócio | RN-MRV-06 |
 | Skills | `outgun-card-workflow` |

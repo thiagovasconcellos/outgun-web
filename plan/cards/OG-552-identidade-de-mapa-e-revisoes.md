@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S60 |
-| Status | Backlog |
+| Status | Em revisão |
 | Dependências | — |
 | Regras de negócio | RN-MRV-01, RN-MRV-02, RN-MRV-03 |
 | Skills | `outgun-card-workflow` |
@@ -29,8 +29,11 @@ Como moderador, quero que cada mapa tenha uma identidade estável e uma lista de
 - API interna: catálogo de mapas jogáveis (chave, revisão ativa, CRC, SHA-256) e `GET /maps/:key/rev/:n.txt` imutável (cache longo).
 
 ## Critérios de aceite
-- [ ] Os 20 nativos e todos os mapas da moderação existem como mapa + revisões; os bytes da revisão 1 dos nativos batem com `_legacy/maps/` (SHA-256).
-- [ ] Rodar a semente duas vezes não cria mapa nem revisão a mais.
-- [ ] Não há caminho na API que altere ou apague uma revisão.
+- [x] Os 20 nativos e todos os mapas da moderação existem como mapa + revisões; os bytes da revisão 1 dos nativos batem com `_legacy/maps/` (SHA-256).
+- [x] Rodar a semente duas vezes não cria mapa nem revisão a mais.
+- [x] Não há caminho na API que altere ou apague uma revisão.
 
 ## Notas de implementação
+- Migração 0055 (`maps`, `map_revisions`, `map_aliases`); gatilho no banco recusa DELETE e mudança de conteúdo (só `map_id`/`number` podem mudar, para a conciliação do OG-560). Catálogo em `apps/api/src/map-catalog.ts`.
+- Semente idempotente (`seedMaps`) no `cli migrate up` e no boot da API; a imagem da API ganhou `_legacy/maps` (`MAPS_DIR=/app/maps`). Nativo = revisão 1 com data 2011-03-12, procedência `native-1.0.3`.
+- `GET /maps/:name` passa a servir a revisão ativa de qualquer mapa jogável (chave ou alias; servidores antigos seguem funcionando); `GET /maps/:name/rev/N.txt` é imutável e público (o cliente precisa dele para jogar/assistir, RN-MRV-11); o heartbeat leva `rev`, `sha256` e `origin`.
