@@ -7,7 +7,7 @@ import { chatName, encodeFrame, message, packNumberStyle, PERSONAL_COLORS, PROTO
 import { applyGamemod, formatGamemod, formatPlayers, MAX_SUBSTITUTES, maxSubstitutesPerSide, newSeries, recordSeriesGame, seriesOver, seriesWinner, settingsOf, type GameMode, type GameSettings, type Preset, type RankedRoomFormat, type SeriesScore } from '@outgun/settings';
 import { findPreset } from './presets.js';
 import type { GeneratedMaps, RandomMapParams } from './generated-maps.js';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { censor, formatDuration, MAX_CHAT_LENGTH, TalkMeter } from './chat.js';
 import { ReportLimiter, runCommand, type AuditEntry, type BotConsole, type ConsoleHost, type ConsolePlayer, type PlayerReport } from './moderation.js';
 import { BotClient, type BotHost } from './bot-client.js';
@@ -1865,7 +1865,10 @@ export class Room {
     if (this.options.training) return; // treino não grava replay nem alimenta espectadores (OG-498)
     const init = this.welcomeMessages(-1).filter((m) => m.type !== 'welcome');
     const file = this.mapFile(this.mapIndex);
-    const mapText = this.options.generatedMaps?.text(file) ?? this.options.mapText?.(file);
+    const entry = this.rotation[this.mapIndex] as RotationEntry;
+    // texto da revisão presa (OG-554): o replay toca com as paredes desta partida, nativo inclusive
+    const mapText = this.options.generatedMaps?.text(file) ?? entry.text ?? this.options.mapText?.(file);
+    const mapSha256 = mapText !== undefined && entry.rev != null ? createHash('sha256').update(Buffer.from(mapText, 'latin1')).digest('hex') : undefined;
     this.recorder = new ReplayRecorder(
       {
         roomId: this.id,
@@ -1875,6 +1878,8 @@ export class Room {
         mapTitle: this.world.map.title,
         // mapa gerado (OG-015) ou da moderação (OG-367): o texto vai no replay, porque não existe em maps/
         ...(mapText !== undefined ? { mapText } : {}),
+        ...(entry.rev != null ? { mapRevision: entry.rev } : {}),
+        ...(mapSha256 ? { mapSha256 } : {}),
         maxPlayers: this.world.maxPlayers,
         startedAt: new Date(this.wallClock()).toISOString(),
         startFrame: this.world.frame,

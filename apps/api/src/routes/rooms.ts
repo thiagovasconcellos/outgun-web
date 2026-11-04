@@ -9,7 +9,7 @@ import { randomBytes } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
 import { hashPassword } from '../auth/password.js';
 import { gameServers, rooms } from '../db/schema.js';
-import { findMap, findRevision, playableMaps } from '../map-catalog.js';
+import { findMap, findRevision, findRevisionByCrc, playableMaps } from '../map-catalog.js';
 import { canSpawnRoom, onlineServers, pickServer, regionFallback, roomHumans, roomListed, roomOnline } from '../registry.js';
 import { ErrorSchema, GameModeSchema, LobbyPhaseSchema, RankedFormatSchema, RoomId, SeriesBestOfSchema } from './schemas.js';
 
@@ -182,13 +182,17 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
       {
         schema: {
           tags: ['salas'],
-          summary: 'Texto da revisão ativa de um mapa jogável (OG-552), em Latin-1, pela chave ou por um nome antigo',
-          params: Type.Object({ name: Type.String({ minLength: 1, maxLength: 64 }) }),
+          summary:
+            'Texto da revisão ativa de um mapa jogável (OG-552), em Latin-1, pela chave ou por um nome antigo (`.txt` opcional); `?crc=` dá a revisão com aquele CRC (replays antigos, OG-554)',
+          params: Type.Object({ name: Type.String({ minLength: 1, maxLength: 68 }) }),
+          querystring: Type.Object({ crc: Type.Optional(Type.Integer({ minimum: 0 })) }),
         },
       },
       async (request, reply) => {
-        const m = await findMap(db, request.params.name);
-        const r = m && m.playable && m.activeRevision !== null ? await findRevision(db, m.id, m.activeRevision) : undefined;
+        const name = request.params.name.replace(/\.txt$/, '');
+        const m = await findMap(db, name);
+        const { crc } = request.query;
+        const r = !m ? undefined : crc !== undefined ? await findRevisionByCrc(db, m.id, crc) : m.playable && m.activeRevision !== null ? await findRevision(db, m.id, m.activeRevision) : undefined;
         if (!r) return reply.code(404).send({ error: 'map_not_found', message: 'map not found' });
         return reply
           .header('content-type', 'text/plain; charset=iso-8859-1')

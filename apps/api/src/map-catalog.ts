@@ -8,7 +8,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { and, asc, eq, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import type { Db } from './db/client.js';
 import { mapAliases, mapRevisions, maps, panelMaps, panelMapVersions } from './db/schema.js';
 import { checkMapText } from './panel-maps.js';
@@ -63,6 +63,17 @@ export async function findMap(db: Conn, name: string): Promise<typeof maps.$infe
 /** Uma revisão de um mapa (número), ou a ativa se `number` faltar. */
 export async function findRevision(db: Conn, mapId: number, number: number): Promise<typeof mapRevisions.$inferSelect | undefined> {
   const [r] = await db.select().from(mapRevisions).where(and(eq(mapRevisions.mapId, mapId), eq(mapRevisions.number, number)));
+  return r;
+}
+
+/** A revisão mais recente de um mapa com aquele CRC (o CRC do jogo tem 16 bits: pode repetir). */
+export async function findRevisionByCrc(db: Conn, mapId: number, crc: number): Promise<typeof mapRevisions.$inferSelect | undefined> {
+  const [r] = await db
+    .select()
+    .from(mapRevisions)
+    .where(and(eq(mapRevisions.mapId, mapId), eq(mapRevisions.crc, crc)))
+    .orderBy(desc(mapRevisions.number))
+    .limit(1);
   return r;
 }
 

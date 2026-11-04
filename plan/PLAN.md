@@ -1035,7 +1035,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-551](cards/OG-551-servidor-oficial-em-madrid.md) | Servidor oficial em Madrid (Oracle Always Free do PO) | E16 | 3 | Must | — | OG-545, OG-546, OG-547, OG-548 | Backlog |
 | [OG-552](cards/OG-552-identidade-de-mapa-e-revisoes.md) | Identidade de mapa e revisões imutáveis | E17 | 5 | Must | S60 | — | Em revisão |
 | [OG-553](cards/OG-553-partida-presa-a-revisao.md) | Partidas presas à revisão: servidores e cliente carregam por revisão | E17 | 5 | Must | S60 | OG-552 | Em revisão |
-| [OG-554](cards/OG-554-replays-com-o-mapa-exato.md) | Replays com o mapa exato da partida (inclusive nativos) | E17 | 3 | Must | S60 | OG-552, OG-553 | Pronto |
+| [OG-554](cards/OG-554-replays-com-o-mapa-exato.md) | Replays com o mapa exato da partida (inclusive nativos) | E17 | 3 | Must | S60 | OG-552, OG-553 | Em revisão |
 | [OG-555](cards/OG-555-partida-ligada-a-revisao.md) | Partida ligada à revisão: relatório e miniatura históricos | E17 | 3 | Must | S60 | OG-552, OG-553 | Pronto |
 | [OG-556](cards/OG-556-estatisticas-pela-identidade-do-mapa.md) | Estatísticas, filtros e marcos pela identidade do mapa | E17 | 3 | Should | S60 | OG-555 | Pronto |
 | [OG-557](cards/OG-557-painel-novo-mapa-ou-revisao.md) | Painel: novo mapa ou nova revisão, sem campo de nome | E17 | 3 | Must | S60 | OG-552 | Pronto |

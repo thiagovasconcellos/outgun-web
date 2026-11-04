@@ -277,6 +277,11 @@ export function SpectateScreen() {
             <small>{t('Arrows room · F follow player · A follow the flag · keypad +/- zoom · M sound · N music · H hide this bar')}</small>
           </div>
         )}
+        {status?.mapMismatch && !error && (
+          <p className="game-toast" role="status">
+            {t('The map of this match was not found; the walls may be different.')}
+          </p>
+        )}
         {status?.audioBlocked && !error && (
           <p className="game-toast" role="status">
             {t('Click to turn on the sound.')}
