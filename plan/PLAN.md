@@ -1042,7 +1042,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-558](cards/OG-558-painel-catalogo-historico-comparar.md) | Painel: catálogo único, histórico, baixar, comparar e restaurar | E17 | 3 | Must | S60 | OG-557 | Em revisão |
 | [OG-559](cards/OG-559-importacao-pacote-nosferatu.md) | Importação do pacote de Nosferatu (14 revisões + 9 mapas novos) | E17 | 3 | Must | S60 | OG-552, OG-557 | Em revisão |
 | [OG-560](cards/OG-560-conciliar-duplicatas-de-mapas.md) | Conciliar duplicatas já existentes (mooca × Mooca, Pari2) | E17 | 1 | Should | S60 | OG-552 | Em revisão |
-| [OG-561](cards/OG-561-backup-ensaio-implantacao-mapas.md) | Backup, ensaio da migração e implantação recuperável dos mapas | E17 | 3 | Must | S60 | OG-552, OG-553, OG-554, OG-555, OG-559 | Em andamento |
+| [OG-561](cards/OG-561-backup-ensaio-implantacao-mapas.md) | Backup, ensaio da migração e implantação recuperável dos mapas | E17 | 3 | Must | S60 | OG-552, OG-553, OG-554, OG-555, OG-559 | Em revisão |
 | [OG-562](cards/OG-562-rascunho-testavel-em-sala-privada.md) | Rascunho testável: revisão jogável só em sala privada antes de ativar | E17 | 3 | Should | S60 | OG-553, OG-557 | Em revisão |
 | [OG-563](cards/OG-563-volta-sem-prazo-no-ranked.md) | Ranked: quem saiu do jogo volta à vaga sem prazo, mesmo com o time seguindo um a menos (incidente do 5x5 de 04/11, v2.59.1) | E11 | 2 | Must | — | OG-262, OG-332 | Em revisão |
 | [OG-564](cards/OG-564-tiro-na-diagonal-sai-na-direcao-antiga.md) | Tiro na diagonal sai na direção antiga: seta e tiro chegavam fora de ordem (issue #33, v2.59.1) | E11 | 2 | Must | — | OG-371, OG-372 | Em revisão |
