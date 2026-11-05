@@ -39,4 +39,4 @@ export function isPortalPath(pathname: string): boolean {
 }
 
 /** Abas do painel que abrem no celular (OG-427): as de moderação; as de configuração ficam no computador. */
-export const PHONE_ADMIN_TABS: ReadonlySet<string> = new Set(['rooms', 'reports', 'clans', 'bans', 'audit', 'feedback']);
+export const PHONE_ADMIN_TABS: ReadonlySet<string> = new Set(['rooms', 'reports', 'clans', 'bans', 'audit', 'feedback', 'cards']);

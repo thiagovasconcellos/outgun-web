@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-571, OG-572 |
 | Regras de negócio | RN-CRT-02, RN-CRT-03, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -27,9 +27,10 @@ Como moderador, quero preencher a ficha vendo a carta pronta, para cadastrar as 
 - Sair com alterações não salvas pede confirmação.
 
 ## Critérios de aceite
-- [ ] Criar uma carta pelo formulário a deixa no sorteio e no catálogo na hora.
-- [ ] Mudar a classe na ficha muda a prévia na hora.
-- [ ] Editar e salvar sem mudar nada não cria revisão.
+- [x] Criar uma carta pelo formulário a deixa no sorteio e no catálogo na hora.
+- [x] Mudar a classe na ficha muda a prévia na hora.
+- [x] Editar e salvar sem mudar nada não cria revisão.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- Formulário em `admin-cards.tsx` (`CardForm`): posições por `datalist` com as já usadas, gerações do cadastro, conta por busca (contas já ligadas aparecem desabilitadas), clãs e cartas ligadas por vírgula, prévia `PlayerCard` ao vivo e checklist. Nick igual bloqueia o Salvar; parecido só avisa.
+- Sair com alterações: "Cancelar" pede confirmação na tela e o navegador avisa ao fechar a aba (`beforeunload`). Edição tem "Nota para o histórico" opcional.

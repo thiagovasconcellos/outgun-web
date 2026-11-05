@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 2 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-571, OG-573 |
 | Regras de negócio | RN-CRT-03, RN-CRT-05, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -26,8 +26,9 @@ Como moderador/admin, quero ajustar as chances de cada classe e manter as geraç
 - Tudo vai para a auditoria.
 
 ## Critérios de aceite
-- [ ] Mudar um peso altera a chance mostrada e vale no próximo resgate.
-- [ ] Moderador não vê o cadastro de gerações; admin vê.
+- [x] Mudar um peso altera a chance mostrada e vale no próximo resgate.
+- [x] Moderador não vê o cadastro de gerações; admin vê.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- `OddsAndGenerations` em `admin-cards.tsx`: pesos por classe com % por resgate, chance de cada carta e aviso de classe com peso sem carta ativa. A "simulação" virou conta exata: sem repetidas e 2 resgates por semana, a coleção fecha em ⌈cartas ÷ 2⌉ semanas para quem resgata toda semana.
+- Gerações: tabela para todos, edição e criação só para admin (a API também recusa).

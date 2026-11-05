@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-571, OG-572 |
 | Regras de negócio | RN-CRT-02, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -28,8 +28,9 @@ Como moderador, quero consultar todas as cartas, ver a ficha e o histórico de c
 - No celular, segue a regra das abas de moderação (D-80): só consulta.
 
 ## Critérios de aceite
-- [ ] Catálogo encontra uma carta pelo nick, clã ou epíteto.
-- [ ] Desativar pela ficha pede confirmação e aparece na auditoria.
+- [x] Catálogo encontra uma carta pelo nick, clã ou epíteto.
+- [x] Desativar pela ficha pede confirmação e aparece na auditoria.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- `apps/web/src/screens/admin-cards.tsx` (aba **Cartas**, entre Bots e OutCup; no celular entra em `PHONE_ADMIN_TABS`, só consulta). Catálogo com contadores por classe (sem "meta": o catálogo não tem tamanho fixo), filtros e tabela; ficha com carta, checklist, donos, chance por resgate, fatos, frase, biografia, revisões com diferença campo a campo e Restaurar.
+- Desativar pede confirmação na própria ficha (sem diálogo do navegador). A conferência visual com dados fica para o fechamento (precisa de API e banco).
