@@ -14,6 +14,7 @@ import { momentStats } from '../match-moments.js';
 import { closeSeason, seasonAt } from '../ranking.js';
 import { applySkill } from '../skill.js';
 import { awardMilestones } from '../milestones.js';
+import { noticeUnlockedClaims } from '../legend-card-claims.js';
 import { recordMatchSocial } from '../social-stats.js';
 import { verifyInternalRequest } from '@outgun/tickets';
 import { ONLINE_MS } from '../registry.js';
@@ -581,6 +582,8 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
           if (seriesDone) await cupSeriesFinished(tx, seriesDone.roomId, seriesDone.seriesId, seriesDone, cupOutbox);
           await recordMatchSocial(tx, match!.id);
           await awardMilestones(tx, [...known], { beta: config.beta, events: [match!.id], notify: true });
+          // Cartas de Jogador (OG-576): a 3ª partida da semana libera os resgates
+          await noticeUnlockedClaims(tx, [...known], new Date(body.endedAt));
           // Rating de habilidade (OG-349, RN-SKL-02/03): pelo placar final, com quem saiu no meio
           if (body.ranked) {
             const roster = body.skillRoster ?? body.players.flatMap((p) => (p.userId && !p.isBot ? [{ userId: p.userId, team: p.team as 0 | 1 }] : []));

@@ -544,7 +544,7 @@ export const matchEventPlayers = pgTable(
 );
 
 /** Notificações da conta (OG-361): convite de clã, pedido de entrada no clã; marcos novos de uma partida (OG-394). */
-export type NotificationKind = 'clan_invite' | 'clan_request' | 'milestone' | 'number_expiring' | 'number_released' | 'cup';
+export type NotificationKind = 'clan_invite' | 'clan_request' | 'milestone' | 'number_expiring' | 'number_released' | 'cup' | 'cards';
 /** Clã (tag e nome) e quem convidou ou pediu; nos marcos, os ids e o texto dos secretos (o cliente não tem o catálogo deles). */
 export interface NotificationData {
   clanTag?: string;
@@ -554,6 +554,8 @@ export interface NotificationData {
   secretNames?: Record<string, { 'pt-BR': string; en: string }>;
   /** Número a expirar ou liberado (OG-410). */
   number?: number;
+  /** Resgates de carta liberados na semana (OG-576). */
+  cards?: number;
   /** OutCup (OG-527): edição, o que aconteceu e os detalhes para o texto. */
   cup?: string;
   cupEvent?: string;

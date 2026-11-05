@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-570 |
 | Regras de negócio | RN-CRT-04, RN-CRT-05, RN-CRT-06, RN-CRT-08, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -30,13 +30,15 @@ Como jogador, quero resgatar 2 cartas por semana quando jogo, sem nunca repetir,
 - Notificação no portal quando os 2 resgates da semana ficam liberados.
 
 ## Critérios de aceite
-- [ ] Conta com 2 partidas na semana não resgata; com 3, resgata 2 e o terceiro é recusado.
-- [ ] Partidas de treino não contam.
-- [ ] Em 10 mil resgates simulados nenhuma conta recebe repetida e a distribuição por classe segue os pesos.
-- [ ] Testes da regra da semana (virada de domingo para segunda em Brasília) e do sorteio.
+- [x] Conta com 2 partidas na semana não resgata; com 3, resgata 2 e o terceiro é recusado.
+- [x] Partidas de treino não contam.
+- [x] Em 10 mil resgates simulados nenhuma conta recebe repetida e a distribuição por classe segue os pesos.
+- [x] Testes da regra da semana (virada de domingo para segunda em Brasília) e do sorteio.
 
 ## Notas técnicas
 Contar partidas pela data de fim no fuso de Brasília. Sem compra, sem moeda e sem troca (RN-CRT-08).
 
 ## Notas de implementação
-(preenchido durante a execução)
+- `apps/api/src/legend-card-claims.ts` (semana, contagem, `drawCard`, `claimCard`, aviso) e `routes/player-cards.ts` (`GET/POST /cards/claims`). Sorteio com `crypto.randomInt`; a linha da conta fica travada (`FOR UPDATE`) durante o resgate e o `seq` (1 ou 2) torna o pedido idempotente.
+- Brasília fixa em UTC−3 (sem horário de verão desde 2019). Classe com peso 0 nunca sai enquanto houver outra com peso; se só sobrarem classes com peso 0, sorteio uniforme (a coleção sempre fecha).
+- Aviso: notificação `cards` (migração `0059`) quando a partida gravada é a 3ª da semana; texto no cliente vem no OG-577. Testes de banco rodam no fechamento.

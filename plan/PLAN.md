@@ -1059,7 +1059,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-573](cards/OG-573-cartas-painel-catalogo-e-ficha.md) | Painel: catálogo e ficha | E18 | 3 | Must | S61 | OG-571, OG-572 | Pronto |
 | [OG-574](cards/OG-574-cartas-painel-formulario.md) | Painel: criar e editar carta | E18 | 5 | Must | S61 | OG-571, OG-572 | Pronto |
 | [OG-575](cards/OG-575-cartas-painel-chances-e-geracoes.md) | Painel: chances e gerações | E18 | 2 | Should | S61 | OG-571, OG-573 | Pronto |
-| [OG-576](cards/OG-576-cartas-resgate-semanal-e-sorteio.md) | Resgate semanal e sorteio sem repetir | E18 | 5 | Must | S61 | OG-570 | Pronto |
+| [OG-576](cards/OG-576-cartas-resgate-semanal-e-sorteio.md) | Resgate semanal e sorteio sem repetir | E18 | 5 | Must | S61 | OG-570 | Em revisão |
 | [OG-577](cards/OG-577-cartas-abertura-do-resgate.md) | Tela de resgate e abertura | E18 | 3 | Must | S61 | OG-572, OG-576 | Pronto |
 | [OG-578](cards/OG-578-cartas-inventario-no-perfil.md) | Coleção no perfil | E18 | 3 | Must | S61 | OG-572, OG-576 | Pronto |
 | [OG-579](cards/OG-579-cartas-pagina-de-detalhes.md) | Página de detalhes da carta | E18 | 3 | Must | S61 | OG-572, OG-576 | Pronto |
