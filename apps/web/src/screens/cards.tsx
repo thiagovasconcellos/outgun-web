@@ -319,7 +319,7 @@ interface CardPage {
     epithet: string;
     position: string;
     bio: string;
-    generations: { name: string; description: string }[];
+    generations: { name: string; description: string; startedOn: string | null; story: string }[];
     clans: string[];
     achievements: CardEntry[];
     traits: CardEntry[];
@@ -445,6 +445,20 @@ export function CardPageScreen() {
                     </span>
                   ))}
                 </div>
+              </section>
+            )}
+            {c.generations.some((g) => g.story) && (
+              <section>
+                <h3>{t('The generations of $1', c.nick)}</h3>
+                <ol className="cards-gens">
+                  {c.generations.map((g) => (
+                    <li key={g.name}>
+                      <b>{g.name}</b>
+                      {g.startedOn && <small> · {t('since $1', new Date(`${g.startedOn}T12:00:00`).toLocaleDateString(prefs.locale, { dateStyle: 'long' }))}</small>}
+                      {g.story && <p>{g.story}</p>}
+                    </li>
+                  ))}
+                </ol>
               </section>
             )}
             <section>

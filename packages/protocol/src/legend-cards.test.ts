@@ -27,6 +27,10 @@ describe('cartas de jogador (OG-570)', () => {
     expect(cardNickKey('Tainha*')).toBe('TAINHA');
     expect(cardSlug('Ek-FROGUE')).toBe('ek-frogue');
     expect(cardSlug('Ação!')).toBe('acao');
+    // nick só de símbolos (a carta ":(")
+    expect(cardNickKey(':(')).toBe(':(');
+    expect(cardSlug(':(')).toBe('x3a28');
+    expect(legendCardProblems(base({ nick: ':(' }))).toEqual([]);
   });
   it('chance ignora classes sem carta', () => {
     const w = { classico: 50, epico: 25, lendario: 13, especial: 8, nefasto: 3.5, mitica: 0.5 };

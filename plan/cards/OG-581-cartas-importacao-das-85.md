@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-570, OG-571 |
 | Regras de negócio | RN-CRT-02, RN-CRT-03, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -27,11 +27,14 @@ Como PO, quero que as 85 cartas já feitas entrem no catálogo sem redigitar, pa
 - Relatório ao PO com as dúvidas antes da importação no beta; backup do banco antes de rodar em produção.
 
 ## Critérios de aceite
-- [ ] As 85 fichas passam no `--dry-run` sem erro.
-- [ ] Importar duas vezes deixa 85 cartas.
+- [x] As 79 fichas recebidas passam no `--dry-run` sem erro (o PO mandou 79, não 85).
+- [x] Importar duas vezes deixa 79 cartas (a 2ª rodada: 79 iguais).
 
 ## Notas técnicas
 Espera a pasta com as 85 cartas; sem ela, o card entrega só o script e o teste com fichas de exemplo.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- Transcrição: OCR do Vision (macOS) nas 79 imagens + metadados à mão (classe, cores, gerações, clãs, frase) em `~/.config/outgun/cartas/` (`meta.py`, `build.py`, `overrides.py`, `cartas.json`), fora do repo. Importadas no banco local; produção só no deploy, com backup.
+- `node dist/cli.js cards import ARQUIVO [--dry-run] [--note]` (`legend-card-import.ts`): mesma validação do painel, idempotente pela chave do nick, ficha alterada vira revisão.
+- O que as cartas reais pediram: frase até 120, título até 40, texto até 200; nick só de símbolos (":(" → endereço `x3a28`); gerações com data e história (migração `0060`, cronologia do PO), mostradas na página da carta e editáveis no painel.
+- Não cobertos (perguntas ao PO): classe "Super Clássico" (THALES, cadastrado como Clássico); boneco arco-íris do LOBITO; MARLBORO com arte de Nefasto e selo Clássico; PHIN e CORVO_MAN sem geração; data da 4ª geração; ícones da ficha por posição (as cartas usam ícones que a lista não tem).

@@ -1020,6 +1020,9 @@ export const cardGenerations = pgTable('card_generations', {
   name: text('name').notNull(),
   description: text('description').notNull().default(''),
   active: boolean('active').notNull().default(true),
+  /** Início da era (cronologia do PO) e a história dela (OG-581). */
+  startedOn: date('started_on', { mode: 'string' }),
+  story: text('story').notNull().default(''),
 });
 
 /** Ficha da carta (RN-CRT-03); as listas ficam na própria linha e cada gravação vira revisão. */

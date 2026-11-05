@@ -78,6 +78,8 @@ interface Generation {
   description: string;
   active: boolean;
   cards: number;
+  startedOn: string | null;
+  story: string;
 }
 interface Revision {
   number: number;
@@ -109,7 +111,7 @@ export function CardsTab({ isAdmin }: { readonly isAdmin: boolean }) {
   ];
   const go = (k: View['kind']) => setView(k === 'edit' ? { kind: 'edit', id: null } : k === 'odds' ? { kind: 'odds' } : { kind: 'catalog' });
   return (
-    <section className="admin-tab admin-cards">
+    <section className="admin-tab admin-legend-cards">
       <p className="stats-tabs" role="tablist" aria-label={t('Cards')}>
         {nav.map(([k, label]) => (
           <button key={k} type="button" role="tab" aria-selected={view.kind === k && !(k === 'edit' && view.kind === 'edit' && view.id !== null)} className={view.kind === k ? 'active' : ''} onClick={() => go(k)}>
@@ -125,11 +127,11 @@ export function CardsTab({ isAdmin }: { readonly isAdmin: boolean }) {
   );
 }
 
-const Swatch = ({ ring, center }: { ring: string; center: string }) => <span className="admin-card-dot" style={{ background: ring, boxShadow: `inset 0 0 0 3px ${center}` }} aria-hidden="true" />;
+const Swatch = ({ ring, center }: { ring: string; center: string }) => <span className="admin-lc-dot" style={{ background: ring, boxShadow: `inset 0 0 0 3px ${center}` }} aria-hidden="true" />;
 const ClassBadge = ({ cls }: { cls: CardClassId }) => {
   const c = cardClass(cls);
   return (
-    <span className="admin-card-class" style={{ color: c.c2, borderColor: c.c1 }}>
+    <span className="admin-lc-class" style={{ color: c.c2, borderColor: c.c1 }}>
       {c.name} {'★'.repeat(c.tier + 1)}
     </span>
   );
@@ -154,7 +156,7 @@ function Catalog({ t, gens, open }: { t: T; gens: Generation[]; open: (id: numbe
   const sum = (f: (r: (typeof totals)[number]) => boolean) => totals.filter(f).reduce((s, r) => s + r.count, 0);
   return (
     <>
-      <div className="admin-card-tiles">
+      <div className="admin-lc-tiles">
         <div>
           <b>{sum((r) => r.active)}</b>
           <small>{t('active cards')}</small>
@@ -192,7 +194,7 @@ function Catalog({ t, gens, open }: { t: T; gens: Generation[]; open: (id: numbe
             key: 'nick',
             header: t('Nick'),
             cell: (c) => (
-              <span className="admin-card-nick">
+              <span className="admin-lc-nick">
                 <Swatch ring={c.ringColor} center={c.centerColor} />
                 <b>{c.nick}</b>
                 {c.epithet && <small> {c.epithet}</small>}
@@ -260,7 +262,7 @@ function checklist(c: LegendCardInput, t: T) {
   ];
 }
 const Checklist = ({ card, t }: { card: LegendCardInput; t: T }) => (
-  <ul className="admin-card-checks">
+  <ul className="admin-lc-checks">
     {checklist(card, t).map((x) => (
       <li key={x.text} className={x.ok ? 'ok' : x.required ? 'missing' : 'warn'}>
         {x.text}
@@ -299,14 +301,14 @@ function CardSheet({ t, id, gens, phone, back, edit }: { t: T; id: number; gens:
     );
   const cls = cardClass(c.class);
   return (
-    <div className="admin-card-sheet" style={{ '--c1': cls.c1, '--c2': cls.c2 } as CSSProperties}>
+    <div className="admin-lc-sheet" style={{ '--c1': cls.c1, '--c2': cls.c2 } as CSSProperties}>
       <div className="admin-row-actions">
         <Button variant="ghost" onClick={back}>
           {t('Back to the catalog')}
         </Button>
         <Status text={status.text} error={status.error} />
       </div>
-      <div className="admin-card-head">
+      <div className="admin-lc-head">
         <h3>{c.nick}</h3>
         <ClassBadge cls={c.class} />
         {c.active ? <Badge tone="success">{t('Active')}</Badge> : <Badge tone="danger">{t('Deactivated')}</Badge>}
@@ -314,11 +316,11 @@ function CardSheet({ t, id, gens, phone, back, edit }: { t: T; id: number; gens:
           /cartas/{c.slug} · {t('revision $1', String(c.revision))} · {when(c.updatedAt)} · {c.updatedBy ?? '—'}
         </small>
       </div>
-      <div className="admin-card-grid">
+      <div className="admin-lc-grid">
         <aside>
           <PlayerCard look={c} />
           {!phone && (
-            <div className="admin-card-actions">
+            <div className="admin-lc-actions">
               <Button variant="primary" onClick={edit}>
                 {t('Edit sheet')}
               </Button>
@@ -343,15 +345,15 @@ function CardSheet({ t, id, gens, phone, back, edit }: { t: T; id: number; gens:
           )}
           <Link to={`/cartas/${c.slug}`}>{t('See the card page')}</Link>
         </aside>
-        <div className="admin-card-main">
-          <div className="admin-card-two">
+        <div className="admin-lc-main">
+          <div className="admin-lc-two">
             <div>
               <h4>{t('Sheet')}</h4>
               <Checklist card={c} t={t} />
             </div>
             <div>
               <h4>{t('In the collection')}</h4>
-              <div className="admin-card-tiles">
+              <div className="admin-lc-tiles">
                 <div>
                   <b>{c.owners}</b>
                   <small>{t('players have it')}</small>
@@ -363,7 +365,7 @@ function CardSheet({ t, id, gens, phone, back, edit }: { t: T; id: number; gens:
               </div>
             </div>
           </div>
-          <dl className="admin-card-facts">
+          <dl className="admin-lc-facts">
             <dt>{t('Position')}</dt>
             <dd>{c.position || '—'}</dd>
             <dt>{t('Generation')}</dt>
@@ -379,8 +381,8 @@ function CardSheet({ t, id, gens, phone, back, edit }: { t: T; id: number; gens:
             <dt>{t('Sources')}</dt>
             <dd>{c.sources || '—'}</dd>
           </dl>
-          {c.quote && <p className="admin-card-quote">"{c.quote}"</p>}
-          <div className="admin-card-bio">
+          {c.quote && <p className="admin-lc-quote">"{c.quote}"</p>}
+          <div className="admin-lc-bio">
             {cardParagraphs(c.bio).map((p, i) => (
               <p key={i}>{p}</p>
             ))}
@@ -401,7 +403,7 @@ function CardSheet({ t, id, gens, phone, back, edit }: { t: T; id: number; gens:
                   const prev = revs.find((x) => x.number === r.number - 1)?.data;
                   const diff = diffRev(prev, r.data, gens, t);
                   return (
-                    <div className="admin-card-diff">
+                    <div className="admin-lc-diff">
                       <span>{r.note || (r.number === 1 ? t('Card created') : t('Sheet edited'))}</span>
                       {diff.length > 0 && (
                         <details>
@@ -461,10 +463,10 @@ const pickInput = (c: LegendCardInput): LegendCardInput => Object.fromEntries(Ob
 function Entries({ t, label, list, onChange }: { t: T; label: string; list: CardEntry[]; onChange: (l: CardEntry[]) => void }) {
   const set = (i: number, e: Partial<CardEntry>) => onChange(list.map((x, j) => (j === i ? { ...x, ...e } : x)));
   return (
-    <fieldset className="admin-card-entries">
+    <fieldset className="admin-lc-entries">
       <legend>{label}</legend>
       {list.map((e, i) => (
-        <div key={i} className="admin-card-entry">
+        <div key={i} className="admin-lc-entry">
           <select className="ui-input" aria-label={t('Icon')} value={e.icon} onChange={(ev) => set(i, { icon: ev.target.value })}>
             {Object.entries(CARD_ICONS).map(([k, v]) => (
               <option key={k} value={k}>
@@ -492,11 +494,11 @@ function Entries({ t, label, list, onChange }: { t: T; label: string; list: Card
 
 function Swatches({ label, colors, value, onChange }: { label: string; colors: readonly string[]; value: string; onChange: (c: string) => void }) {
   return (
-    <div className="admin-card-swatches" role="group" aria-label={label}>
+    <div className="admin-lc-swatches" role="group" aria-label={label}>
       <span>{label}</span>
       <div>
         {colors.map((c) => (
-          <button key={c} type="button" className="admin-card-swatch" style={{ background: c }} aria-label={c} aria-pressed={c.toUpperCase() === value.toUpperCase()} onClick={() => onChange(c)} />
+          <button key={c} type="button" className="admin-lc-swatch" style={{ background: c }} aria-label={c} aria-pressed={c.toUpperCase() === value.toUpperCase()} onClick={() => onChange(c)} />
         ))}
       </div>
     </div>
@@ -508,7 +510,7 @@ function AccountPicker({ t, value, name, onChange }: { t: T; value: string | nul
   const found = useLoad<{ accounts: { id: string; username: string; linkedCard: { id: number; nick: string } | null }[] }>(q.trim() ? `/admin/cards/accounts?${new URLSearchParams({ q: q.trim() })}` : null);
   if (value)
     return (
-      <div className="admin-card-account">
+      <div className="admin-lc-account">
         <span>
           {t('Current account')}: <b>{name ?? value}</b>
         </span>
@@ -518,7 +520,7 @@ function AccountPicker({ t, value, name, onChange }: { t: T; value: string | nul
       </div>
     );
   return (
-    <div className="admin-card-account">
+    <div className="admin-lc-account">
       <TextField label={t('Current account in Outgun Web (optional)')} value={q} maxLength={15} onChange={setQ} hint={t('Gets copy no. 0 and the legend reward when drawing their own card.')} />
       {q.trim() && (
         <ul>
@@ -589,12 +591,12 @@ function CardForm({ t, id, gens, done, cancel }: { t: T; id: number | null; gens
     );
   };
   return (
-    <div className="admin-card-form">
-      <div className="admin-card-formhead">
+    <div className="admin-lc-form">
+      <div className="admin-lc-formhead">
         <h3>{id ? t('Editing $1', existing.data?.card.nick ?? '') : t('New card')}</h3>
         <small className="admin-muted">{t('Saving publishes right away: the card goes into the draw and every save keeps the previous version.')}</small>
       </div>
-      <div className="admin-card-formgrid">
+      <div className="admin-lc-formgrid">
         <form
           className="admin-panel"
           onSubmit={(ev) => {
@@ -607,11 +609,11 @@ function CardForm({ t, id, gens, done, cancel }: { t: T; id: number | null; gens
             <TextField label={t('Epithet (optional, only on the page)')} value={card.epithet} maxLength={CARD_LIMITS.epithet} onChange={(v) => set({ epithet: v })} />
           </div>
           {similar.same ? (
-            <p className="admin-card-warn">
+            <p className="admin-lc-warn">
               {t('There is already a card for $1.', similar.same.nick)}
             </p>
           ) : similar.similar.length > 0 ? (
-            <p className="admin-card-warn">{t('Similar to $1. Check it is not the same person.', similar.similar.map((s) => s.nick).join(', '))}</p>
+            <p className="admin-lc-warn">{t('Similar to $1. Check it is not the same person.', similar.similar.map((s) => s.nick).join(', '))}</p>
           ) : null}
           <div className="admin-panel-fields">
             <label className="ui-field">
@@ -629,7 +631,7 @@ function CardForm({ t, id, gens, done, cancel }: { t: T; id: number | null; gens
             }} />
           </div>
           <TextAreaField label={t('Biography (one paragraph per blank line)')} value={card.bio} rows={8} maxLength={CARD_LIMITS.bio} onChange={(v) => set({ bio: v })} hint={`${card.bio.length} / ${CARD_LIMITS.bio}`} />
-          <fieldset className="admin-card-radios">
+          <fieldset className="admin-lc-radios">
             <legend>{t('Class')}</legend>
             {CARD_CLASSES.map((c) => (
               <label key={c.id} style={{ borderColor: card.class === c.id ? c.c1 : undefined }}>
@@ -638,7 +640,7 @@ function CardForm({ t, id, gens, done, cancel }: { t: T; id: number | null; gens
               </label>
             ))}
           </fieldset>
-          <fieldset className="admin-card-radios">
+          <fieldset className="admin-lc-radios">
             <legend>{t('Generation')}</legend>
             {gens
               .filter((g) => g.active || card.generations.includes(g.id))
@@ -696,7 +698,7 @@ function CardForm({ t, id, gens, done, cancel }: { t: T; id: number | null; gens
             <Status text={status.text} error={status.error} />
           </div>
         </form>
-        <aside className="admin-card-preview">
+        <aside className="admin-lc-preview">
           <PlayerCard look={look} />
           <h4>{t('Before saving')}</h4>
           <Checklist card={card} t={t} />
@@ -731,7 +733,7 @@ function OddsAndGenerations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens
       (e: unknown) => setStatus({ error: errorText(e) }),
     );
   return (
-    <div className="admin-cards-odds">
+    <div className="admin-lc-odds">
       <div className="admin-panel">
         <h3>{t('Odds per class')}</h3>
         <p className="admin-muted">{t('Weight of each class in the draw. Classes without an active card the player lacks leave the sum, so the draw never repeats.')}</p>
@@ -744,7 +746,7 @@ function OddsAndGenerations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens
             {
               key: 'weight',
               header: t('Weight'),
-              cell: (r) => <input className="ui-input admin-card-weight" type="number" min={0} max={1000} step={0.5} aria-label={t('Weight of $1', cardClass(r.class).name)} value={w?.[r.class] ?? ''} onChange={(ev) => setW({ ...(w ?? {}), [r.class]: ev.target.value })} />,
+              cell: (r) => <input className="ui-input admin-lc-weight" type="number" min={0} max={1000} step={0.5} aria-label={t('Weight of $1', cardClass(r.class).name)} value={w?.[r.class] ?? ''} onChange={(ev) => setW({ ...(w ?? {}), [r.class]: ev.target.value })} />,
             },
             { key: 'pct', header: t('Per claim'), align: 'end', cell: (r) => (total && r.activeCards ? `${(((weights[r.class] ?? 0) / total) * 100).toFixed(1)} %` : '—') },
             { key: 'cards', header: t('Active cards'), align: 'end', cell: (r) => r.activeCards },
@@ -754,7 +756,7 @@ function OddsAndGenerations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens
         {rows
           .filter((r) => (weights[r.class] ?? 0) > 0 && r.activeCards === 0)
           .map((r) => (
-            <p key={r.class} className="admin-card-warn">
+            <p key={r.class} className="admin-lc-warn">
               {t('$1 has weight but no active card: its odds go to the other classes.', cardClass(r.class).name)}
             </p>
           ))}
@@ -772,12 +774,12 @@ function OddsAndGenerations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens
 }
 
 function Generations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens: ReturnType<typeof useLoad<{ generations: Generation[] }>> }) {
-  const [edit, setEdit] = useState<{ id: number | null; name: string; description: string; ord: string; active: boolean } | null>(null);
+  const [edit, setEdit] = useState<{ id: number | null; name: string; description: string; ord: string; active: boolean; startedOn: string; story: string } | null>(null);
   const [status, setStatus] = useState<{ text?: string; error?: string }>({});
   const list = gens.data?.generations ?? [];
   const save = () => {
     if (!edit) return;
-    const body = { name: edit.name.trim(), description: edit.description.trim(), ord: Number(edit.ord) || 0, active: edit.active };
+    const body = { name: edit.name.trim(), description: edit.description.trim(), ord: Number(edit.ord) || 0, active: edit.active, startedOn: edit.startedOn || null, story: edit.story.trim() };
     (edit.id ? api(`/admin/card-generations/${edit.id}`, { method: 'PUT', body }) : api('/admin/card-generations', { body })).then(
       () => {
         setEdit(null);
@@ -799,6 +801,8 @@ function Generations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens: Retur
           { key: 'ord', header: t('Order'), cell: (g) => g.ord, align: 'end' },
           { key: 'name', header: t('Name'), cell: (g) => <b>{g.name}</b> },
           { key: 'desc', header: t('Description'), cell: (g) => g.description },
+          { key: 'since', header: t('Since'), cell: (g) => (g.startedOn ? new Date(`${g.startedOn}T12:00:00`).toLocaleDateString() : '—') },
+          { key: 'story', header: t('Story'), cell: (g) => <span className="admin-wrap">{g.story || '—'}</span>, hideOnPhone: true },
           { key: 'cards', header: t('Cards'), cell: (g) => g.cards, align: 'end' },
           { key: 'active', header: t('Status'), cell: (g) => (g.active ? <Badge tone="success">{t('Active')}</Badge> : <Badge tone="danger">{t('Deactivated')}</Badge>) },
           {
@@ -807,7 +811,7 @@ function Generations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens: Retur
             align: 'end',
             cell: (g) =>
               isAdmin ? (
-                <Button variant="ghost" onClick={() => setEdit({ id: g.id, name: g.name, description: g.description, ord: String(g.ord), active: g.active })}>
+                <Button variant="ghost" onClick={() => setEdit({ id: g.id, name: g.name, description: g.description, ord: String(g.ord), active: g.active, startedOn: g.startedOn ?? '', story: g.story })}>
                   {t('Edit')}
                 </Button>
               ) : null,
@@ -820,6 +824,11 @@ function Generations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens: Retur
             <TextField label={t('Name')} value={edit.name} maxLength={40} onChange={(v) => setEdit({ ...edit, name: v })} />
             <TextField label={t('Description')} value={edit.description} maxLength={120} onChange={(v) => setEdit({ ...edit, description: v })} />
             <TextField label={t('Order')} value={edit.ord} maxLength={3} onChange={(v) => setEdit({ ...edit, ord: v.replace(/\D/g, '') })} />
+            <label className="ui-field">
+              <span className="ui-label">{t('Start of the era')}</span>
+              <input className="ui-input" type="date" value={edit.startedOn} onChange={(ev) => setEdit({ ...edit, startedOn: ev.target.value })} />
+            </label>
+            <TextAreaField label={t('Story of the generation')} value={edit.story} rows={4} maxLength={2000} onChange={(v) => setEdit({ ...edit, story: v })} />
             <label className="admin-inline-check">
               <input type="checkbox" checked={edit.active} onChange={(ev) => setEdit({ ...edit, active: ev.target.checked })} /> {t('Active')}
             </label>
@@ -834,7 +843,7 @@ function Generations({ t, isAdmin, gens }: { t: T; isAdmin: boolean; gens: Retur
           </div>
         ) : (
           <div>
-            <Button onClick={() => setEdit({ id: null, name: '', description: '', ord: String((list.at(-1)?.ord ?? 0) + 1), active: true })}>{t('New generation')}</Button>
+            <Button onClick={() => setEdit({ id: null, name: '', description: '', ord: String((list.at(-1)?.ord ?? 0) + 1), active: true, startedOn: '', story: '' })}>{t('New generation')}</Button>
           </div>
         ))}
       <Status text={status.text} error={status.error ?? gens.error} />

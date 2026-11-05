@@ -68,13 +68,14 @@ export const CARD_LIMITS = {
   epithet: 32,
   position: 32,
   bio: 3000,
-  quote: 90,
+  // frase até 120, título até 40 e texto até 200: o que as 79 cartas reais pedem (OG-581)
+  quote: 120,
   memory: 200,
   clans: 12,
   clan: 24,
   entries: 8,
-  entryTitle: 28,
-  entryText: 160,
+  entryTitle: 40,
+  entryText: 200,
   links: 12,
   sources: 500,
 } as const;
@@ -112,11 +113,17 @@ export interface LegendCardInput {
 }
 
 /** Nick normalizado: dois cadastros da mesma pessoa ("Ek-Frogue" e "EK FROGUE") colidem. */
-export const cardNickKey = (nick: string) =>
-  nick.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const ACCENTS = /[\u0300-\u036f]/g;
+export const cardNickKey = (nick: string) => {
+  const key = nick.normalize('NFD').replace(ACCENTS, '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  // nick só de símbolos (":("): a chave é o próprio nick, sem espaços
+  return key || nick.replace(/\s+/g, '');
+};
 /** Endereço da página: /cartas/<slug>. */
 export const cardSlug = (nick: string) =>
-  nick.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'carta';
+  nick.normalize('NFD').replace(ACCENTS, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') ||
+  // nick só de símbolos: os códigos dos caracteres (":(" → "x3a28")
+  `x${[...nick.trim()].map((c) => c.codePointAt(0)!.toString(16)).join('')}`;
 /** Parágrafos da biografia: separados por linha em branco. */
 export const cardParagraphs = (bio: string) => bio.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 

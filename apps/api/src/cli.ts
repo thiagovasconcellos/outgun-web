@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Utilitários: node dist/cli.js migrate up|down [N]|status, seed, openapi [arquivo], season start NOME, season reclose AAAA-MM, ticket-key [kid],
 // invite [usos] [observação] (convite do beta), role NOME admin|moderator|player, milestones (marcos retroativos), milestones-calibrate (contas por marco, sem gravar).
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 import { connect } from './db/client.js';
@@ -9,6 +9,7 @@ import { appliedVersions, loadMigrations, migrateDown, migrateUp } from './db/mi
 import { ensureAppRole, ensureMonitorRole } from './db/app-role.js';
 import { seed } from './db/seed.js';
 import { importMaps } from './map-import.js';
+import { importLegendCards } from './legend-card-import.js';
 import { fileURLToPath } from 'node:url';
 import { nativeMapsDir, seedMaps } from './map-catalog.js';
 import { backfillMilestones, calibrateMilestones } from './milestones.js';
@@ -154,6 +155,13 @@ try {
     console.log(
       `${report.dryRun ? 'ENSAIO (nada gravado)' : 'GRAVADO'}: ${report.revisions.length} revisões (${report.revisions.filter((r) => r.created).length} novas), ${report.created.length} mapas novos (${report.created.filter((r) => r.created).length} criados), ${report.untouched.length} intocados, ${report.absorbed.length} duplicatas absorvidas, ${report.problems.length} avisos`,
     );
+  } else if (command === 'cards' && arg1 === 'import' && arg2) {
+    // OG-581: node dist/cli.js cards import ARQUIVO.json [--dry-run] [--note TEXTO] (o arquivo fica fora do repo, RN-CRT-08)
+    const flags = process.argv.slice(5);
+    const note = flags.includes('--note') ? flags[flags.indexOf('--note') + 1] : undefined;
+    const report = await importLegendCards(database.db, JSON.parse(readFileSync(arg2, 'utf8')), { dryRun: flags.includes('--dry-run'), ...(note ? { note } : {}) });
+    for (const p of report.problems) console.log(`PROBLEMA ${p.nick}${p.source ? ` (${p.source})` : ''}: ${p.problems.join(', ')}`);
+    console.log(`${report.dryRun ? 'ENSAIO (nada gravado)' : 'GRAVADO'}: ${report.created.length} novas, ${report.updated.length} alteradas, ${report.unchanged.length} iguais, ${report.problems.length} com problema`);
   } else if (command === 'alert-test') {
     // Um e-mail de teste de cada alerta (OG-313) para ALERT_EMAIL, pelo MAILER do ambiente.
     if (!config.alertEmail) {

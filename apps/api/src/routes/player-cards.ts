@@ -156,7 +156,7 @@ export function playerCardRoutes({ database }: AppDeps, { sessions }: Services):
             epithet: c.epithet,
             position: c.position,
             bio: c.bio,
-            generations: gens.map((g) => ({ name: g.name, description: g.description })),
+            generations: gens.map((g) => ({ name: g.name, description: g.description, startedOn: g.startedOn, story: g.story })),
             clans: c.clans,
             achievements: c.achievements,
             traits: c.traits,

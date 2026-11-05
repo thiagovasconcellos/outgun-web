@@ -1064,7 +1064,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-578](cards/OG-578-cartas-inventario-no-perfil.md) | Coleção no perfil | E18 | 3 | Must | S61 | OG-572, OG-576 | Em revisão |
 | [OG-579](cards/OG-579-cartas-pagina-de-detalhes.md) | Página de detalhes da carta | E18 | 3 | Must | S61 | OG-572, OG-576 | Em revisão |
 | [OG-580](cards/OG-580-cartas-recompensa-da-lenda.md) | Recompensa da lenda (broche, destaque, marco) | E18 | 3 | Should | S61 | OG-576, OG-578 | Em revisão |
-| [OG-581](cards/OG-581-cartas-importacao-das-85.md) | Importação das 85 cartas | E18 | 3 | Must | S61 | OG-570, OG-571 | Pronto |
+| [OG-581](cards/OG-581-cartas-importacao-das-85.md) | Importação das 85 cartas | E18 | 3 | Must | S61 | OG-570, OG-571 | Em revisão |
 | [OG-582](cards/OG-582-cartas-premio-da-outcup.md) | Carta alta para a dupla campeã da OutCup | E18 | 3 | Could | — | OG-576, OG-528 | Backlog |
 
 **Total:** 419 cards, 1328 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 350 cards, 1033 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).

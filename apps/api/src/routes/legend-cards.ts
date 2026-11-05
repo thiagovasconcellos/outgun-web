@@ -437,12 +437,20 @@ export function legendCardAdminRoutes(deps: AppDeps, services: Services): Fastif
       const usage = new Map([...used].map((r) => [Number(r.g), Number(r.n)]));
       return { generations: gens.map((g) => ({ ...g, cards: usage.get(g.id) ?? 0 })) };
     });
-    const GenBody = Type.Object({ name: Type.String({ minLength: 1, maxLength: 40 }), description: Type.String({ maxLength: 120 }), ord: Type.Integer({ minimum: 0, maximum: 999 }), active: Type.Boolean() });
+    const GenBody = Type.Object({
+      name: Type.String({ minLength: 1, maxLength: 40 }),
+      description: Type.String({ maxLength: 120 }),
+      ord: Type.Integer({ minimum: 0, maximum: 999 }),
+      active: Type.Boolean(),
+      startedOn: Type.Optional(Type.Union([Type.String({ format: 'date' }), Type.Null()])),
+      story: Type.Optional(Type.String({ maxLength: 2000 })),
+    });
+    const genValues = (b: Static<typeof GenBody>) => ({ name: b.name.trim(), description: b.description.trim(), ord: b.ord, active: b.active, startedOn: b.startedOn ?? null, story: b.story?.trim() ?? '' });
     app.post('/card-generations', { schema: { tags: ['admin'], summary: 'Cria uma geração (só admin)', body: GenBody } }, async (request, reply) => {
       const user = await guard(request, reply, 'admin');
       if (!user) return reply;
       const b = request.body;
-      const [g] = await db.insert(cardGenerations).values({ name: b.name.trim(), description: b.description.trim(), ord: b.ord, active: b.active }).returning();
+      const [g] = await db.insert(cardGenerations).values(genValues(b)).returning();
       await audit(user, 'card-generation', g!.name, { generation: g!.id });
       return reply.code(201).send(g);
     });
@@ -450,7 +458,7 @@ export function legendCardAdminRoutes(deps: AppDeps, services: Services): Fastif
       const user = await guard(request, reply, 'admin');
       if (!user) return reply;
       const b = request.body;
-      const [g] = await db.update(cardGenerations).set({ name: b.name.trim(), description: b.description.trim(), ord: b.ord, active: b.active }).where(eq(cardGenerations.id, request.params.id)).returning();
+      const [g] = await db.update(cardGenerations).set(genValues(b)).where(eq(cardGenerations.id, request.params.id)).returning();
       if (!g) return reply.code(404).send({ error: 'not_found', message: 'no such generation' });
       await audit(user, 'card-generation', g.name, { generation: g.id, active: g.active });
       return g;
