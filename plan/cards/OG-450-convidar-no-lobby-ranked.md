@@ -6,8 +6,8 @@
 | Tipo | Feature |
 | Prioridade | Could |
 | Estimativa | 3 pts |
-| Sprint | — |
-| Status | Backlog |
+| Sprint | S62 |
+| Status | Pronto |
 | Dependências | OG-447, D-82 |
 | Regras de negócio | RN-RKL-07..12 |
 | Skills | `outgun-card-workflow` |
