@@ -25,6 +25,7 @@ import { SignInForm } from './account.js';
 import { type HistoryEntry, useApi } from './stats.js';
 import { STEAM_STORE_URL } from './download.js';
 import { ClanBadge } from '../ui/Emblem.js';
+import { useClaimStatus } from './cards.js';
 
 /** Seta circular grossa do sorteio de cor. */
 function RerollIcon() {
@@ -355,6 +356,15 @@ export function HomeMilestones({ username }: { readonly username: string }) {
   );
 }
 
+/** Cartas de Jogador (OG-577): resgates liberados levam ao resgate; senão, a coleção no perfil. */
+export function HomeCards({ username }: { readonly username: string }) {
+  const { t } = usePrefs();
+  const { status } = useClaimStatus();
+  if (!status || status.total === 0) return null;
+  const value = status.available > 0 ? t('Claim ($1)', String(status.available)) : !status.unlocked ? t('$1 of $2 matches', String(Math.min(status.matches, status.matchesNeeded)), String(status.matchesNeeded)) : `${status.owned}/${status.total}`;
+  return <StatRow icon={<Icon name="cards" size={18} />} label={t('Player cards')} value={value} muted={status.available === 0} to={status.available > 0 ? '/cartas/resgatar' : `/players/${encodeURIComponent(username)}#cards`} />;
+}
+
 /** Cartão da esquerda: convidado (cor, apelido, começar) ou "Entrar"; quem entrou vê o boneco da conta e joga. */
 export function StartCard() {
   const { t, prefs, setPrefs } = usePrefs();
@@ -381,6 +391,7 @@ export function StartCard() {
                 <HomeClan tag={user.clanTag} />
                 <HomeRank username={user.username} />
                 <HomeMilestones username={user.username} />
+                <HomeCards username={user.username} />
               </ul>
             </>
           ) : (

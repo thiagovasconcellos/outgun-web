@@ -1060,10 +1060,10 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-574](cards/OG-574-cartas-painel-formulario.md) | Painel: criar e editar carta | E18 | 5 | Must | S61 | OG-571, OG-572 | Em revisão |
 | [OG-575](cards/OG-575-cartas-painel-chances-e-geracoes.md) | Painel: chances e gerações | E18 | 2 | Should | S61 | OG-571, OG-573 | Em revisão |
 | [OG-576](cards/OG-576-cartas-resgate-semanal-e-sorteio.md) | Resgate semanal e sorteio sem repetir | E18 | 5 | Must | S61 | OG-570 | Em revisão |
-| [OG-577](cards/OG-577-cartas-abertura-do-resgate.md) | Tela de resgate e abertura | E18 | 3 | Must | S61 | OG-572, OG-576 | Pronto |
-| [OG-578](cards/OG-578-cartas-inventario-no-perfil.md) | Coleção no perfil | E18 | 3 | Must | S61 | OG-572, OG-576 | Pronto |
-| [OG-579](cards/OG-579-cartas-pagina-de-detalhes.md) | Página de detalhes da carta | E18 | 3 | Must | S61 | OG-572, OG-576 | Pronto |
-| [OG-580](cards/OG-580-cartas-recompensa-da-lenda.md) | Recompensa da lenda (broche, destaque, marco) | E18 | 3 | Should | S61 | OG-576, OG-578 | Pronto |
+| [OG-577](cards/OG-577-cartas-abertura-do-resgate.md) | Tela de resgate e abertura | E18 | 3 | Must | S61 | OG-572, OG-576 | Em revisão |
+| [OG-578](cards/OG-578-cartas-inventario-no-perfil.md) | Coleção no perfil | E18 | 3 | Must | S61 | OG-572, OG-576 | Em revisão |
+| [OG-579](cards/OG-579-cartas-pagina-de-detalhes.md) | Página de detalhes da carta | E18 | 3 | Must | S61 | OG-572, OG-576 | Em revisão |
+| [OG-580](cards/OG-580-cartas-recompensa-da-lenda.md) | Recompensa da lenda (broche, destaque, marco) | E18 | 3 | Should | S61 | OG-576, OG-578 | Em revisão |
 | [OG-581](cards/OG-581-cartas-importacao-das-85.md) | Importação das 85 cartas | E18 | 3 | Must | S61 | OG-570, OG-571 | Pronto |
 | [OG-582](cards/OG-582-cartas-premio-da-outcup.md) | Carta alta para a dupla campeã da OutCup | E18 | 3 | Could | — | OG-576, OG-528 | Backlog |
 

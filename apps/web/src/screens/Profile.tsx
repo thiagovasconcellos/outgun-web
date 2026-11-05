@@ -19,10 +19,12 @@ import { TitleBadges } from './HallOfFame.js';
 import { CupTitleBadges } from './outcup.js';
 import { useManifestLists, swatchBackground } from './options.js';
 import { MilestonesPanel } from './milestones-panel.js';
+import { ProfileCards } from './cards.js';
 import { StylePanel } from './style-panel.js';
 import { RatingInfo } from './rating-help.js';
 import { date, duration, FormatTabs, formatQuery, percent, PlayerLink, Status, SubstitutionBadges, useApi, useFormatParam, type HistoryEntry, type Mode, type Profile, type Totals } from './stats.js';
 import { ClanBadge } from '../ui/Emblem.js';
+import { LegendBadge } from '../ui/LegendBadge.js';
 
 interface Mate {
   username: string;
@@ -129,6 +131,7 @@ export function ProfileScreen() {
           {colour && <span className="profile-colour" style={{ background: colour }} aria-hidden="true" />}
           <ClanBadge tag={p.user.clanTag} size={28} />
           {withClan(p.user.username, p.user.clanLabel)}
+          <LegendBadge username={p.user.username} />
           {p.number ? <span className="profile-number" title={t('Player number')}>{p.number}</span> : null}
         </span>
       }
@@ -214,6 +217,8 @@ export function ProfileScreen() {
       </Panel>
 
       <MilestonesPanel p={p} />
+
+      <ProfileCards name={p.user.username} owner={owner} />
 
       <Panel title={t('Recent matches')}>
         <Tabs

@@ -18,7 +18,7 @@ export const NOTIFICATIONS_POLL_MS = 30_000;
 
 export interface AppNotification {
   id: string;
-  kind: 'clan_invite' | 'clan_request' | 'milestone' | 'number_expiring' | 'number_released' | 'cup';
+  kind: 'clan_invite' | 'clan_request' | 'milestone' | 'number_expiring' | 'number_released' | 'cup' | 'cards';
   data: {
     clanTag?: string;
     clanName?: string;
@@ -26,6 +26,8 @@ export interface AppNotification {
     milestones?: string[];
     secretNames?: Record<string, Bilingual>;
     number?: number;
+    /** Resgates de carta liberados (OG-577). */
+    cards?: number;
     /** OutCup (OG-527). */
     cup?: string;
     cupEvent?: string;
@@ -66,6 +68,8 @@ export function notificationText(n: AppNotification, t: T, locale = 'en'): strin
     return secret ? t('Secret milestone unlocked! $1', shown) : names.length === 1 ? t('New milestone: $1', shown) : t('New milestones: $1', shown);
   }
   if (n.kind === 'cup') return cupNotificationText(n, t, locale);
+  // Cartas de Jogador (OG-577): 3 partidas na semana
+  if (n.kind === 'cards') return t('Your $1 card claims of the week are unlocked!', String(n.data.cards ?? 2));
   // número de jogador (OG-410)
   if (n.kind === 'number_expiring') return t('Your number $1 is freed in 7 days if you do not play.', String(n.data.number ?? '?'));
   if (n.kind === 'number_released') return t('Your number $1 was freed after 60 days without playing.', String(n.data.number ?? '?'));
@@ -109,7 +113,9 @@ function cupNotificationText(n: AppNotification, t: T, locale: string): string {
 
 /** Para onde a notificação leva: a caixa de convites ou a página do clã (onde a liderança aprova). */
 export const notificationPath = (n: AppNotification, username?: string) =>
-  n.kind === 'cup'
+  n.kind === 'cards'
+    ? '/cartas/resgatar'
+    : n.kind === 'cup'
     ? `/outcup${n.data.cup ? `/${n.data.cup}` : ''}${n.data.matchId ? `?confronto=${n.data.matchId}` : ''}`
     : n.kind === 'milestone' ? (username ? `/players/${encodeURIComponent(username)}` : '/') : n.kind === 'number_expiring' || n.kind === 'number_released' ? '/account' : n.kind === 'clan_invite' || !n.data.clanTag ? '/clans/inbox' : `/clans/${encodeURIComponent(n.data.clanTag)}`;
 

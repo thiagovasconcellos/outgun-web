@@ -142,6 +142,7 @@ export const MILESTONES: readonly Milestone[] = [
   { id: 'comeback', group: 'ranked', name: b('Virada', 'Comeback'), description: b('Venceu uma ranqueada depois de estar 2 capturas atrás', 'Won a ranked match after being 2 captures behind') },
   // social
   { id: 'beta', group: 'social', name: b('Pioneiro', 'Pioneer'), description: b('Jogou o beta', 'Played the beta') },
+  { id: 'card_legend', group: 'social', name: b('A lenda em pessoa', 'The legend in person'), description: b('Tirou a própria Carta de Jogador', 'Drew their own player card') },
   { id: 'duo_50', group: 'social', name: b('Dupla dinâmica', 'Dynamic duo'), description: b('50 partidas no mesmo time do mesmo jogador', '50 matches on the same team as the same player') },
   // humor (OG-399)
   { id: 'humor_today_yes', group: 'humor', name: b('Hoje não, hoje não... hoje sim?', 'Not today, not today... today?'), description: b('Morreu com a bandeira 3 vezes seguidas e capturou na 4ª tentativa', 'Died carrying the flag 3 times in a row, then captured on the 4th try') },

@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 3 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-576, OG-578 |
 | Regras de negócio | RN-CRT-09, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -29,8 +29,9 @@ Como jogador que virou carta, quero ser reconhecido quando tiro a minha própria
 - Se a moderação desvincular a conta, o broche sai; a cópia nº 0 fica.
 
 ## Critérios de aceite
-- [ ] Conta vinculada que tira a própria carta recebe a cópia nº 0, o broche e o marco.
-- [ ] O broche não aparece dentro da partida.
+- [x] Conta vinculada que tira a própria carta recebe a cópia nº 0, o broche e o marco.
+- [x] O broche não aparece dentro da partida.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- Broche: `GET /cards/legends` (contas com a própria carta na cópia nº 0) + `ui/LegendBadge.tsx`, dentro do `PlayerLink` (perfil, jogadores, ranking, relatórios, clãs) e no título do perfil; uma chamada por carregamento. Nada no HUD da partida.
+- Marco `card_legend` ("A lenda em pessoa", grupo social, ícone estrela) gravado no resgate da própria carta, com aviso; conquista `CARD_LEGEND` gerada nos CSVs/ícones da Steam — **o PO precisa cadastrá-la no Steamworks** (como as outras, `apps/desktop/steam/achievements.md`).

@@ -163,6 +163,13 @@ export async function claimCard(db: Db, userId: string, seq: number, o: { now?: 
     }
     await tx.insert(userCards).values({ userId, cardId: pick.id, serial, claimedAt: now });
     await tx.insert(cardClaims).values({ userId, week, seq, cardId: pick.id, claimedAt: now });
+    // recompensa da lenda (OG-580, RN-CRT-09): marco "A lenda em pessoa" (o broche e o destaque saem da cópia nº 0)
+    if (own) {
+      const got = await tx.execute<{ milestone: string }>(sql`
+        INSERT INTO player_milestones (user_id, milestone, achieved_at, match_id) VALUES (${userId}, 'card_legend', ${now.toISOString()}, NULL)
+        ON CONFLICT (user_id, milestone) DO NOTHING RETURNING milestone`);
+      if (got.length > 0) await notify(tx, [userId], 'milestone', { milestones: ['card_legend'] });
+    }
     return { seq, cardId: pick.id, serial, own, repeated: false };
   });
 }

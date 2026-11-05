@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-572, OG-576 |
 | Regras de negócio | RN-CRT-07, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -27,8 +27,9 @@ Como jogador, quero ver minhas cartas no meu perfil e quantas faltam, para acomp
 - API: `GET /players/:id/cards`.
 
 ## Critérios de aceite
-- [ ] Perfil sem cartas mostra 0/x e nenhuma carta não descoberta é revelada (nem pelo JSON da API).
-- [ ] Clicar numa carta que eu tenho abre a página dela.
+- [x] Perfil sem cartas mostra 0/x e nenhuma carta não descoberta é revelada (nem pelo JSON da API).
+- [x] Clicar numa carta que eu tenho abre a página dela.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- `ProfileCards` no perfil (âncora `#cards`) e `GET /players/:name/cards`: só as cartas que a pessoa tem (da mais rara para a mais comum), contagem geral e por classe e espaços "?" (até 24) para as que faltam; a API não manda nada das não descobertas.
+- A carta da lenda aparece em destaque no topo (OG-580).

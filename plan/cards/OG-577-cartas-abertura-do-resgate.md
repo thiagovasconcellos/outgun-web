@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-572, OG-576 |
 | Regras de negócio | RN-CRT-01, RN-CRT-04, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -27,8 +27,9 @@ Como jogador, quero abrir a carta com suspense que cresce com a raridade, para o
 - Reduzir movimento: vira sem efeitos.
 
 ## Critérios de aceite
-- [ ] O resgate é sorteado no servidor antes da animação; recarregar a página não troca a carta.
-- [ ] Os 6 efeitos batem com a proposta.
+- [x] O resgate é sorteado no servidor antes da animação; recarregar a página não troca a carta.
+- [x] Os 6 efeitos batem com a proposta.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- `screens/cards.tsx` → `ClaimScreen` em `/cartas/resgatar`: verso que carrega na cor da classe (0,2 s a 1,8 s), vira, clarão a partir do Lendário, escurecido no Nefasto, tremor no Especial e na Mítica (`cards.css`); sem efeitos com movimento reduzido. Entrada na tela inicial (linha "Cartas de jogador" na ficha de quem entrou: "Resgatar (2)", "1 de 3 partidas" ou "12/85") e no perfil.
+- Aviso `cards` com texto e link para o resgate. Conferido com a API simulada (Playwright); com banco real, no fechamento.
