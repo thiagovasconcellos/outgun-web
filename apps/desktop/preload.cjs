@@ -31,7 +31,12 @@ contextBridge.exposeInMainWorld('outgunDesktop', {
     ),
   /** Convite pela Steam (OG-447): abre a janela de amigos da Steam para a sala (token: sala com senha). */
   steamInvite: (room, token, by) =>
-    ipcRenderer.invoke('outgun:steam-invite', typeof room === 'string' ? room : '', typeof token === 'string' ? token : null, typeof by === 'string' ? by : null),
+    ipcRenderer.invoke(
+      'outgun:steam-invite',
+      typeof room === 'string' ? room : '',
+      typeof token === 'string' ? token : null,
+      typeof by === 'string' ? by : null,
+    ),
   /** Saiu da sala: o lobby da Steam do convite fecha. */
   steamLeaveRoom: () => ipcRenderer.send('outgun:steam-leave-room'),
   /** Convite aceito: { room, token } (com o app aberto). Devolve a função que para de ouvir. */

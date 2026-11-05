@@ -393,7 +393,11 @@ function joinFromLobby(lobby) {
   const by = lobby.getData('by') ?? '';
   if (!ROOM_ID.test(room)) return;
   log(`convite: entrando na sala ${room}`);
-  pendingJoin = { room, token: INVITE_TOKEN.test(token) ? token : null, by: ACCOUNT_ID.test(by) ? by : null };
+  pendingJoin = {
+    room,
+    token: INVITE_TOKEN.test(token) ? token : null,
+    by: ACCOUNT_ID.test(by) ? by : null,
+  };
   win?.webContents.send('outgun:steam-join', pendingJoin);
   try {
     lobby.leave();
@@ -415,7 +419,10 @@ function steamReady() {
   const steam = steamClient();
   if (!steam || joinCallbackOn) return steam;
   joinCallbackOn = true;
-  steam.callback.register(steam.callback.SteamCallback.GameLobbyJoinRequested, (e) => void acceptLobby(e.lobby_steam_id));
+  steam.callback.register(
+    steam.callback.SteamCallback.GameLobbyJoinRequested,
+    (e) => void acceptLobby(e.lobby_steam_id),
+  );
   return steam;
 }
 /** `+connect_lobby <id>` na linha de comando (jogo aberto pelo convite, ou segunda abertura). */
@@ -427,18 +434,28 @@ function connectLobbyArg(argv) {
 const startLobby = launchedBySteam ? connectLobbyArg(process.argv) : null;
 
 ipcMain.handle('outgun:steam-invite', async (event, room, token, by) => {
-  if (!launchedBySteam || !sameOrigin(event.senderFrame?.url ?? '') || typeof room !== 'string' || !ROOM_ID.test(room)) return false;
+  if (
+    !launchedBySteam ||
+    !sameOrigin(event.senderFrame?.url ?? '') ||
+    typeof room !== 'string' ||
+    !ROOM_ID.test(room)
+  )
+    return false;
   const steam = steamReady();
   if (!steam) return false;
   try {
     if (!inviteLobby || inviteLobby.room !== room) {
       inviteLobby?.lobby.leave();
       inviteLobby = null;
-      const lobby = await steam.matchmaking.createLobby(steam.matchmaking.LobbyType?.FriendsOnly ?? 1, 16);
+      const lobby = await steam.matchmaking.createLobby(
+        steam.matchmaking.LobbyType?.FriendsOnly ?? 1,
+        16,
+      );
       lobby.setData('room', room);
       inviteLobby = { room, lobby };
     }
-    if (typeof token === 'string' && INVITE_TOKEN.test(token)) inviteLobby.lobby.setData('token', token);
+    if (typeof token === 'string' && INVITE_TOKEN.test(token))
+      inviteLobby.lobby.setData('token', token);
     // quem convidou (OG-450): no lobby Ranked o convidado entra no time dele
     if (typeof by === 'string' && ACCOUNT_ID.test(by)) inviteLobby.lobby.setData('by', by);
     keepRepainting(90_000);
@@ -471,7 +488,10 @@ ipcMain.handle('outgun:steam-auth-ticket', async (event) => {
   if (!steam) return null;
   try {
     const ticket = await steam.auth.getAuthTicketForWebApi('outgun');
-    return { ticket: ticket.getBytes().toString('hex'), steamId: steam.localplayer.getSteamId().steamId64.toString() };
+    return {
+      ticket: ticket.getBytes().toString('hex'),
+      steamId: steam.localplayer.getSteamId().steamId64.toString(),
+    };
   } catch (error) {
     log(`steam: sem ticket: ${error}`);
     return null;
