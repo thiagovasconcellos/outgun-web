@@ -1,0 +1,244 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* Carta de Jogador (OG-572, D-94): escada de exclusividade (t0 = Clássico ... t5 = Mítica). Cores da
+   classe em --c1 (moldura, brilho) e --c2 (textos). Medidas em cqw: a carta funciona em qualquer
+   largura. Fonte única do jogo (Inter), em peso alto e itálico. */
+.pc {
+  container-type: inline-size;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #030405;
+  color: #eef2f7;
+  overflow: hidden;
+  border-radius: 1.2cqw;
+  font-family: var(--font);
+  user-select: none;
+}
+.pc-bg,
+.pc-frame,
+.pc-cracks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.pc-inner {
+  position: absolute;
+  inset: 6cqw 7cqw;
+  display: grid;
+  grid-template-rows: 16cqw 1fr 16cqw 12cqw;
+  row-gap: 3cqw;
+}
+.pc-logo {
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  line-height: 0.9;
+  background: linear-gradient(180deg, #ffffff 0%, #c9ced6 45%, #6c727c 55%, #e9edf2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0.2cqw 0 #000);
+}
+.pc-sub {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c2);
+}
+.pc-box {
+  border: 0.3cqw solid var(--c1);
+  border-radius: 1.2cqw;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 1.2cqw color-mix(in srgb, var(--c1) 60%, transparent), inset 0 0 1.4cqw color-mix(in srgb, var(--c1) 25%, transparent);
+}
+.pc-head {
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  padding: 1.2cqw 9cqw;
+}
+.pc-head .pc-logo {
+  font-size: 9cqw;
+}
+.pc-head .pc-sub {
+  font-size: 3.2cqw;
+}
+.pc-art {
+  position: relative;
+  min-height: 0;
+}
+.pc-art canvas {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pc-name {
+  display: grid;
+  place-items: center;
+  padding: 0 3cqw;
+  min-width: 0;
+}
+.pc-nick {
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  line-height: 0.95;
+  white-space: nowrap;
+  overflow: hidden;
+  padding-right: 1cqw;
+  max-width: 100%;
+  font-size: 12cqw;
+  letter-spacing: -0.01em;
+}
+.pc-class {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.6cqw;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 5.4cqw;
+  line-height: 1;
+  color: var(--c2);
+  text-shadow: 0 0 1.2cqw var(--c1);
+}
+.pc-stars {
+  font-size: 3.6cqw;
+  letter-spacing: 0.5em;
+  padding-left: 0.5em;
+}
+.pc-serial {
+  position: absolute;
+  right: 9cqw;
+  bottom: 2.2cqw;
+  font-weight: 700;
+  font-size: 3.2cqw;
+  letter-spacing: 0.06em;
+  color: var(--c2);
+  opacity: 0.9;
+  z-index: 3;
+  font-variant-numeric: tabular-nums;
+}
+.pc-foil {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  mix-blend-mode: screen;
+  border-radius: inherit;
+}
+.pc-aura {
+  position: absolute;
+  inset: 3%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 8%, var(--c1) 12%, transparent 18% 33%, var(--c2) 38%, transparent 44% 58%, var(--c1) 63%, transparent 69% 83%, var(--c2) 88%, transparent 94%);
+  filter: blur(1.6cqw);
+  opacity: 0.6;
+  animation: pc-spin 14s linear infinite;
+}
+
+/* degraus */
+.pc-t0 .pc-nick { color: var(--c2); }
+.pc-t1 .pc-nick {
+  background: linear-gradient(180deg, var(--c2), var(--c1));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.pc-t2 .pc-nick,
+.pc-t3 .pc-nick,
+.pc-t4 .pc-nick {
+  background: linear-gradient(180deg, #ffffff 0%, var(--c2) 38%, var(--c1) 72%, color-mix(in srgb, var(--c1) 55%, #000) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 0.8cqw color-mix(in srgb, var(--c1) 70%, transparent));
+}
+.pc-t5 .pc-nick {
+  background: linear-gradient(90deg, #ffffff, var(--c2), #9dffe8, #ffe58a, var(--c1), #ffffff, var(--c2));
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 1.2cqw var(--c1));
+  animation: pc-holo-text 6s linear infinite;
+}
+.pc-t4 .pc-nick { animation: pc-glitch 4.5s steps(1) infinite; }
+.pc-t0 .pc-frame { filter: drop-shadow(0 0 0.3cqw var(--c1)); }
+.pc-t1 .pc-frame { filter: drop-shadow(0 0 0.6cqw var(--c1)); }
+.pc-t2 .pc-frame { filter: drop-shadow(0 0 0.6cqw var(--c1)) drop-shadow(0 0 1.6cqw var(--c1)); }
+.pc-t3 .pc-frame,
+.pc-t4 .pc-frame {
+  filter: drop-shadow(0 0 0.6cqw var(--c1)) drop-shadow(0 0 2.2cqw var(--c1));
+  animation: pc-pulse 3.2s ease-in-out infinite;
+}
+.pc-t5 .pc-frame {
+  filter: drop-shadow(0 0 0.8cqw var(--c1)) drop-shadow(0 0 3cqw var(--c1));
+  animation: pc-pulse 2.4s ease-in-out infinite;
+}
+.pc-t0 .pc-box { box-shadow: none; }
+.pc-t2 .pc-foil { background: radial-gradient(circle at var(--mx, 30%) var(--my, 22%), rgba(255, 255, 255, 0.2), transparent 45%); }
+.pc-t3 .pc-foil,
+.pc-t4 .pc-foil {
+  background-image: radial-gradient(circle at var(--mx, 30%) var(--my, 22%), rgba(255, 255, 255, 0.2), transparent 45%), linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, 0.17) 50%, transparent 58%);
+  background-size: 100% 100%, 260% 100%;
+  animation: pc-sweep 5s linear infinite;
+}
+.pc-t4 .pc-foil { mix-blend-mode: soft-light; }
+.pc-t5 .pc-foil {
+  background-image: radial-gradient(circle at var(--mx, 30%) var(--my, 22%), rgba(255, 255, 255, 0.28), transparent 45%),
+    linear-gradient(125deg, rgba(255, 0, 140, 0.22), rgba(255, 210, 0, 0.22), rgba(0, 255, 170, 0.22), rgba(0, 170, 255, 0.22), rgba(210, 0, 255, 0.22), rgba(255, 0, 140, 0.22));
+  background-size: 100% 100%, 300% 300%;
+  animation: pc-holo 7s linear infinite;
+  mix-blend-mode: color-dodge;
+}
+
+/* verso e silhueta */
+.pc-inner-back {
+  grid-template-rows: auto auto;
+  align-content: center;
+  justify-items: center;
+  gap: 3cqw;
+  text-align: center;
+}
+.pc-inner-back .pc-logo { font-size: 15cqw; }
+.pc-inner-back .pc-sub { font-size: 4.4cqw; }
+.pc-silhouette .pc-nick {
+  color: var(--c2);
+  background: none;
+  filter: none;
+  animation: none;
+}
+
+/* parada: sem movimento (grade grande); anima só sob o mouse */
+.pc-still:not(:hover) *,
+.pc-still:not(:hover) {
+  animation-play-state: paused !important;
+}
+
+@keyframes pc-holo { to { background-position: 0 0, 300% 0; } }
+@keyframes pc-holo-text { to { background-position: 300% 0; } }
+@keyframes pc-sweep {
+  from { background-position: 0 0, 130% 0; }
+  to { background-position: 0 0, -130% 0; }
+}
+@keyframes pc-pulse { 50% { opacity: 0.7; } }
+@keyframes pc-spin { to { transform: rotate(1turn); } }
+@keyframes pc-glitch {
+  0%, 88%, 100% { transform: none; }
+  90% { transform: translate(-1.4cqw, 0) skewX(-10deg); opacity: 0.8; }
+  92% { transform: translate(1.1cqw, 0.3cqw); }
+  94% { transform: translate(-0.5cqw, 0); opacity: 0.9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc,
+  .pc * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

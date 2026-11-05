@@ -68,6 +68,13 @@ const PATHS = {
   ),
   // notificações (OG-361)
   bell: <path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4" />,
+  cards: (
+    <>
+      <rect x="8" y="4" width="11" height="15" rx="1.5" />
+      <path d="M5.5 7.5v11A1.5 1.5 0 0 0 7 20h9" />
+      <path d="m13.5 8.5 1.3 2.6 2.7.4-2 1.9.5 2.7-2.5-1.3-2.5 1.3.5-2.7-2-1.9 2.7-.4z" />
+    </>
+  ),
   shield: (
     <>
       <circle cx="12" cy="12" r="8.5" />

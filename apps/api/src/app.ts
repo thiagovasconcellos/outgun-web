@@ -17,6 +17,8 @@ import { clanRoutes } from './routes/clans.js';
 import { notificationRoutes } from './routes/notifications.js';
 import { liveRoutes } from './routes/live.js';
 import { adminRoutes } from './routes/admin.js';
+import { legendCardAdminRoutes } from './routes/legend-cards.js';
+import { playerCardRoutes } from './routes/player-cards.js';
 import { GitHubIssues, type IssueTracker } from './github.js';
 import { feedbackRoutes } from './routes/feedback.js';
 import { telemetryRoutes } from './routes/telemetry.js';
@@ -224,6 +226,8 @@ export async function buildApp(deps: AppDeps): Promise<App> {
   }
   await app.register(internalRoutes(deps, services), { prefix: '/internal' });
   await app.register(adminRoutes(deps, services), { prefix: '/admin' });
+  await app.register(legendCardAdminRoutes(deps, services), { prefix: '/admin' });
+  await app.register(playerCardRoutes(deps, services));
   await app.register(feedbackRoutes(deps, services));
   await app.register(telemetryRoutes(deps, services));
   return app;

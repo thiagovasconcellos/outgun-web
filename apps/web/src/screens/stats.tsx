@@ -11,6 +11,7 @@ import { usePrefs } from '../app/prefs.js';
 import { Badge } from '../ui/Button.js';
 import { Tabs } from '../ui/Tabs.js';
 import type { ClanEmblem } from '@outgun/protocol';
+import { LegendBadge } from '../ui/LegendBadge.js';
 
 export type Mode = 'ranked' | 'casual';
 
@@ -248,7 +249,14 @@ export function Status({ loading, missing, error }: { loading: boolean; missing:
 }
 
 export function PlayerLink({ name, username }: { name: string; username: string | null }) {
-  return username ? <Link to={`/players/${encodeURIComponent(username)}`}>{name}</Link> : <>{name}</>;
+  return username ? (
+    <>
+      <Link to={`/players/${encodeURIComponent(username)}`}>{name}</Link>
+      <LegendBadge username={username} />
+    </>
+  ) : (
+    <>{name}</>
+  );
 }
 
 export type FormatFilter = RankedFormat | 'all';

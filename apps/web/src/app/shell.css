@@ -2714,3 +2714,258 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-3);
 }
+
+/* Aba Cartas do painel (OG-573/574/575) */
+.admin-lc-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--space-2);
+}
+.admin-lc-tiles > div {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  padding: var(--space-2) var(--space-3);
+}
+.admin-lc-tiles b {
+  display: block;
+  font-size: var(--text-xl, 1.5rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.admin-lc-tiles small {
+  color: var(--text-muted);
+}
+.admin-lc-nick {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.admin-lc-dot {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  flex: none;
+}
+.admin-lc-class {
+  display: inline-block;
+  white-space: nowrap;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium, 600);
+}
+.admin-lc-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+}
+.admin-lc-head h3 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 900;
+  font-style: italic;
+  text-transform: uppercase;
+  color: var(--c2);
+  text-shadow: 0 0 14px var(--c1);
+}
+.admin-lc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 16rem) minmax(0, 1fr);
+  gap: var(--space-5, 1.5rem);
+  align-items: start;
+}
+.admin-lc-grid > aside,
+.admin-lc-actions,
+.admin-lc-main,
+.admin-lc-preview {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+.admin-lc-actions .ui-button {
+  justify-self: stretch;
+}
+.admin-lc-main h4,
+.admin-lc-preview h4 {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: var(--text-sm);
+  color: var(--text-accent);
+}
+.admin-lc-two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-4);
+}
+.admin-lc-checks {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.admin-lc-checks li::before {
+  display: inline-block;
+  width: 1.2em;
+  font-weight: 700;
+}
+.admin-lc-checks li.ok::before {
+  content: '✓';
+  color: var(--text-success);
+}
+.admin-lc-checks li.warn {
+  color: var(--text-muted);
+}
+.admin-lc-checks li.warn::before {
+  content: '!';
+  color: var(--text-warning);
+}
+.admin-lc-checks li.missing::before {
+  content: '×';
+  color: var(--text-danger);
+}
+.admin-lc-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+}
+.admin-lc-facts dt {
+  color: var(--text-muted);
+}
+.admin-lc-facts dd {
+  margin: 0;
+}
+.admin-lc-quote {
+  margin: 0;
+  border-left: 3px solid var(--c1);
+  padding: var(--space-2) var(--space-3);
+  font-weight: 800;
+  font-style: italic;
+  text-transform: uppercase;
+  color: var(--c2);
+}
+.admin-lc-bio {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 70ch;
+}
+.admin-lc-bio p {
+  margin: 0;
+}
+.admin-lc-diff details {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+}
+.admin-lc-diff del {
+  color: var(--text-danger);
+}
+.admin-lc-diff ins {
+  color: var(--text-success);
+  text-decoration: none;
+}
+.admin-lc-formgrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+  gap: var(--space-4);
+  align-items: start;
+}
+.admin-lc-preview {
+  position: sticky;
+  top: var(--space-3);
+}
+.admin-lc-warn {
+  margin: 0;
+  color: var(--text-warning);
+}
+.admin-lc-radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.admin-lc-radios legend,
+.admin-lc-entries legend {
+  font-weight: var(--weight-medium, 600);
+  margin-bottom: var(--space-2);
+  padding: 0;
+}
+.admin-lc-radios label {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+}
+.admin-lc-entries {
+  display: grid;
+  gap: var(--space-2);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.admin-lc-entry {
+  display: grid;
+  grid-template-columns: 8rem 1fr 2fr auto;
+  gap: var(--space-2);
+}
+.admin-lc-swatches {
+  display: grid;
+  gap: var(--space-1);
+}
+.admin-lc-swatches > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.admin-lc-swatch {
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  border: 2px solid #000;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px var(--border);
+}
+.admin-lc-swatch[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--text);
+}
+.admin-lc-account ul {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.admin-lc-weight {
+  width: 6rem;
+  text-align: end;
+}
+.admin-lc-odds {
+  display: grid;
+  gap: var(--space-4);
+}
+@media (max-width: 900px) {
+  .admin-lc-grid,
+  .admin-lc-formgrid {
+    grid-template-columns: 1fr;
+  }
+  .admin-lc-grid > aside,
+  .admin-lc-preview {
+    max-width: 18rem;
+    position: static;
+  }
+  .admin-lc-entry {
+    grid-template-columns: 1fr 1fr;
+  }
+}

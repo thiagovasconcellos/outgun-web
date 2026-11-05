@@ -25,6 +25,7 @@ import { HallOfFameScreen } from './screens/HallOfFame.js';
 import { OutCupScreen } from './screens/outcup.js';
 import { LeaderboardScreen, PlayersScreen } from './screens/Players.js';
 import { ProfileScreen } from './screens/Profile.js';
+import { CardPageScreen, ClaimScreen } from './screens/cards.js';
 import { CreditsScreen, HelpScreen, HomeScreen, ReplaysScreen, SourceScreen } from './screens/menus.js';
 import { OptionsScreen } from './screens/options.js';
 import { ClanInboxScreen, ClanScreen, ClansScreen, CreateClanScreen } from './screens/clans.js';
@@ -89,6 +90,8 @@ const router = createBrowserRouter([
           { path: 'players', element: <PlayersScreen /> },
           { path: 'jogadores', element: <Navigate to="/players" replace /> },
           { path: 'players/:name', element: <ProfileScreen /> },
+          { path: 'cartas/resgatar', element: <ClaimScreen /> },
+          { path: 'cartas/:slug', element: <CardPageScreen /> },
           { path: 'matches/:id', element: <MatchScreen /> },
           { path: 'series/:id', element: <SeriesScreen /> },
           { path: 'rooms/:id/report', element: <LastMatchScreen /> },

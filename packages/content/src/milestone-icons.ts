@@ -56,7 +56,7 @@ export const MILESTONE_ICON_SYMBOLS: Readonly<Record<string, MilestoneSymbol>> =
   deathbringer_1: 'skull', deathbringer_50: 'skull', trades_50: 'players', first_kills_50: 'bolt', assists_100: 'players', enemy_base_kills_100: 'flag',
   ranked_first: 'medal', ranked_win: 'medal', ranked_wins_100: 'medal', win_2x2: 'players', win_3x3: 'players', win_4x4: 'players', win_5x5: 'players',
   series_bo5: 'trophy', season_champion: 'trophy', comeback: 'bolt',
-  beta: 'star', duo_50: 'players',
+  beta: 'star', card_legend: 'star', duo_50: 'players',
   humor_today_yes: 'flag', humor_customer: 'skull', humor_butterfingers: 'flag', humor_ball_hog: 'player', humor_punching_bag: 'skull', humor_sightseeing: 'map', humor_runner_up: 'medal',
   clan_war: 'clan', clan_war_win: 'clan', clan_war_10: 'clan', clan_war_wins_10: 'clan', clan_series_win: 'trophy', clan_sweep: 'trophy', clan_rivalry_5: 'players', clan_defender: 'shield',
   cup_first: 'calendar', cup_win_match: 'medal', cup_final: 'medal', cup_champion: 'trophy', cup_bicampeao: 'trophy', cup_unbeaten: 'star', cup_comeback: 'bolt',

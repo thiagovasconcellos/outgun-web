@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cartas de Jogador do Outgun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:ital,wght@0,500;0,700;0,800;1,700;1,800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Um mundo só: fundo quase preto com neon, como as cartas. Coluna de leitura + vitrines largas para as cartas. */
+  --bg: #06080c;
+  --panel: #0d1119;
+  --panel-2: #131a26;
+  --line: #243045;
+  --ink: #e7ecf4;
+  --muted: #8c99ae;
+  --accent: #3fa9ff;
+  --ok: #49d17a;
+  --warn: #ffb547;
+  --display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); }
+a { color: var(--accent); }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.1; margin: 0; letter-spacing: .01em; }
+h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 800; }
+h2 { font-size: 2rem; font-weight: 700; }
+h3 { font-size: 1.25rem; font-weight: 700; }
+p { margin: 0; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 20px 64px; display: grid; gap: 56px; }
+.muted { color: var(--muted); }
+small { color: var(--muted); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 14px; cursor: pointer; font-weight: 600; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #031120; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+.seg button { background: transparent; border: 0; border-radius: 5px; padding: 6px 12px; cursor: pointer; color: var(--muted); font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--panel-2); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+
+header.top { padding: 40px 0 0; display: grid; gap: 14px; }
+.eyebrow { font-family: var(--display); text-transform: uppercase; letter-spacing: .14em; color: var(--accent); font-weight: 700; }
+.lead { max-width: 70ch; font-size: 1.08rem; }
+.notice { border-left: 3px solid var(--warn); background: #1a1508; padding: 12px 16px; border-radius: 0 6px 6px 0; max-width: 90ch; }
+.decided { border-left: 3px solid var(--ok); background: #0b1a10; padding: 12px 16px; border-radius: 0 6px 6px 0; max-width: 90ch; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .95rem; }
+
+section { display: grid; gap: 20px; }
+section > .head { display: grid; gap: 6px; max-width: 80ch; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+article.box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; align-content: start; }
+article.box.rec { border-color: var(--accent); }
+.tag { justify-self: start; display: inline-block; font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: .78rem; padding: 2px 8px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--line); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* ====== Escada de exclusividade ====== */
+.ladder { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1050px) { .ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ladder figure { margin: 0; display: grid; gap: 8px; }
+.ladder figcaption { font-size: .85rem; color: var(--muted); display: grid; gap: 2px; }
+.ladder figcaption b { font-family: var(--display); font-size: 1.05rem; color: var(--c2); letter-spacing: .04em; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--display); text-transform: uppercase; letter-spacing: .06em; font-size: .8rem; color: var(--muted); white-space: nowrap; }
+.feat td:first-child { font-weight: 600; white-space: nowrap; }
+.feat td.off { color: #4a5568; }
+.feat th[style] { color: var(--c2); }
+
+/* ====== CARTA ====== */
+.card { container-type: inline-size; position: relative; width: 100%; aspect-ratio: 3 / 4; background: #030405; color: #eef2f7; overflow: hidden; font-family: var(--body); border-radius: 1.2cqw; }
+.card .bgfx { position: absolute; inset: 0; width: 100%; height: 100%; }
+.card .frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.card .cracks { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.card .inner { position: absolute; inset: 6cqw 7cqw; display: grid; grid-template-rows: 16cqw 1fr 16cqw 12cqw; row-gap: 3cqw; }
+.logo { font-family: var(--display); font-weight: 800; font-style: italic; letter-spacing: .02em; line-height: .9; background: linear-gradient(180deg, #ffffff 0%, #c9ced6 45%, #6c727c 55%, #e9edf2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 .2cqw 0 #000); }
+.sub { font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--c2); }
+.boxn { border: .3cqw solid var(--c1); border-radius: 1.2cqw; background: rgba(0,0,0,.55); box-shadow: 0 0 1.2cqw color-mix(in srgb, var(--c1) 60%, transparent), inset 0 0 1.4cqw color-mix(in srgb, var(--c1) 25%, transparent); }
+.b-logo { justify-self: center; display: grid; place-items: center; padding: 1.2cqw 9cqw; }
+.b-logo .logo { font-size: 10cqw; }
+.b-logo .sub { font-size: 3.6cqw; }
+.card .art { position: relative; min-height: 0; }
+.card .art canvas { position: relative; z-index: 1; width: 100%; height: 100%; display: block; }
+.b-name { display: grid; place-items: center; padding: 0 3cqw; }
+.nick { font-family: var(--display); font-weight: 800; font-style: italic; text-transform: uppercase; line-height: .92; white-space: nowrap; overflow: hidden; padding-right: 1cqw; max-width: 100%; font-size: 15cqw; }
+.b-cls { display: grid; justify-items: center; align-content: center; gap: .6cqw; text-align: center; font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: .12em; font-size: 6.2cqw; line-height: 1; color: var(--c2); text-shadow: 0 0 1.2cqw var(--c1); }
+.pips { font-size: 3.6cqw; letter-spacing: .5em; padding-left: .5em; color: var(--c2); }
+.serial { position: absolute; right: 5.4cqw; bottom: 3cqw; font-family: var(--display); font-weight: 700; font-size: 2.8cqw; letter-spacing: .08em; color: var(--c2); opacity: .85; z-index: 3; }
+.foil { position: absolute; inset: 0; pointer-events: none; z-index: 4; mix-blend-mode: screen; border-radius: inherit; }
+
+/* Degraus (t0 = Clássico ... t5 = Mítica) */
+.t0 .nick { color: var(--c2); }
+.t1 .nick { background: linear-gradient(180deg, var(--c2), var(--c1)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.t2 .nick, .t3 .nick, .t4 .nick { background: linear-gradient(180deg, #ffffff 0%, var(--c2) 38%, var(--c1) 72%, color-mix(in srgb, var(--c1) 55%, #000) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 .8cqw color-mix(in srgb, var(--c1) 70%, transparent)); }
+.t5 .nick { background: linear-gradient(90deg, #ffffff, var(--c2), #9dffe8, #ffe58a, var(--c1), #ffffff, var(--c2)); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 1.2cqw var(--c1)); animation: holo 6s linear infinite; }
+.t0 .frame { filter: drop-shadow(0 0 .3cqw var(--c1)); }
+.t1 .frame { filter: drop-shadow(0 0 .6cqw var(--c1)); }
+.t2 .frame { filter: drop-shadow(0 0 .6cqw var(--c1)) drop-shadow(0 0 1.6cqw var(--c1)); }
+.t3 .frame, .t4 .frame { filter: drop-shadow(0 0 .6cqw var(--c1)) drop-shadow(0 0 2.2cqw var(--c1)); animation: pulse 3.2s ease-in-out infinite; }
+.t5 .frame { filter: drop-shadow(0 0 .8cqw var(--c1)) drop-shadow(0 0 3cqw var(--c1)); animation: pulse 2.4s ease-in-out infinite; }
+.t0 .boxn { box-shadow: none; }
+.t2 .foil { background: radial-gradient(circle at var(--mx, 30%) var(--my, 22%), rgba(255,255,255,.2), transparent 45%); }
+.t3 .foil, .t4 .foil { background-image: radial-gradient(circle at var(--mx, 30%) var(--my, 22%), rgba(255,255,255,.2), transparent 45%), linear-gradient(115deg, transparent 42%, rgba(255,255,255,.17) 50%, transparent 58%); background-size: 100% 100%, 260% 100%; animation: sweep 5s linear infinite; }
+.t4 .foil { mix-blend-mode: soft-light; }
+.t5 .foil { background-image: radial-gradient(circle at var(--mx, 30%) var(--my, 22%), rgba(255,255,255,.28), transparent 45%), linear-gradient(125deg, rgba(255,0,140,.22), rgba(255,210,0,.22), rgba(0,255,170,.22), rgba(0,170,255,.22), rgba(210,0,255,.22), rgba(255,0,140,.22)); background-size: 100% 100%, 300% 300%; animation: holo 7s linear infinite; mix-blend-mode: color-dodge; }
+.t4 .nick { animation: glitch 4.5s steps(1) infinite; }
+.aura { position: absolute; inset: 3%; border-radius: 50%; background: conic-gradient(from 0deg, transparent 0 8%, var(--c1) 12%, transparent 18% 33%, var(--c2) 38%, transparent 44% 58%, var(--c1) 63%, transparent 69% 83%, var(--c2) 88%, transparent 94%); filter: blur(1.6cqw); opacity: .6; animation: spin 14s linear infinite; }
+.card.locked .art canvas { filter: brightness(0) drop-shadow(0 0 .5cqw var(--c1)); }
+.card.locked .foil, .card.locked .aura { display: none; }
+.card.locked .lockmsg { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 5; font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: .1em; font-size: 4.4cqw; color: var(--c2); background: rgba(0,0,0,.75); border: .3cqw solid var(--c1); border-radius: 1cqw; padding: 1cqw 3cqw; white-space: nowrap; }
+@keyframes holo { to { background-position: 0 0, 300% 0; } }
+.t5 .nick { animation-name: holoText; }
+@keyframes holoText { to { background-position: 300% 0; } }
+@keyframes sweep { from { background-position: 0 0, 130% 0; } to { background-position: 0 0, -130% 0; } }
+@keyframes pulse { 50% { opacity: .7; } }
+@keyframes spin { to { transform: rotate(1turn); } }
+@keyframes glitch { 0%, 88%, 100% { transform: none; } 90% { transform: translate(-1.4cqw, 0) skewX(-10deg); opacity: .8; } 92% { transform: translate(1.1cqw, .3cqw); } 94% { transform: translate(-.5cqw, 0); opacity: .9; } }
+
+/* Verso */
+.back .inner { place-items: center; grid-template-rows: 1fr; }
+.back .center { display: grid; gap: 3cqw; justify-items: center; text-align: center; }
+.back .logo { font-size: 17cqw; }
+.back .sub { font-size: 4.4cqw; }
+
+/* ====== Página da carta ====== */
+.stage { display: grid; gap: 16px; }
+.dpage { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.dband { padding: 22px 26px 18px; background: linear-gradient(120deg, color-mix(in srgb, var(--c1) 30%, transparent), transparent 65%), var(--panel-2); border-bottom: 1px solid color-mix(in srgb, var(--c1) 50%, var(--line)); display: grid; gap: 8px; }
+.dband .crumbs { color: var(--muted); font-size: .88rem; }
+.dband h3 { font-size: clamp(2.4rem, 6vw, 3.6rem); font-weight: 800; font-style: italic; text-transform: uppercase; color: var(--c2); text-shadow: 0 0 16px var(--c1); line-height: 1; }
+.dband .line { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.clspill { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--c1); color: var(--c2); border-radius: 99px; padding: 2px 12px; font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: .08em; background: color-mix(in srgb, var(--c1) 14%, transparent); }
+.epi { font-family: var(--display); font-style: italic; font-weight: 700; font-size: 1.25rem; color: var(--ink); }
+.dgrid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 28px; padding: 24px 26px 28px; align-items: start; }
+@media (max-width: 900px) { .dgrid { grid-template-columns: 1fr; } .dgrid aside { max-width: 360px; } }
+.dgrid aside { display: grid; gap: 14px; position: sticky; top: 12px; }
+.mine { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; font-size: .93rem; }
+.mine b.big { font-family: var(--display); font-size: 1.5rem; color: var(--c2); line-height: 1; }
+.mine .btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.mine .btn { padding: 5px 10px; font-size: .88rem; }
+.dmain { display: grid; gap: 24px; min-width: 0; }
+.dmain h4 { margin: 0 0 8px; font-family: var(--display); font-size: 1.05rem; text-transform: uppercase; letter-spacing: .1em; color: var(--c2); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.fact { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+.fact small { display: block; text-transform: uppercase; letter-spacing: .06em; font-size: .72rem; }
+.fact b { font-family: var(--display); font-size: 1.15rem; }
+.clans { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.clans span { border: 1px solid var(--line); border-radius: 4px; padding: 1px 8px; font-family: var(--display); font-weight: 700; }
+.clans span.main { border-color: var(--c1); color: var(--c2); }
+.clans i { color: var(--muted); font-style: normal; }
+.gold { border-left: 3px solid var(--c1); padding: 8px 16px; font-family: var(--display); font-size: 1.6rem; font-style: italic; font-weight: 800; color: var(--c2); text-transform: uppercase; line-height: 1.1; background: linear-gradient(90deg, color-mix(in srgb, var(--c1) 14%, transparent), transparent); }
+.bio { display: grid; gap: .8em; max-width: 68ch; }
+.bio.blur p:not(:first-child) { filter: blur(5px); user-select: none; }
+.lockline { border: 1px dashed var(--c1); border-radius: 8px; padding: 10px 14px; color: var(--c2); font-weight: 600; }
+.ach { display: grid; gap: 10px; }
+.ach div { display: grid; grid-template-columns: 46px 1fr; gap: 12px; align-items: center; }
+.medal { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle at 35% 30%, #fff4b8, #e9b42a 45%, #8a5d08); color: #3b2500; box-shadow: 0 0 10px #f2c94c88; }
+.medal .ico { width: 24px; height: 24px; }
+.ach b, .lst b { font-family: var(--display); text-transform: uppercase; letter-spacing: .02em; font-size: 1.05rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+.lst { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.lst li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
+.lst li .ico { width: 26px; height: 26px; color: var(--c2); margin-top: 1px; }
+.mem { color: var(--muted); font-style: italic; border-left: 2px solid var(--line); padding-left: 12px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stats div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.stats b { display: block; font-family: var(--display); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
+.stats small { font-size: .8rem; }
+.rel { display: flex; flex-wrap: wrap; gap: 8px; }
+.rel button, .rel span { border: 1px solid var(--line); background: var(--panel-2); border-radius: 6px; padding: 4px 10px; font-family: var(--display); font-weight: 700; letter-spacing: .03em; }
+.rel button { cursor: pointer; border-color: var(--c1); }
+.rel span { color: var(--muted); }
+.meta { font-size: .85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+.ico { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ====== Formulário ====== */
+.formwrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 320px); gap: 24px; align-items: start; }
+@media (max-width: 960px) { .formwrap { grid-template-columns: 1fr; } .preview-sticky { max-width: 320px; } }
+.preview-sticky { position: sticky; top: 12px; display: grid; gap: 10px; }
+form.sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 18px; }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+legend { font-family: var(--display); font-weight: 700; font-size: 1.15rem; padding: 0; margin-bottom: 4px; display: flex; gap: 8px; align-items: baseline; }
+legend .n { color: var(--accent); font-variant-numeric: tabular-nums; }
+legend small { font-family: var(--body); font-weight: 400; font-size: .85rem; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+label.f { display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
+input[type="text"], input[type="search"], input[type="number"], select, textarea { background: #080b11; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; color: var(--ink); width: 100%; }
+textarea { resize: vertical; min-height: 140px; line-height: 1.45; }
+.count { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; justify-self: end; }
+.count.over { color: var(--warn); }
+.radios { display: flex; flex-wrap: wrap; gap: 8px; }
+.radios label { display: inline-flex; gap: 6px; align-items: center; background: #080b11; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.radios label:has(input:checked) { border-color: var(--accent); background: #0c1a2a; }
+.items { display: grid; gap: 8px; }
+.item { display: grid; grid-template-columns: 110px 1fr 2fr 34px; gap: 8px; align-items: start; }
+@media (max-width: 640px) { .item { grid-template-columns: 1fr 1fr; } }
+.item .rm { background: transparent; border: 1px solid var(--line); border-radius: 6px; height: 38px; cursor: pointer; color: var(--muted); }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.sw { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #000; cursor: pointer; padding: 0; box-shadow: 0 0 0 1px var(--line); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.adminrow { background: var(--panel-2); border: 1px dashed var(--line); border-radius: 8px; padding: 12px; }
+
+/* Busca */
+.search { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; }
+#rows td { white-space: nowrap; vertical-align: middle; }
+tbody tr[data-p] { cursor: pointer; }
+tbody tr:hover { background: var(--panel-2); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 1px 9px; border-radius: 99px; font-size: .8rem; font-weight: 600; border: 1px solid; }
+.st-pub { color: var(--ok); border-color: var(--ok); }
+.st-rev { color: var(--warn); border-color: var(--warn); }
+.st-dra { color: var(--muted); border-color: var(--line); }
+
+/* Fluxo */
+.flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; counter-reset: st; }
+.flow div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font-size: .93rem; }
+.flow div::before { counter-increment: st; content: counter(st); font-family: var(--display); font-weight: 800; color: var(--accent); font-size: 1.5rem; display: block; line-height: 1; margin-bottom: 4px; }
+.flow b { display: block; font-family: var(--display); font-size: 1.05rem; }
+
+/* Drops */
+.drop { display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .drop { grid-template-columns: 1fr; } }
+.flip { perspective: 1400px; width: 100%; max-width: 300px; cursor: pointer; }
+.flip .in { position: relative; transition: transform .8s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; }
+.flip.open .in { transform: rotateY(180deg); }
+.flip .face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip .face.front { position: absolute; inset: 0; transform: rotateY(180deg); }
+.flip.charging .back .frame { animation: charge .3s ease-in-out infinite alternate; }
+.flip.charging.ct4 .back { animation: jitter .12s steps(2) infinite; }
+.flip.shake { animation: shake .5s ease-in-out; }
+@keyframes charge { to { filter: drop-shadow(0 0 1.5cqw var(--c1)) drop-shadow(0 0 4cqw var(--c1)) brightness(1.6); } }
+@keyframes jitter { 50% { transform: translate(1px, -1px); } }
+@keyframes shake { 20% { transform: translateX(-8px) rotate(-1deg); } 40% { transform: translateX(7px) rotate(1deg); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
+#burst { position: fixed; inset: 0; pointer-events: none; opacity: 0; z-index: 50; }
+#burst.b2 { background: radial-gradient(circle at 25% 50%, color-mix(in srgb, var(--c1) 45%, transparent), transparent 55%); animation: flash .7s ease-out; }
+#burst.b3 { background: radial-gradient(circle at 25% 50%, color-mix(in srgb, var(--c1) 65%, transparent), transparent 70%); animation: flash .9s ease-out; }
+#burst.b4 { background: rgba(0,0,0,.75); animation: flicker 1.1s steps(1); }
+#burst.b5 { background: radial-gradient(circle at 25% 50%, #ffffff, var(--c1) 30%, transparent 85%); animation: flash 1.6s ease-out; }
+@keyframes flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes flicker { 0% { opacity: .9; } 20% { opacity: .2; } 30% { opacity: .9; } 45% { opacity: .1; } 55% { opacity: .7; } 100% { opacity: 0; } }
+.odds { display: grid; gap: 6px; }
+.odds .r { display: grid; grid-template-columns: 110px 1fr 74px 74px; gap: 8px; align-items: center; font-size: .92rem; }
+.odds .r.h { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; }
+.odds input { padding: 4px 6px; text-align: right; font-variant-numeric: tabular-nums; }
+.bar { height: 8px; border-radius: 4px; background: var(--panel-2); overflow: hidden; }
+.bar i { display: block; height: 100%; }
+.result { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; font-variant-numeric: tabular-nums; display: grid; gap: 4px; }
+.album { display: grid; gap: 8px; }
+.album .cl { display: grid; grid-template-columns: 100px 1fr 56px; gap: 8px; align-items: center; font-size: .9rem; }
+.slots { display: flex; flex-wrap: wrap; gap: 3px; }
+.slots i { width: 12px; height: 16px; border-radius: 2px; border: 1px solid var(--line); background: #080b11; }
+.slots i.on { background: var(--c1); border-color: var(--c1); box-shadow: 0 0 5px var(--c1); }
+.slots i.dup { outline: 2px solid #fff; outline-offset: -4px; }
+.log { font-size: .88rem; color: var(--muted); max-height: 120px; overflow: auto; }
+
+/* Banco */
+.schema { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.schema article { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.schema h3 { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 1rem; color: var(--accent); margin-bottom: 8px; }
+.schema ul { margin: 0; padding: 0; list-style: none; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .82rem; display: grid; gap: 3px; }
+.schema li span { color: var(--muted); font-family: var(--body); font-size: .85rem; }
+
+ol.qs { margin: 0; padding: 0; list-style: none; counter-reset: q; display: grid; gap: 10px; }
+ol.qs li { counter-increment: q; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px 12px 64px; position: relative; display: grid; gap: 4px; }
+ol.qs li::before { content: "P" counter(q); position: absolute; left: 16px; top: 11px; font-family: var(--display); font-weight: 800; font-size: 1.3rem; color: var(--accent); }
+footer { color: var(--muted); font-size: .88rem; display: grid; gap: 6px; border-top: 1px solid var(--line); padding-top: 18px; }
+
+/* ====== Painel de moderação (imita a tela Moderação do jogo) ====== */
+.admwin { border: 1px solid var(--line); border-radius: 14px; background: #0a0e15; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.45); }
+.admtop { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: center; padding: 12px 18px; border-bottom: 1px solid var(--line); background: var(--panel); font-size: .92rem; }
+.admtop b { font-family: var(--display); font-size: 1.45rem; }
+.admtabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.admtabs span, .admtabs b { border: 1px solid var(--line); background: var(--panel-2); border-radius: 5px; padding: 3px 11px; font-size: .88rem; color: var(--muted); font-weight: 400; }
+.admtabs b { background: var(--accent); color: #031120; border-color: var(--accent); font-weight: 600; }
+.admbody { padding: 18px; display: grid; gap: 18px; min-width: 0; }
+.badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--warn); color: #1a1000; font-size: .72rem; font-weight: 700; margin-left: 4px; }
+.badge:empty { display: none; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tiles > div { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.tiles b { display: block; font-family: var(--display); font-size: 1.6rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tiles small { font-size: .8rem; }
+.clsmeter { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px 16px; }
+.clsmeter > div { display: grid; gap: 4px; font-size: .85rem; }
+.clsmeter span { display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.mhead { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.mhead h3 { font-size: 2.2rem; font-weight: 800; font-style: italic; text-transform: uppercase; color: var(--c2); text-shadow: 0 0 14px var(--c1); }
+.mgrid { display: grid; grid-template-columns: minmax(0, 250px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .mgrid { grid-template-columns: 1fr; } .mgrid > aside { max-width: 280px; } }
+.mgrid > aside { display: grid; gap: 10px; }
+.acts { display: grid; gap: 6px; }
+.acts .btn { text-align: left; }
+.acts input { padding: 6px 8px; font-size: .9rem; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:disabled:hover { border-color: var(--line); }
+.why { font-size: .8rem; color: var(--warn); }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; font-size: .85rem; text-align: left; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .9rem; }
+.checks li { display: grid; grid-template-columns: 18px 1fr; gap: 6px; }
+.checks li::before { content: "✓"; color: var(--ok); font-weight: 700; }
+.checks li.no::before { content: "!"; color: var(--warn); }
+.checks li.req.no::before { content: "×"; color: #ff6b6b; }
+.checks li.no { color: var(--muted); }
+.revs td { white-space: normal; }
+.revs td:first-child, .revs td:nth-child(2) { white-space: nowrap; }
+.revs summary { cursor: pointer; color: var(--accent); font-size: .85rem; }
+.diff { font-size: .85rem; display: grid; gap: 6px; margin-top: 6px; }
+.diff del { color: #ff9a9a; background: #2a0f12; text-decoration: line-through; padding: 0 3px; }
+.diff ins { color: #8affb0; background: #0d2615; text-decoration: none; padding: 0 3px; }
+.steps { display: flex; flex-wrap: wrap; gap: 6px; font-size: .86rem; }
+.steps span { padding: 2px 10px; border: 1px solid var(--line); border-radius: 99px; color: var(--muted); }
+.steps span.on { border-color: var(--accent); color: var(--ink); background: #0c1a2a; }
+.steps span.done { color: var(--ok); border-color: var(--ok); }
+.sheethead { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.dupe { border-left: 3px solid var(--warn); background: #1a1508; padding: 8px 12px; border-radius: 0 6px 6px 0; font-size: .9rem; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.dupe .btn { padding: 3px 10px; font-size: .85rem; }
+.queue { display: grid; gap: 12px; }
+.qitem { display: grid; grid-template-columns: 100px minmax(0, 1fr) auto; gap: 16px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+@media (max-width: 640px) { .qitem { grid-template-columns: 90px minmax(0, 1fr); } .qitem > .btn { grid-column: 1 / -1; } }
+.qitem h3 { font-size: 1.4rem; font-style: italic; text-transform: uppercase; }
+.qitem p { font-size: .9rem; }
+.audit { font-size: .88rem; display: grid; gap: 4px; color: var(--muted); }
+.audit b { color: var(--ink); font-weight: 600; }
+.st-out { color: #ff6b6b; border-color: #ff6b6b; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.panel h3 { font-size: 1.15rem; }
+.warnline { color: var(--warn); font-size: .9rem; }
+#modrows td { white-space: nowrap; vertical-align: middle; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">Proposta para a comunidade · versão 3 · 05/11/2026</span>
+  <h1>Cartas de Jogador do Outgun</h1>
+  <p class="lead">Uma coleção de cartas que conta a história de quem marcou os 24 anos do Outgun: lendas, criadores, campeões, polêmicos e figuras da comunidade. A moderação cadastra a ficha, o jogo desenha a carta e ela chega aos jogadores em drops duas vezes por semana. Quem ganha a carta abre a página dela, com a história completa.</p>
+  <p class="decided"><b>Decidido:</b> a carta é simples (boneco, nick e classe) e toda a história fica na página de detalhes da carta. Para cada classe parecer mais exclusiva que a anterior, além da cor, a carta ganha efeitos em degraus: veja a <a href="#escada">escada de exclusividade</a>.</p>
+  <p class="notice"><b>Protótipo.</b> SPINAL, NIX, SLAN e JARULE usam os textos dos exemplos enviados ao grupo. Os nomes marcados com * são inventados, só para mostrar a tela. Chances, datas, números de cópia e quantidades são sugestões para discutir.</p>
+  <nav class="toc" aria-label="Seções">
+    <a href="#escada">Escada de exclusividade</a><a href="#pagina">Carta e página de detalhes</a><a href="#moderacao">Telas da moderação</a><a href="#geracao">Geração automática</a><a href="#drops">Drops</a><a href="#banco">Banco de dados</a><a href="#ideias">Mais ideias</a><a href="#cuidados">Cuidados</a><a href="#perguntas">Perguntas</a>
+  </nav>
+</header>
+
+<section id="escada" aria-labelledby="t-escada">
+  <div class="head">
+    <h2 id="t-escada">Escada de exclusividade</h2>
+    <p class="muted">As 6 classes usam o mesmo desenho de carta. Cada degrau mantém tudo o que o anterior tem e acrescenta algo: estrelas, moldura, fundo, acabamento do nome, reflexo, movimento, número de cópia e o jeito de abrir o pacote. Assim, só de olhar a carta já dá para saber o quanto ela é rara. Passe o mouse nas cartas a partir do Lendário para ver o reflexo.</p>
+  </div>
+  <div class="ladder" id="ladder"></div>
+  <div class="tbl"><table class="feat" id="featTable"></table></div>
+  <small>A ordem segue a tabela de classes enviada, da mais comum para a mais rara (P2). O Nefasto tem efeitos próprios (rachaduras e falha no nome) em vez de mais brilho, porque é a carta dos polêmicos.</small>
+</section>
+
+<section id="pagina" aria-labelledby="t-pagina">
+  <div class="head">
+    <h2 id="t-pagina">A carta e a página de detalhes</h2>
+    <p class="muted">No álbum o jogador vê só a carta. Ao tocar nela, abre a página com tudo: história, frase dourada, clãs, conquistas, características, habilidades, quem mais tem a carta e a cópia dele. Troque o jogador e veja também como a página aparece para quem ainda não tem a carta (P14).</p>
+  </div>
+  <div class="stage">
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Jogador" id="pickPlayer"></div>
+      <div class="seg" role="group" aria-label="Visão" id="pickView">
+        <button type="button" data-v="own" aria-pressed="true">Tenho a carta</button>
+        <button type="button" data-v="locked" aria-pressed="false">Ainda não tenho</button>
+      </div>
+    </div>
+    <div id="showcase"></div>
+  </div>
+</section>
+
+<section id="moderacao" aria-labelledby="t-moderacao">
+  <div class="head">
+    <h2 id="t-moderacao">Telas da moderação</h2>
+    <p class="muted">A aba "Cartas" entra no painel de Moderação que já existe, ao lado de Mapas e Clãs. São cinco telas: o catálogo para consultar, a ficha de cada carta (com revisões e ações), o formulário de nova carta, a fila de revisão e os drops. O protótipo funciona: busque um nick, abra uma ficha, crie uma carta e mande para revisão.</p>
+  </div>
+  <div class="grid2">
+    <article class="box rec"><span class="tag" style="background:var(--accent);color:#031120;border-color:var(--accent)">Sugerido</span><h3>Aba "Cartas" no painel de moderação</h3><p>Usa o login e o papel de moderador que já existem. Toda edição guarda a versão anterior, como nas revisões de mapas, e cai na Auditoria.</p></article>
+    <article class="box"><span class="tag">Alternativa</span><h3>Papel novo de "historiador"</h3><p>Quem só escreve histórias vê apenas esta aba, sem acesso ao resto do painel. Faz sentido se quem escreve não for moderador (P8).</p></article>
+  </div>
+  <div class="admwin">
+    <div class="admtop"><span><b>Moderação</b> <span class="muted">· Outgun Web</span></span><span class="muted">Você entrou como moderador. Os outros moderadores do exemplo (VIGIA*, CRONISTA*) são inventados.</span></div>
+    <div class="admtabs" aria-label="Abas do painel (as cinzas já existem)"><span>Salas ao vivo</span><span>Feedback</span><span>Rede</span><span>Denúncias</span><span>Clãs</span><span>Bans</span><span>Auditoria</span><span>Presets</span><span>Mapas</span><span>Rotações</span><span>Bots</span><b>Cartas</b></div>
+    <div class="admbody">
+      <div class="seg" role="group" aria-label="Telas da aba Cartas" id="modNav">
+        <button type="button" data-m="cat" aria-pressed="true">Catálogo</button>
+        <button type="button" data-m="new" aria-pressed="false">Nova carta</button>
+        <button type="button" data-m="rev" aria-pressed="false">Revisão <span class="badge" id="revBadge"></span></button>
+        <button type="button" data-m="drop" aria-pressed="false">Drops e entregas</button>
+      </div>
+
+      <div data-mview="cat">
+        <div style="display:grid;gap:16px">
+          <div class="tiles" id="modTiles"></div>
+          <div class="panel"><h3>Cartas publicadas por classe</h3><div class="clsmeter" id="modMeter"></div><small>A meta de cada classe é o tamanho do catálogo do simulador de drops. Mude lá e a meta muda aqui.</small></div>
+          <div class="search">
+            <div class="controls">
+              <label class="f" for="q" style="flex:1;min-width:200px">Buscar por nick, clã ou epíteto<input type="search" id="q" placeholder="Ex.: Ek"></label>
+              <label class="f" for="qc">Classe<select id="qc"><option value="">Todas</option></select></label>
+              <label class="f" for="qs">Situação<select id="qs"><option value="">Todas</option><option value="pub">Publicada</option><option value="rev">Em revisão</option><option value="dra">Rascunho</option><option value="out">Retirada</option></select></label>
+              <button type="button" class="btn primary" data-m="new" style="align-self:end">Nova carta</button>
+            </div>
+            <div class="tbl"><table>
+              <thead><tr><th>Nick</th><th>Classe</th><th>Posição</th><th>Geração</th><th>Situação</th><th>Ficha</th><th>Donos</th><th>Última edição</th></tr></thead>
+              <tbody id="modrows"></tbody>
+            </table></div>
+            <small>* Nomes inventados. Clique numa linha para abrir a ficha. "Ficha" conta quantos dos 11 campos estão preenchidos.</small>
+          </div>
+        </div>
+      </div>
+
+      <div data-mview="card" hidden id="modCard"></div>
+
+      <div data-mview="new" hidden>
+        <div style="display:grid;gap:14px">
+          <div class="sheethead"><div style="display:grid;gap:6px"><h3 id="sheetTitle"></h3><div class="steps" id="sheetSteps"></div></div><button type="button" class="btn" id="btnClear">Começar ficha nova</button></div>
+          <div class="formwrap">
+    <form class="sheet" id="sheet" autocomplete="off">
+      <fieldset>
+        <legend><span class="n">1</span> Nick e epíteto</legend>
+        <div class="row">
+          <label class="f" for="f-nick">Nick (como era no jogo)<input type="text" id="f-nick" maxlength="16"></label>
+          <label class="f" for="f-epi">Epíteto (opcional, só na página)<input type="text" id="f-epi" maxlength="32" placeholder="Ex.: Arquiteto do Outgun"></label>
+        </div>
+        <div id="dupe" aria-live="polite"></div>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">2</span> Posição</legend>
+        <div class="row">
+          <label class="f" for="f-pos">Posição ou papel<select id="f-pos"></select></label>
+          <label class="f" for="f-pos2">Outra (se não estiver na lista)<input type="text" id="f-pos2" maxlength="24"></label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">3</span> Descrição / biografia</legend>
+        <label class="f" for="f-bio">Um parágrafo por linha em branco<textarea id="f-bio"></textarea></label>
+        <span class="count" id="c-bio"></span>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">4</span> Classe <small>muda a cor e os efeitos da carta</small></legend>
+        <div class="radios" id="f-cls"></div>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">5</span> Geração</legend>
+        <div class="radios" id="f-gen"></div>
+        <small>Rascunho das gerações, para confirmar na P10.</small>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">6</span> Clãs</legend>
+        <label class="f" for="f-clans">Separados por vírgula, na ordem da carreira. O último aparece em destaque.<input type="text" id="f-clans"></label>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">7</span> Conquistas</legend>
+        <div class="items" id="it-ach"></div>
+        <div><button type="button" class="btn" data-add="ach">Adicionar conquista</button></div>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">8</span> Frase dourada e lembrança</legend>
+        <label class="f" for="f-quote">Frase dourada (destaque no topo da página)<input type="text" id="f-quote" maxlength="90"></label>
+        <span class="count" id="c-quote"></span>
+        <label class="f" for="f-mem">Lembrança ou citação de alguém (opcional)<input type="text" id="f-mem" maxlength="200"></label>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">9</span> Características</legend>
+        <div class="items" id="it-tra"></div>
+        <div><button type="button" class="btn" data-add="tra">Adicionar característica</button></div>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">10</span> Habilidades especiais</legend>
+        <div class="items" id="it-abi"></div>
+        <div><button type="button" class="btn" data-add="abi">Adicionar habilidade</button></div>
+        <small>Até 8 de cada. Ícone de uma lista fechada, título até 28 letras, texto até 160.</small>
+      </fieldset>
+      <fieldset>
+        <legend><span class="n">11</span> Cores do boneco</legend>
+        <span class="muted">Anel e cano (as cores de clã do jogo)</span>
+        <div class="swatches" id="sw-ring" role="group" aria-label="Cor do anel"></div>
+        <span class="muted">Centro (as 32 cores pessoais do jogo)</span>
+        <div class="swatches" id="sw-center" role="group" aria-label="Cor do centro"></div>
+      </fieldset>
+      <fieldset class="adminrow">
+        <legend>Controle da moderação</legend>
+        <div class="row">
+          <label class="f" for="f-link">Conta atual no Outgun Web (opcional)<input type="text" id="f-link" placeholder="Ex.: nick da conta, se ainda joga"></label>
+          <label class="f" for="f-rel">Cartas ligadas (nicks citados na história)<input type="text" id="f-rel" placeholder="Ex.: JARU, EK-FROGUE"></label>
+          <label class="f" for="f-src">Fontes (quem contou, links, prints)<input type="text" id="f-src"></label>
+        </div>
+        <div class="radios"><label><input type="checkbox" id="f-ok"> O jogador (ou alguém próximo) concordou com a carta</label></div>
+      </fieldset>
+      <div class="controls">
+        <button type="button" class="btn" id="btnSave">Salvar rascunho</button>
+        <button type="button" class="btn primary" id="btnSend">Enviar para revisão</button>
+        <button type="button" class="btn" id="btnShow">Ver a página pública</button>
+      </div>
+      <small id="sheetMsg" aria-live="polite"></small>
+    </form>
+            <div class="preview-sticky">
+              <div id="livePreview"></div>
+              <small>A carta muda enquanto você digita. Troque a classe para ver os degraus.</small>
+              <div class="panel"><h3>Antes de enviar</h3><ul class="checks" id="sheetChecks"></ul><small>× obrigatório para enviar · ! recomendado</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div data-mview="rev" hidden>
+        <div style="display:grid;gap:12px">
+          <p class="muted">Fichas esperando outro moderador. Quem escreveu não aprova a própria ficha. Nefasto precisa de duas aprovações.</p>
+          <div class="queue" id="queue"></div>
+        </div>
+      </div>
+
+      <div data-mview="drop" hidden>
+        <div style="display:grid;gap:16px">
+          <div class="tiles" id="dropTiles"></div>
+          <div id="dropWarn" class="warnline"></div>
+          <div class="grid2">
+            <div class="panel">
+              <h3>Próximos drops</h3>
+              <div class="tbl"><table><thead><tr><th>Quando</th><th>Situação</th><th>Pacotes</th></tr></thead><tbody id="agenda"></tbody></table></div>
+              <div class="controls"><button type="button" class="btn" id="btnPause">Pausar os drops</button><small>As chances valem as do simulador acima. Mudar chance fica só com admin.</small></div>
+            </div>
+            <div class="panel">
+              <h3>Entregar uma carta</h3>
+              <p class="muted" style="font-size:.9rem">Fora do sorteio: a lenda que reivindica a própria carta (cópia nº 0), prêmio de evento ou correção de erro.</p>
+              <label class="f" for="g-user">Conta do jogador<input type="text" id="g-user" placeholder="Nick da conta no Outgun Web"></label>
+              <label class="f" for="g-card">Carta<select id="g-card"></select></label>
+              <label class="f" for="g-why">Motivo<select id="g-why"><option>A lenda reivindicou a carta (cópia nº 0)</option><option>Prêmio de evento</option><option>Correção de drop com erro</option></select></label>
+              <div class="controls"><button type="button" class="btn primary" id="btnGive">Entregar</button><small id="giveMsg" aria-live="polite"></small></div>
+            </div>
+          </div>
+          <div class="panel"><h3>Registro da aba Cartas</h3><p class="muted" style="font-size:.88rem">Também aparece na aba Auditoria.</p><div class="audit" id="auditAll"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="geracao" aria-labelledby="t-geracao">
+  <div class="head">
+    <h2 id="t-geracao">Geração automática</h2>
+    <p class="muted">Ninguém precisa desenhar carta. A moderação preenche a ficha e o jogo monta a carta com o modelo da classe e o boneco com as cores escolhidas. É o que esta página já faz.</p>
+  </div>
+  <div class="flow">
+    <div><b>Cadastro</b>Um moderador preenche a ficha. Fica em rascunho.</div>
+    <div><b>Revisão</b>Outro moderador confere fatos e texto.</div>
+    <div><b>Publicação</b>A carta entra no catálogo da coleção 2026, com página própria.</div>
+    <div><b>Imagem</b>O servidor gera o PNG da carta para compartilhar e para a prévia do link.</div>
+    <div><b>Drop</b>A carta passa a sair nos drops de terça e sexta, conforme a classe.</div>
+    <div><b>Álbum</b>Quem recebe abre o pacote, a carta vai para o álbum e a página de detalhes fica liberada.</div>
+  </div>
+  <div class="grid3">
+    <article class="box"><h3>Sem arte manual</h3><p>Moldura, efeitos e boneco saem do código, a partir da classe e das cores. Mudar o modelo de uma classe muda todas as cartas dela de uma vez.</p></article>
+    <article class="box"><h3>Página sempre atual</h3><p>A carta quase nunca muda (nick, classe, cores). A história pode ser corrigida e ampliada a qualquer momento; quem tem a carta vê a versão nova.</p></article>
+    <article class="box"><h3>Ficha com histórico</h3><p>Toda edição guarda a versão anterior, como nas revisões de mapas.</p></article>
+  </div>
+</section>
+
+<section id="drops" aria-labelledby="t-drops">
+  <div class="head">
+    <h2 id="t-drops">Drops duas vezes por semana</h2>
+    <p class="muted">Sugestão: terça e sexta às 20h (Brasília), cada jogador que jogou ao menos uma partida nos últimos 7 dias ganha um pacote com uma carta. O pacote fica guardado até ser aberto, então ninguém perde o drop por não entrar no dia. A abertura também segue a escada: quanto mais rara, mais o verso brilha antes de virar, e a partir do Lendário a tela reage. Mexa nas chances e veja quanto tempo leva para completar o álbum.</p>
+  </div>
+  <div class="drop">
+    <div style="display:grid;gap:12px;justify-items:center">
+      <div class="flip" id="flip" role="button" tabindex="0" aria-label="Abrir pacote"><div class="in"><div class="face" id="faceBack"></div><div class="face front" id="faceFront"></div></div></div>
+      <div class="controls"><button type="button" class="btn primary" id="btnOpen">Abrir pacote</button><button type="button" class="btn" id="btnReset">Esvaziar álbum</button></div>
+      <div class="controls" style="font-size:.88rem"><span class="muted">Forçar classe:</span><select id="force" aria-label="Forçar classe no próximo pacote" style="width:auto;padding:4px 8px"><option value="">Sorteio</option></select></div>
+    </div>
+    <div style="display:grid;gap:18px">
+      <div class="odds" id="odds"></div>
+      <div class="controls"><button type="button" class="btn" id="btnSim">Simular 500 jogadores</button><span class="muted" style="font-size:.9rem">Repetidas contam como drop perdido; veja a P6.</span></div>
+      <div class="result" id="simOut" aria-live="polite"></div>
+      <div>
+        <h3 style="margin-bottom:8px">Seu álbum de teste</h3>
+        <div class="album" id="album"></div>
+        <div class="log" id="dropLog" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+  <div id="burst" aria-hidden="true"></div>
+</section>
+
+<section id="banco" aria-labelledby="t-banco">
+  <div class="head">
+    <h2 id="t-banco">Banco de dados</h2>
+    <p class="muted">Rascunho das tabelas, numa migração nova. Clãs antigos (MK, Ek, MM...) não existem no jogo de hoje, então ficam como texto.</p>
+  </div>
+  <div class="schema">
+    <article><h3>legend_cards</h3><ul>
+      <li>id, slug <span>endereço da página: /cartas/nix</span></li>
+      <li>nick, epithet, position</li>
+      <li>bio <span>parágrafos</span></li>
+      <li>class <span>classico · epico · lendario · especial · nefasto · mitica</span></li>
+      <li>generations smallint[]</li>
+      <li>clans text[]</li>
+      <li>quote, memory <span>frase dourada e lembrança</span></li>
+      <li>ring_color, center_color</li>
+      <li>linked_user_id <span>conta atual, opcional</span></li>
+      <li>collection <span>2026</span></li>
+      <li>status <span>rascunho · revisão · publicada · retirada</span></li>
+      <li>consent, sources</li>
+      <li>created_by, reviewed_by, published_at</li>
+    </ul></article>
+    <article><h3>legend_card_entries</h3><ul>
+      <li>card_id, kind <span>conquista · característica · habilidade</span></li>
+      <li>ord, icon, title, body</li>
+    </ul>
+    <h3 style="margin-top:14px">legend_card_links</h3><ul>
+      <li>card_id, linked_card_id <span>ou nick, se ainda não tem carta</span></li>
+    </ul>
+    <h3 style="margin-top:14px">legend_card_revisions</h3><ul>
+      <li>card_id, rev, data jsonb <span>cópia da ficha a cada edição</span></li>
+      <li>edited_by, edited_at</li>
+    </ul></article>
+    <article><h3>card_drops</h3><ul>
+      <li>id, scheduled_at <span>terça e sexta</span></li>
+      <li>odds jsonb <span>chances usadas naquele drop</span></li>
+    </ul>
+    <h3 style="margin-top:14px">card_packs</h3><ul>
+      <li>drop_id, user_id, card_id <span>sorteada na entrega</span></li>
+      <li>opened_at <span>vazio = pacote fechado</span></li>
+    </ul>
+    <h3 style="margin-top:14px">user_cards</h3><ul>
+      <li>user_id, card_id, first_at, copies</li>
+      <li>serial <span>nº da cópia: ordem em que a pessoa recebeu</span></li>
+    </ul></article>
+  </div>
+  <small>A carta é sorteada no servidor no momento do drop e gravada fechada; abrir só revela. Assim ninguém escolhe a carta recarregando a página.</small>
+</section>
+
+<section id="ideias" aria-labelledby="t-ideias">
+  <div class="head"><h2 id="t-ideias">Mais ideias</h2></div>
+  <div class="grid3">
+    <article class="box"><h3>Carta do dia</h3><p>A tela inicial mostra uma carta por dia com a frase dourada e o começo da história. É a parte diária, mesmo nos dias sem drop (P4).</p></article>
+    <article class="box"><h3>Álbum no perfil</h3><p>Contagem por classe (ex.: 12/30 Clássicos). As cartas que faltam aparecem como silhueta.</p></article>
+    <article class="box"><h3>Vitrine no perfil</h3><p>O jogador escolhe 3 cartas para mostrar no perfil. As raras chamam atenção sozinhas, por causa dos efeitos.</p></article>
+    <article class="box"><h3>Marcos de colecionador</h3><p>Novos marcos: primeira carta, primeira Lendária, classe completa, álbum completo da coleção 2026.</p></article>
+    <article class="box"><h3>A lenda reivindica a carta</h3><p>Se o jogador da carta ainda joga, a conta dele é ligada à ficha: ele recebe a própria carta com a cópia nº 0 e um selo no perfil.</p></article>
+    <article class="box"><h3>Cartas ligadas</h3><p>A página de SLAN leva às de JARU e EK-FROGUE. Coleções temáticas surgem sozinhas: o Ek campeão, os criadores.</p></article>
+    <article class="box"><h3>Sugestão da comunidade</h3><p>Qualquer jogador sugere um nome e uma história num formulário; vira rascunho para a moderação.</p></article>
+    <article class="box"><h3>Lançamento em série</h3><p>Cada semana uma leva temática: os criadores, o CBDO, os clãs da 2ª geração. Dá assunto para o grupo.</p></article>
+    <article class="box"><h3>Troca de repetidas</h3><p>Trocar carta repetida com outro jogador, uma por uma, sem moeda e sem venda (P7).</p></article>
+  </div>
+</section>
+
+<section id="cuidados" aria-labelledby="t-cuidados">
+  <div class="head"><h2 id="t-cuidados">Cuidados</h2></div>
+  <div class="grid3">
+    <article class="box"><h3>Pessoas reais</h3><p>As cartas falam de gente de verdade. Sugestão: pedir o aval de quem dá para encontrar e tirar a carta do ar se a pessoa pedir.</p></article>
+    <article class="box"><h3>Nefasto e polêmicos</h3><p>Contar a polêmica sem ofender e sem expor nada pessoal. Revisão por dois moderadores nessa classe.</p></article>
+    <article class="box"><h3>Fato e lenda</h3><p>Guardar as fontes de cada ficha. Quando for memória de alguém, a página diz de quem.</p></article>
+    <article class="box"><h3>Nada à venda</h3><p>Pacote não se compra, nem com dinheiro nem com moeda do jogo. Sem isso, vira loteria e entra em regra de loot box da Steam e de vários países.</p></article>
+    <article class="box"><h3>Efeitos leves</h3><p>Brilho, reflexo e animação são CSS e um desenho por carta. Quem pede menos movimento no sistema vê as cartas paradas, e o álbum anima só a carta sob o mouse.</p></article>
+    <article class="box"><h3>Sem efeito na partida</h3><p>Carta não dá vantagem nem aparece no HUD. Fica no portal, no perfil e no compartilhamento.</p></article>
+    <article class="box"><h3>Repo público</h3><p>O código é público, mas as fichas ficam só no banco. Não vão para o GitHub.</p></article>
+    <article class="box"><h3>Fôlego do catálogo</h3><p>Com 2 drops por semana, um catálogo pequeno acaba rápido e vira só repetida. Precisa de fichas novas todo mês.</p></article>
+  </div>
+</section>
+
+<section id="perguntas" aria-labelledby="t-perguntas">
+  <div class="head">
+    <h2 id="t-perguntas">Perguntas para o grupo</h2>
+    <p class="muted">Responda pelo número (P1, P2...) no grupo. P19 e P20 são novas, das telas da moderação. Já decidido: carta simples + página de detalhes.</p>
+  </div>
+  <ol class="qs">
+    <li><p>A escada de exclusividade está boa? Algum degrau tem efeito demais ou de menos? O número da cópia (Nº 0042 = 42º a receber) a partir do Lendário agrada?</p></li>
+    <li><p>Ordem de raridade das 6 classes, da mais comum para a mais rara. É a ordem da tabela (Nefasto mais raro que Especial)? As chances sugeridas estão boas?</p><small>Hoje: Clássico 50 %, Épico 25 %, Lendário 13 %, Especial 8 %, Nefasto 4 %, Mítica fora do drop.</small></li>
+    <li><p>Mítica sai no drop ou é entregue de outro jeito (evento, aniversário, completar o álbum)? Existe só uma carta Mítica (SPINAL)?</p></li>
+    <li><p>"Premiação diária que dropa 2x por semana": a parte diária é a carta do dia na tela inicial, ou outra coisa? Quais dias e horário?</p></li>
+    <li><p>Quem recebe o pacote: todo mundo com conta, quem jogou na semana, ou quem jogou um número mínimo de partidas? Treino conta?</p></li>
+    <li><p>O que fazer com repetidas: nada, juntar repetidas para escolher uma carta, trocar com outros jogadores, ou o drop não repete até completar a classe?</p></li>
+    <li><p>Querem troca entre jogadores?</p></li>
+    <li><p>Quem cadastra e quem aprova: qualquer moderador, dois moderadores, ou um grupo de "historiadores"? A tela fica no painel de moderação ou numa página à parte?</p></li>
+    <li><p>Precisa do aval do jogador para publicar a carta? E para a classe Nefasto?</p></li>
+    <li><p>Quais são as gerações e o que marca cada uma? O Outgun Web é a 3ª?</p><small>Rascunho: 1ª até a 0.5.x, 2ª da 1.0, 3ª Outgun Web.</small></li>
+    <li><p>Posição é de uma lista fechada? Falta alguma na lista do formulário?</p></li>
+    <li><p>Cores do boneco: o anel é vermelho ou azul (cor de time) ou qualquer cor? O centro é a cor que a pessoa usava no jogo?</p></li>
+    <li><p>Se o jogador da carta joga hoje, ligamos a conta dele à carta? Ganha o quê?</p></li>
+    <li><p>Quem não tem a carta vê a página? Tudo, só o começo (como no protótipo), ou nada?</p></li>
+    <li><p>Onde a carta aparece além do álbum: perfil, vitrine, tela inicial, link público para compartilhar?</p></li>
+    <li><p>A comunidade pode sugerir jogadores e histórias por um formulário?</p></li>
+    <li><p>Coleção por ano ("Outgun Player Cards 2026")? Uma carta pode mudar de classe numa coleção seguinte?</p></li>
+    <li><p>Quantas fichas existem para o lançamento? Quem escreve as próximas?</p><small>Com 2 drops por semana, um catálogo de 60 cartas leva meses para fechar (veja a simulação).</small></li>
+    <li><p>Carta já publicada: corrigir o texto entra direto (com histórico), e mudar nick ou classe volta para revisão. Concordam? Quem pode retirar uma carta do ar?</p></li>
+    <li><p>Entrega fora do sorteio (lenda que reivindica a carta, prêmio de evento, correção): qualquer moderador ou só admin? E a Mítica?</p><small>No protótipo: moderador entrega qualquer classe menos a Mítica, que fica com admin.</small></li>
+  </ol>
+</section>
+
+<footer>
+  <span>Proposta de 05/11/2026 a partir dos exemplos de carta e da tabela de classes enviados pelo PO. Versão 2: carta simples + página de detalhes e escada de exclusividade. Versão 3: telas da moderação para criar e consultar as cartas.</span>
+  <span>Já existe no jogo: as 32 cores pessoais e as cores de clã (OG-407, OG-411), papel de moderador e painel de moderação, notificações no portal, marcos e revisões imutáveis com histórico (mapas, S60).</span>
+</footer>
+
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---------- Dados ----------
+  const CLASSES = [
+    { id: 'classico', name: 'Clássico', desc: 'Azul-neon', c1: '#2c9bff', c2: '#8fd0ff', odds: 50, n: 30 },
+    { id: 'epico', name: 'Épico', desc: 'Roxo-neon', c1: '#a43dff', c2: '#dcaaff', odds: 25, n: 14 },
+    { id: 'lendario', name: 'Lendário', desc: 'Dourado', c1: '#f2a81e', c2: '#ffd866', odds: 13, n: 8 },
+    { id: 'especial', name: 'Especial', desc: 'Vermelho', c1: '#ff2626', c2: '#ffc21a', odds: 8, n: 5 },
+    { id: 'nefasto', name: 'Nefasto', desc: 'Marrom-cobre e cinza-escuro', c1: '#b8692c', c2: '#b4b4bb', odds: 4, n: 3 },
+    { id: 'mitica', name: 'Mítica', desc: 'Verde-neon e dourado', c1: '#3dff2e', c2: '#f0cc5c', odds: 0, n: 1 },
+  ];
+  const CLS = Object.fromEntries(CLASSES.map((c, i) => [c.id, Object.assign(c, { t: i })]));
+  const FEATURES = [
+    ['Estrelas na carta', ['★', '★★', '★★★', '★★★★', '★★★★★', '★★★★★★']],
+    ['Moldura', ['Linha simples', 'Linha dupla', 'Dupla com cantos ornamentados', 'Tripla, cantos e marcas laterais', 'Tripla com rachaduras', 'Tripla, cantos e joias douradas']],
+    ['Fundo', ['Escuro, poucas estrelas', 'Grade neon', 'Raios de luz', 'Raios e anéis', 'Fumaça escura', 'Raios, anéis e aura girando']],
+    ['Nome', ['Cor lisa', 'Degradê', 'Metálico com brilho', 'Metálico com brilho', 'Metálico com falha (glitch)', 'Holográfico em movimento']],
+    ['Reflexo', ['—', '—', 'Segue o mouse', 'Segue o mouse + faixa de luz', 'Faixa de luz fosca', 'Holográfico (arco-íris)']],
+    ['Moldura viva', ['—', '—', '—', 'Pulsa', 'Pulsa', 'Pulsa mais rápido']],
+    ['Nº da cópia', ['—', '—', 'Nº 0042', 'Nº 0042', 'Nº 0042', 'Nº 001']],
+    ['Abertura do pacote', ['Vira', 'Vira', 'Verso brilha + clarão', 'Suspense + clarão + tremor', 'Verso treme + tela escurece', 'Suspense longo + explosão de luz']],
+  ];
+  const GENS = [['g1', '1ª geração'], ['g2', '2ª geração'], ['g3', '3ª geração (Web)'], ['all', 'Todas']];
+  const POSITIONS = ['Atacante', 'Defensor', 'Híbrido', 'Suporte', 'Capitão de clã', 'Desenvolvedor', 'Criadora', 'Administrador', 'Mapeador', 'Comunidade'];
+  // Cores de clã (CLAN_COLORS) para o anel e as 32 cores pessoais para o centro (packages/protocol/src/colors.ts e o tema de fábrica).
+  const RING = ['#E02828', '#2050E0', '#3FA0E8', '#F07800', '#F2C200', '#B8932A', '#7CC400', '#1E9E3A', '#0FA89A', '#00AEDB', '#1E2F80', '#7A2BC0', '#C0189E', '#F25AA8', '#8A1E3C', '#80542A', '#303030', '#E6E6E6', '#8E98A6'];
+  const CENTER = ['#00FF00', '#FFFF00', '#FFFFFF', '#FF08FF', '#00FFFF', '#FFA000', '#FF5544', '#4455FF', '#008000', '#A0A0A0', '#00A0A0', '#800080', '#A06000', '#000080', '#800000', '#666666', '#262626', '#FFA6C9', '#9DA8FF', '#C2185B', '#8DB600', '#A8FFC8', '#00A86B', '#FFCBA4', '#4682B4', '#FFF3C4', '#4A5D23', '#8ECDF0', '#B8962E', '#E0B0FF', '#01796F', '#C000C0'];
+
+  const ICONS = {
+    estrela: '<polygon points="12,2.5 14.8,8.9 21.6,9.4 16.4,13.8 18,20.6 12,17 6,20.6 7.6,13.8 2.4,9.4 9.2,8.9"/>',
+    trofeu: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a3 3 0 0 0 3 4.5M17 6h2.5a3 3 0 0 1-3 4.5M12 14v4M8 21h8M9.5 18h5"/>',
+    raio: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+    escudo: '<path d="M12 2.5 4.5 5.5v6c0 4.6 3.2 8.4 7.5 10 4.3-1.6 7.5-5.4 7.5-10v-6z"/>',
+    mira: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><path d="M12 1.5v5M12 17.5v5M1.5 12h5M17.5 12h5"/>',
+    coroa: '<path d="M3 18.5h18M4 18.5 2.5 7.5l5.5 4 4-7 4 7 5.5-4-1.5 11z"/>',
+    codigo: '<path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/>',
+    engrenagem: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5" stroke-dasharray="3 2.9" stroke-width="3.2"/>',
+    pessoas: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c0-4 2.7-6 6-6s6 2 6 6M15.5 14c3 0 5.5 1.8 5.5 5"/>',
+    mapa: '<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+    conversa: '<path d="M4 4h16v12H9l-5 4z"/><path d="M9 10h.01M12 10h.01M15 10h.01" stroke-width="2.6"/>',
+    medalha: '<circle cx="12" cy="15" r="6"/><path d="m8 2.5 4 6 4-6M12 12.5v5"/>',
+    olho: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    infinito: '<path d="M6.5 9a3 3 0 1 0 0 6c3.5 0 7.5-6 11-6a3 3 0 1 1 0 6c-3.5 0-7.5-6-11-6z"/>',
+    grafico: '<path d="M3 20.5h18M5.5 20V14M10 20V9.5M14.5 20V12M19 20V5"/>',
+    pulso: '<path d="M2.5 12H7l2-5.5 3.5 11 2.5-6.5h6.5"/>',
+    espadas: '<path d="m4 4 11 11M20 4 9 15M5.5 18.5l3-3M18.5 18.5l-3-3M3.5 20.5l2-2M20.5 20.5l-2-2"/>',
+    servidor: '<rect x="4" y="3.5" width="16" height="7" rx="1.5"/><rect x="4" y="13.5" width="16" height="7" rx="1.5"/><path d="M8 7h.01M8 17h.01" stroke-width="2.6"/>',
+    camadas: '<path d="m12 3 9.5 5-9.5 5-9.5-5z"/><path d="m2.5 13 9.5 5 9.5-5"/>',
+    cadeado: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  };
+  const ICON_NAMES = { estrela: 'Estrela', trofeu: 'Troféu', raio: 'Raio', escudo: 'Escudo', mira: 'Mira', coroa: 'Coroa', codigo: 'Código', engrenagem: 'Engrenagem', pessoas: 'Pessoas', mapa: 'Mapa', conversa: 'Conversa', medalha: 'Medalha', olho: 'Olho', infinito: 'Infinito', grafico: 'Gráfico', pulso: 'Pulso', espadas: 'Espadas', servidor: 'Servidor', camadas: 'Camadas' };
+  const icon = (k) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICONS[k] || ICONS.estrela}</svg>`;
+
+  const P = (o) => Object.assign({ epi: '', pos: '', bio: '', cls: 'classico', gens: [], clans: [], ach: [], quote: '', mem: '', tra: [], abi: [], rel: [], ring: '#E02828', center: '#00FF00', status: 'pub', ok: true, owners: 0, fict: false, got: '10/11/2026', src: '', link: '', author: 'VIGIA*', reviewer: 'CRONISTA*', created: '01/11/2026', edited: '04/11/2026', revs: null, approvals: 0 }, o);
+  const PLAYERS = {
+    spinal: P({
+      nick: 'SPINAL', epi: 'The Creator', pos: 'Criadora', cls: 'mitica', gens: ['all'], ring: '#2050E0', center: '#00FF00', owners: 0, got: '',
+      bio: 'Antes dos jogadores, antes das equipes, antes da primeira captura, veio Spinal. Criadora do Outgun e responsável pelo mundo onde todas as batalhas acontecem.',
+      quote: 'Ela não joga o jogo. Ela criou o jogo.', mem: 'Todos podem conquistar o Outgun. Apenas uma pessoa poderia criá-lo.',
+      ach: [{ i: 'coroa', t: 'Criadora do Outgun', d: 'Idealizou e deu origem ao jogo.' }],
+      tra: [
+        { i: 'coroa', t: 'A criadora', d: 'Idealizou e deu origem ao Outgun.' },
+        { i: 'olho', t: 'Acima do campo', d: 'Não pertence ao ataque nem à defesa. Sua existência precede as próprias funções do jogo.' },
+        { i: 'raio', t: 'Autoridade absoluta', d: 'As regras que governam cada partida existem porque alguém primeiro criou o campo de batalha.' },
+        { i: 'infinito', t: 'Única', d: 'Não existe outra carta de sua categoria na coleção.' },
+      ],
+      abi: [
+        { i: 'estrela', t: 'Gênese', d: 'Deu origem ao universo Outgun e a tudo que existe dentro dele.' },
+        { i: 'olho', t: 'Onipresença', d: 'Mesmo fora das partidas, sua criação está presente em cada mapa, equipe e captura.' },
+        { i: 'escudo', t: 'Poder supremo', d: 'Não precisa capturar bandeiras ou eliminar adversários. Ela criou as regras que tornam tudo isso possível.' },
+      ],
+      rel: [{ n: 'NIX', k: 'nix' }, { n: 'HUNTTA' }],
+    }),
+    nix: P({
+      nick: 'NIX', epi: 'Arquiteto do Outgun', pos: 'Desenvolvedor', cls: 'lendario', gens: ['all'], ring: '#E02828', center: '#FFFFFF', owners: 41,
+      bio: 'NIX foi um dos responsáveis pela grande transformação técnica do Outgun. Finlandês, assumiu ao lado de Huntta o desenvolvimento do código originalmente criado por Spinal e conduziu o jogo a uma nova etapa de sua história.\n\nA dupla trabalhou na ampliação e reorganização do projeto, incorporando novos recursos e preparando uma versão muito mais completa do jogo. Esse processo culminou na segunda geração do Outgun, com a versão 1.0.0 em desenvolvimento e, posteriormente, em seu lançamento estável.\n\nSua atuação, porém, não se limitou ao código principal. NIX também desenvolveu ferramentas complementares e atualizações voltadas à administração de servidores, conversão de mapas e suporte ao funcionamento do jogo, participando diretamente da construção do ecossistema que se formava ao redor do Outgun.\n\nMais do que simplesmente manter aquilo que recebeu, ajudou a transformar um projeto em evolução em um jogo mais estruturado, funcional e preparado para crescer. Ao lado de Huntta, estabeleceu as bases técnicas que marcariam definitivamente a segunda geração.\n\nA história do Outgun começa com Spinal. Mas uma parte decisiva de sua evolução passou pelas mãos de NIX.',
+      quote: 'Não criou o Outgun. Ajudou a transformá-lo.',
+      ach: [{ i: 'estrela', t: 'Outgun 1.0.0', d: 'Coautor da versão que consolidou a segunda geração.' }],
+      tra: [
+        { i: 'trofeu', t: 'Desenvolvedor', d: 'Atuou diretamente na evolução do código do Outgun.' },
+        { i: 'grafico', t: 'Evolução contínua', d: 'Participou de diferentes etapas do desenvolvimento do jogo.' },
+        { i: 'camadas', t: 'Visão técnica', d: 'Criou soluções para necessidades do jogo e dos servidores.' },
+        { i: 'codigo', t: 'Segunda geração', d: 'Foi um dos responsáveis pela transformação que marcou essa era.' },
+        { i: 'pessoas', t: 'Parceria com Huntta', d: 'Formou com o finlandês a dupla central no desenvolvimento das novas versões.' },
+      ],
+      abi: [
+        { i: 'engrenagem', t: 'Outgun 0.5.0-E', d: 'Participou do desenvolvimento da versão que incorporou novos recursos ao jogo.' },
+        { i: 'servidor', t: 'Suporte a admins', d: 'Criou atualização com comandos para administração de servidores.' },
+        { i: 'pessoas', t: 'Server Monitor', d: 'Desenvolveu ferramenta para administrar jogadores conectados e criou o recurso de replay e espectador a partir da versão 1.0.' },
+        { i: 'mapa', t: 'Map Converter', d: 'Criou conversor de mapas entre versões do Outgun.' },
+        { i: 'estrela', t: 'Outgun 1.0.0', d: 'Participou do desenvolvimento da versão que consolidou a segunda geração.' },
+      ],
+      rel: [{ n: 'SPINAL', k: 'spinal' }, { n: 'HUNTTA' }],
+    }),
+    slan: P({
+      nick: 'SLAN', pos: 'Híbrido', cls: 'especial', gens: ['g1', 'g2'], clans: ['MK', 'NNF', 'aDe', 'BC', 'Ek (Elite Killers)'], ring: '#E02828', center: '#FFFF00', owners: 88,
+      bio: 'SLAN construiu sua trajetória entre a primeira e a segunda geração do Outgun. Passou por MK, NNF, aDe e BC, mas foi pelo Ek (Elite Killers) que marcou sua história no jogo.\n\nSe destacou pelo posicionamento defensivo, sempre com boa leitura de jogo, e também pelo apoio ao ataque, sendo uma referência no suporte às ações de Jaru.\n\nConquistou o CBDO (Campeonato Brasileiro de Outgun), o único torneio realizado na história do jogo, vencendo o clã MM (Matadores Mercenários) em uma final emocionante no clássico The Blunt.\n\nFora dos mapas, tinha um temperamento forte, falava o que pensava e, muitas vezes, sem filtros. Essa postura gerava debates, mas também respeito dentro da comunidade.\n\nDentro do jogo, sua intensidade se traduzia em participação constante, excelente rendimento e atuações de alto nível, consolidando-o como um dos três grandes jogadores da segunda geração.',
+      quote: 'No The Blunt, o temperamento forte virou título.',
+      ach: [{ i: 'medalha', t: 'Campeão do CBDO', d: 'Conquistou o Campeonato Brasileiro de Outgun pelo Ek (Elite Killers).' }],
+      tra: [
+        { i: 'trofeu', t: 'Temperamento forte', d: 'Não costumava guardar suas opiniões e se posicionava com firmeza.' },
+        { i: 'grafico', t: 'Posicionamento', d: 'Tinha na organização defensiva uma de suas maiores qualidades.' },
+        { i: 'conversa', t: 'Intensidade', d: 'Mantinha participação ativa e imprimia personalidade às partidas.' },
+        { i: 'pulso', t: 'Alto rendimento', d: 'Acumulou excelentes atuações durante sua trajetória.' },
+        { i: 'pessoas', t: 'Top 3 da geração', d: 'Consolidou-se entre os três grandes jogadores da segunda geração.' },
+      ],
+      abi: [
+        { i: 'medalha', t: 'Campeão do CBDO', d: 'Fez parte do Ek campeão do único torneio da história do Outgun.' },
+        { i: 'espadas', t: 'Suporte a Jaru', d: 'Seu trabalho defensivo e de apoio dava sustentação às ações do atacante.' },
+        { i: 'escudo', t: 'Defesa eficiente', d: 'Ao lado de Ek-FROGUE, formou a defesa do Ek na histórica final do CBDO.' },
+        { i: 'pessoas', t: 'Jogo híbrido', d: 'Conseguia contribuir defensivamente sem se desligar das ações ofensivas.' },
+        { i: 'mira', t: 'Decisão no The Blunt', d: 'Teve papel importante na vitória do Ek sobre o MM na final do CBDO.' },
+      ],
+      rel: [{ n: 'JARU' }, { n: 'EK-FROGUE' }],
+    }),
+    jarule: P({ nick: 'JARULE', cls: 'classico', ring: '#3FA0E8', center: '#00FF00', status: 'rev', ok: false, owners: 213 }),
+    kobra: P({
+      nick: 'KOBRA*', epi: 'O vilão do servidor*', pos: 'Atacante', cls: 'nefasto', gens: ['g2'], clans: ['MM*'], ring: '#80542A', center: '#666666', owners: 19, fict: true, status: 'rev',
+      bio: 'Jogador inventado para mostrar a classe Nefasto. Famoso por provocar no chat e por sumir com a bandeira nos últimos segundos.\n\nNinguém gostava de jogar contra ele, e todo mundo queria no próprio time.',
+      quote: 'Odiado no chat, temido no mapa.',
+      tra: [{ i: 'conversa', t: 'Provocador', d: 'Chat cheio de provocações (exemplo inventado).' }],
+      abi: [{ i: 'raio', t: 'Fuga no fim', d: 'Capturava quando o placar parecia decidido.' }],
+    }),
+    brasa: P({ nick: 'BRASA*', pos: 'Atacante', cls: 'epico', gens: ['g3'], ring: '#F07800', center: '#FFFF00', owners: 156, fict: true, bio: 'Jogador inventado para mostrar a classe Épico.' }),
+  };
+  const DRAFT0 = () => P({
+    nick: 'TAINHA*', epi: 'O muro da 1.0', pos: 'Defensor', cls: 'epico', gens: ['g2'], clans: ['XyZ*', 'Kraken*'], ring: '#7A2BC0', center: '#FFA000', status: 'dra', ok: false, fict: true,
+    author: 'você', reviewer: '', revs: [], owners: 0, got: '',
+    bio: 'Jogador inventado para testar o formulário. Defensor paciente, ficava na base do Kraken* noites inteiras e quase nunca saía para atacar.\n\nTroque os campos e veja a carta mudar.',
+    quote: 'Ninguém passava pela base dele.',
+    ach: [{ i: 'escudo', t: 'Copa Kraken* 2008', d: 'Campeão de um torneio inventado para o exemplo.' }],
+    tra: [{ i: 'escudo', t: 'Paciência', d: 'Esperava o atacante errar.' }, { i: 'mira', t: 'Mira de longe', d: 'Acertava quem chegava pela porta.' }],
+    abi: [{ i: 'raio', t: 'Reação rápida', d: 'Devolvia a bandeira antes do adversário fugir.' }],
+  });
+  let draft = DRAFT0();
+  Object.assign(PLAYERS, {
+    mestre: P({ nick: 'MESTRE_VENTO*', cls: 'epico', pos: 'Capitão de clã', gens: ['g1', 'g2'], clans: ['NNF'], status: 'dra', ok: false, fict: true, author: 'CRONISTA*', reviewer: '', edited: '05/11/2026', bio: 'Jogador inventado para mostrar um rascunho pela metade.' }),
+    zarco: P({ nick: 'ZARCO*', cls: 'classico', pos: 'Atacante', gens: ['g3'], fict: true, owners: 240, ring: '#00AEDB', center: '#FF5544', bio: 'Jogador inventado para encher a lista.', quote: 'Corria mais que a bandeira.', tra: [{ i: 'raio', t: 'Rápido', d: 'Exemplo.' }], abi: [{ i: 'mira', t: 'Mira', d: 'Exemplo.' }] }),
+    lua: P({ nick: 'LUA_PRETA*', cls: 'lendario', pos: 'Mapeador', gens: ['g2', 'g3'], clans: ['BC'], fict: true, owners: 37, ring: '#1E2F80', center: '#E0B0FF', bio: 'Jogador inventado para encher a lista.', quote: 'Desenhou metade dos mapas que você joga.', ach: [{ i: 'mapa', t: 'Mapas', d: 'Exemplo.' }], tra: [{ i: 'mapa', t: 'Mapeador', d: 'Exemplo.' }], abi: [{ i: 'camadas', t: 'Camadas', d: 'Exemplo.' }] }),
+  });
+  // Quem escreveu, quem revisou e o histórico de cada ficha (exemplo).
+  const META = {
+    spinal: { author: 'CRONISTA*', reviewer: 'VIGIA*', edited: '03/11/2026', src: 'Texto enviado ao grupo; créditos do jogo original' },
+    nix: { author: 'VIGIA*', reviewer: 'CRONISTA*', src: 'Créditos do Outgun 1.0 e texto enviado ao grupo' },
+    slan: { author: 'VIGIA*', reviewer: 'CRONISTA*', src: 'Texto enviado ao grupo; conversa com ex-membros do Ek', revs: [
+      { n: 1, by: 'VIGIA*', at: '02/11/2026', note: 'Ficha criada' },
+      { n: 2, by: 'VIGIA*', at: '02/11/2026', note: 'Enviada para revisão' },
+      { n: 3, by: 'CRONISTA*', at: '03/11/2026', note: 'Devolvida: conferir o mapa da final', diff: [] },
+      { n: 4, by: 'VIGIA*', at: '03/11/2026', note: 'Corrigido o mapa da final', diff: [['Biografia', '…vencendo o clã MM numa final no mapa Blunt.', '…vencendo o clã MM (Matadores Mercenários) em uma final emocionante no clássico The Blunt.']] },
+      { n: 5, by: 'CRONISTA*', at: '04/11/2026', note: 'Aprovada e publicada' },
+    ] },
+    jarule: { author: 'CRONISTA*', reviewer: '', edited: '05/11/2026' },
+    kobra: { author: 'VIGIA*', reviewer: 'CRONISTA*', approvals: 1, edited: '05/11/2026', src: 'Exemplo inventado' },
+    brasa: { author: 'CRONISTA*', reviewer: 'VIGIA*' },
+  };
+  const baseRevs = (p) => {
+    const r = [{ n: 1, by: p.author, at: p.created, note: 'Ficha criada' }];
+    if (p.status !== 'dra') r.push({ n: 2, by: p.author, at: p.created, note: 'Enviada para revisão' });
+    if (p.status === 'rev' && p.approvals) r.push({ n: 3, by: p.reviewer, at: p.edited, note: 'Aprovada (1 de 2, Nefasto)' });
+    if (p.status === 'pub') r.push({ n: 3, by: p.reviewer, at: p.edited, note: 'Aprovada e publicada' });
+    return r;
+  };
+  for (const [k, p] of Object.entries(PLAYERS)) { Object.assign(p, META[k] || {}); if (!p.revs) p.revs = baseRevs(p); }
+  const ME = 'você'; const TODAY = '05/11/2026';
+  const AUDIT = [
+    { at: '05/11 18:12', who: 'VIGIA*', what: 'aprovou KOBRA* (1 de 2)', k: 'kobra' },
+    { at: '05/11 10:40', who: 'CRONISTA*', what: 'enviou JARULE para revisão', k: 'jarule' },
+    { at: '04/11 21:03', who: 'CRONISTA*', what: 'publicou SLAN', k: 'slan' },
+    { at: '04/11 20:15', who: 'CRONISTA*', what: 'publicou NIX', k: 'nix' },
+    { at: '03/11 22:47', who: 'VIGIA*', what: 'publicou SPINAL', k: 'spinal' },
+  ];
+  const log = (what, k) => AUDIT.unshift({ at: '05/11 agora', who: ME, what, k });
+  const LADDER = ['jarule', 'brasa', 'nix', 'slan', 'kobra', 'spinal'];
+
+  const getP = (k) => (k === 'draft' ? draft : PLAYERS[k]);
+  const genLabel = (g) => (g.includes('all') ? 'Todas' : g.length ? g.map((x) => x.slice(1) + 'ª').join(' e ') : '—');
+  const genLong = (g) => (g.includes('all') ? 'Todas' : g.length ? g.map((x) => x.slice(1) + 'ª').join(' e ') + (g.length > 1 ? ' gerações' : ' geração') : '—');
+  const paras = (s) => String(s || '').split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean);
+
+  const hash = (s) => { let h = 2166136261; for (const ch of String(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const rng = (seed) => () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const serial = (p) => (p.cls === 'mitica' ? '001' : String(1 + (hash(p.nick) % Math.max(1, p.owners || 60))).padStart(4, '0'));
+
+  // ---------- Boneco em pixels ----------
+  const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const ch = (v) => Math.max(0, Math.min(255, Math.round(f > 0 ? v + (255 - v) * f : v * (1 + f)))); return `rgb(${ch(n >> 16)},${ch((n >> 8) & 255)},${ch(n & 255)})`; };
+  const CELLS = (() => {
+    const cells = []; const cx = 11, cy = 11;
+    for (let y = 0; y < 22; y++) for (let x = 0; x < 30; x++) {
+      const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+      let k = null;
+      if (d < 6.1) k = 'c'; else if (d < 7.1) k = 'g'; else if (d < 10.4) k = 'r';
+      if (!k && x >= 20 && x <= 28 && y >= 9 && y <= 12) k = (y === 9 || y === 12 || x === 28) ? 'o' : 'r';
+      if (!k && d < 11.3) k = 'o';
+      if (k) cells.push([x, y, k]);
+    }
+    return cells;
+  })();
+  function drawArt(canvas, p) {
+    const cls = CLS[p.cls]; const t = cls.t;
+    const r = canvas.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    const ctx = canvas.getContext('2d'); const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const rand = rng(hash(p.nick + p.cls));
+    const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2;
+    const glowA = ['22', '33', '55', '66', '33', '77'][t];
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.25);
+    g.addColorStop(0, cls.c1 + glowA); g.addColorStop(0.45, cls.c1 + '14'); g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (t === 4) { // fumaça
+      for (let i = 0; i < 14; i++) { const x = rand() * W, y = rand() * H, s = R * (0.3 + rand() * 0.5); const sg = ctx.createRadialGradient(x, y, 0, x, y, s); sg.addColorStop(0, 'rgba(150,140,135,.16)'); sg.addColorStop(1, 'transparent'); ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H); }
+    }
+    const rays = [0, 0, 18, 30, 0, 48][t];
+    ctx.strokeStyle = cls.c1 + (t >= 5 ? '66' : '44'); ctx.lineWidth = Math.max(1, dpr * 0.8);
+    for (let i = 0; i < rays; i++) { const a = (i / rays) * Math.PI * 2 + rand() * 0.05; const l = R * (0.9 + rand() * 0.9); ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * R * 0.5, cy + Math.sin(a) * R * 0.5); ctx.lineTo(cx + Math.cos(a) * l, cy + Math.sin(a) * l); ctx.stroke(); }
+    if (t === 3 || t === 5) for (const k of [0.62, 0.8, 0.98]) { ctx.beginPath(); ctx.arc(cx, cy, R * k, 0, Math.PI * 2); ctx.strokeStyle = cls.c1 + '33'; ctx.stroke(); }
+    const dust = [30, 70, 140, 200, 60, 320][t];
+    for (let i = 0; i < dust; i++) { const a = rand() * Math.PI * 2, d = R * (0.3 + rand() * 1.1); ctx.fillStyle = rand() < 0.5 ? cls.c2 + 'aa' : '#ffffff88'; const s = (rand() * 1.6 + 0.4) * dpr; ctx.fillRect(cx + Math.cos(a) * d, cy + Math.sin(a) * d, s, s); }
+    const cell = Math.floor(Math.min(W / 31, H / 23) * 0.86);
+    const ox = Math.round(cx - 13 * cell), oy = Math.round(cy - 11 * cell);
+    const col = { r: p.ring, c: p.center, g: '#050505', o: '#050505' };
+    ctx.save(); ctx.shadowColor = p.ring; ctx.shadowBlur = cell * (1.2 + t * 0.4);
+    ctx.fillStyle = p.ring + 'cc';
+    for (const [x, y, k] of CELLS) if (k === 'o') ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+    ctx.restore();
+    const gap = Math.max(1, Math.round(cell * 0.1));
+    for (const [x, y, k] of CELLS) {
+      if (k === 'o') continue;
+      const X = ox + x * cell, Y = oy + y * cell, base = col[k];
+      ctx.fillStyle = base; ctx.fillRect(X + gap, Y + gap, cell - gap * 2, cell - gap * 2);
+      if (k === 'g') continue;
+      const b = Math.max(1, Math.round(cell * 0.18));
+      ctx.fillStyle = shade(base, 0.45); ctx.fillRect(X + gap, Y + gap, cell - gap * 2, b); ctx.fillRect(X + gap, Y + gap, b, cell - gap * 2);
+      ctx.fillStyle = shade(base, -0.38); ctx.fillRect(X + gap, Y + cell - gap - b, cell - gap * 2, b); ctx.fillRect(X + cell - gap - b, Y + gap, b, cell - gap * 2);
+    }
+  }
+
+  // ---------- Moldura por degrau (viewBox 300 × 400, mesma proporção da carta) ----------
+  const poly = (i, cut) => `${cut + i},${4 + i} ${296 - cut - i},${4 + i} ${296 - i},${cut + 4 + i} ${296 - i},${396 - cut - i} ${296 - cut - i},${396 - i} ${cut + i},${396 - i} ${4 + i},${396 - cut - i} ${4 + i},${cut + 4 + i}`;
+  function frameSvg(t) {
+    const cut = 18; let s = `<polygon points="${poly(0, cut)}" fill="none" stroke="var(--c1)" stroke-width="2.4"/>`;
+    if (t >= 1) s += `<polygon points="${poly(6, cut)}" fill="none" stroke="var(--c2)" stroke-opacity=".55" stroke-width="1"/>`;
+    if (t >= 3) s += `<polygon points="${poly(11, cut)}" fill="none" stroke="var(--c1)" stroke-opacity=".45" stroke-width="1" stroke-dasharray="6 4"/>`;
+    if (t >= 2) {
+      const d = (x, y, r, f) => `<polygon points="${x},${y - r} ${x + r},${y} ${x},${y + r} ${x - r},${y}" fill="${f}" stroke="var(--c2)" stroke-width="1"/>`;
+      const f = t === 5 ? 'var(--c2)' : 'var(--c1)';
+      s += d(14, 14, 6, f) + d(286, 14, 6, f) + d(14, 386, 6, f) + d(286, 386, 6, f);
+      s += `<path d="M24 4h28M248 4h28M24 396h28M248 396h28" stroke="var(--c2)" stroke-width="3"/>`;
+    }
+    if (t >= 3) s += `<path d="M2 170v60M298 170v60" stroke="var(--c2)" stroke-width="4"/><path d="M8 186v28M292 186v28" stroke="var(--c1)" stroke-width="2"/>`;
+    if (t === 5) {
+      const gem = (x, y) => `<polygon points="${x},${y - 9} ${x + 7},${y} ${x},${y + 9} ${x - 7},${y}" fill="var(--c2)" stroke="#fff6c9" stroke-width="1"/><circle cx="${x}" cy="${y}" r="2.4" fill="var(--c1)"/>`;
+      s += gem(150, 4) + gem(150, 396) + gem(4, 200) + gem(296, 200);
+    }
+    return `<svg class="frame" viewBox="0 0 300 400" aria-hidden="true">${s}</svg>`;
+  }
+  function cracksSvg(p) {
+    const r = rng(hash(p.nick + 'cracks')); let s = '';
+    const starts = [[0, 60], [300, 120], [0, 300], [300, 340], [80, 400], [220, 0]];
+    for (const [sx, sy] of starts) {
+      let x = sx, y = sy, d = `M${x} ${y}`;
+      const dx = sx === 0 ? 1 : sx === 300 ? -1 : (r() - 0.5), dy = sy === 0 ? 1 : sy === 400 ? -1 : (r() - 0.5);
+      for (let i = 0; i < 6; i++) { x += dx * (8 + r() * 14) + (r() - 0.5) * 12; y += dy * (8 + r() * 14) + (r() - 0.5) * 12; d += ` L${x.toFixed(1)} ${y.toFixed(1)}`; }
+      s += `<path d="${d}" fill="none" stroke="var(--c2)" stroke-opacity=".4" stroke-width="1"/>`;
+    }
+    return `<svg class="cracks" viewBox="0 0 300 400" aria-hidden="true">${s}</svg>`;
+  }
+  const vars = (p) => `--c1:${CLS[p.cls].c1};--c2:${CLS[p.cls].c2}`;
+
+  // ---------- Carta ----------
+  function card(p, key, opts = {}) {
+    const c = CLS[p.cls]; const t = c.t;
+    return `<div class="card t${t} ${opts.locked ? 'locked' : ''}" style="${vars(p)}" data-key="${key}" data-t="${t}">
+      <canvas class="bgfx" data-bg></canvas>${t === 4 ? cracksSvg(p) : ''}${frameSvg(t)}
+      <div class="inner">
+        <div class="b-logo boxn"><div class="logo">OUTGUN</div><div class="sub">Carta de jogador</div></div>
+        <div class="art">${t === 5 ? '<div class="aura"></div>' : ''}<canvas data-art></canvas></div>
+        <div class="b-name boxn"><div class="nick" data-fitw>${esc(p.nick || '???')}</div></div>
+        <div class="b-cls"><span>${esc(c.name)}</span><span class="pips" aria-label="${t + 1} de 6 estrelas">${'★'.repeat(t + 1)}</span></div>
+      </div>
+      ${t >= 2 && !opts.locked ? `<div class="serial">Nº ${serial(p)}</div>` : ''}
+      ${t >= 2 ? '<div class="foil"></div>' : ''}
+      ${opts.locked ? `<div class="lockmsg">Ainda não é sua</div>` : ''}
+    </div>`;
+  }
+  function cardBack() {
+    return `<div class="card back t1" style="--c1:#2c9bff;--c2:#8fd0ff"><canvas class="bgfx" data-bg></canvas>${frameSvg(1)}<div class="inner"><div class="center"><div class="logo">OUTGUN</div><div class="sub">Player Cards 2026</div><div class="sub" style="opacity:.7">Toque para abrir</div></div></div></div>`;
+  }
+
+  // ---------- Página de detalhes ----------
+  function cardChance(p) {
+    const c = CLS[p.cls]; const total = CLASSES.reduce((s, x) => s + x.odds, 0) || 1;
+    if (!c.odds) return 'fora do drop';
+    const v = (c.odds / total / c.n) * 100;
+    return v.toLocaleString('pt-BR', { maximumFractionDigits: v < 1 ? 2 : 1 }) + ' %';
+  }
+  function detailPage(p, key, view) {
+    const c = CLS[p.cls]; const locked = view === 'locked';
+    const lst = (arr) => arr.length ? `<ul class="lst">${arr.map((x) => `<li>${icon(x.i)}<div><b>${esc(x.t)}</b><br>${esc(x.d)}</div></li>`).join('')}</ul>` : '<p class="muted">Ainda não preenchido.</p>';
+    const clans = p.clans.length ? `<div class="clans">${p.clans.map((x, i) => `<span class="${i === p.clans.length - 1 ? 'main' : ''}">${esc(x)}</span>`).join('<i>›</i>')}</div>` : '<p class="muted">—</p>';
+    const bio = paras(p.bio);
+    const owners = p.cls === 'mitica' ? 'Ninguém ainda' : String(p.owners || 0);
+    const mine = locked
+      ? `<div class="mine"><b>${icon('cadeado')} Você ainda não tem esta carta</b><span class="muted">${c.odds ? `Ela pode sair nos drops de terça e sexta. Chance em cada pacote: ${cardChance(p)}.` : 'A Mítica não sai nos drops (P3).'}</span></div>`
+      : `<div class="mine"><span class="muted">Sua cópia</span><b class="big">${c.t >= 2 ? 'Nº ' + serial(p) : '1 cópia'}</b><span>${p.got ? `Recebida no drop de terça, ${p.got}` : 'Entregue pela moderação'}${c.t >= 2 ? `<br><small>Você foi a ${Number(serial(p))}ª pessoa a receber.</small>` : ''}</span>
+        <div class="btns"><button type="button" class="btn" data-act="share">Compartilhar imagem</button><button type="button" class="btn" data-act="pin">Pôr na vitrine</button></div><small data-actmsg></small></div>`;
+    return `<div class="dpage" style="${vars(p)}">
+      <div class="dband">
+        <div class="crumbs">Portal › Meu álbum › ${esc(c.name)} › ${esc(p.nick)}</div>
+        <h3>${esc(p.nick)}</h3>
+        <div class="line"><span class="clspill">${esc(c.name)} <span aria-hidden="true">${'★'.repeat(c.t + 1)}</span></span>${p.epi ? `<span class="epi">${esc(p.epi)}</span>` : ''}${p.pos ? `<span class="muted">${esc(p.pos)}</span>` : ''}</div>
+      </div>
+      <div class="dgrid">
+        <aside>${card(p, key, { locked })}${mine}</aside>
+        <div class="dmain">
+          ${p.quote ? `<p class="gold">“${esc(p.quote)}”</p>` : ''}
+          <div class="facts">
+            <div class="fact"><small>Classe</small><b style="color:${c.c2}">${esc(c.name)}</b></div>
+            <div class="fact"><small>Posição</small><b>${esc(p.pos || '—')}</b></div>
+            <div class="fact"><small>Geração</small><b>${esc(genLong(p.gens))}</b></div>
+          </div>
+          <div><h4>Clãs</h4>${clans}</div>
+          <div><h4>História</h4>${bio.length ? `<div class="bio ${locked ? 'blur' : ''}">${(locked ? bio.slice(0, 3) : bio).map((x) => `<p>${esc(x)}</p>`).join('')}</div>` : '<p class="muted">A história desta carta ainda não foi escrita. A ficha está em revisão.</p>'}
+            ${locked && bio.length ? '<p class="lockline" style="margin-top:12px">O resto da história, as conquistas, características e habilidades aparecem quando você ganhar a carta.</p>' : ''}</div>
+          ${locked ? '' : `
+          ${p.ach.length ? `<div><h4>Conquistas</h4><div class="ach">${p.ach.map((x) => `<div><span class="medal">${icon(x.i)}</span><span><b>${esc(x.t)}</b><br>${esc(x.d)}</span></div>`).join('')}</div></div>` : ''}
+          <div class="two"><div><h4>Características</h4>${lst(p.tra)}</div><div><h4>Habilidades especiais</h4>${lst(p.abi)}</div></div>
+          ${p.mem ? `<p class="mem">“${esc(p.mem)}”</p>` : ''}`}
+          <div><h4>Na coleção</h4><div class="stats">
+            <div><b>${owners}</b><small>jogadores têm esta carta</small></div>
+            <div><b>${cardChance(p)}</b><small>chance em cada pacote</small></div>
+            <div><b>${p.cls === 'mitica' ? '—' : '10/11/2026'}</b><small>lançada no drop</small></div>
+          </div></div>
+          ${p.rel.length ? `<div><h4>Cartas ligadas</h4><div class="rel">${p.rel.map((r) => r.k ? `<button type="button" data-goto="${r.k}">${esc(r.n)}</button>` : `<span title="Ainda sem carta">${esc(r.n)} · em breve</span>`).join('')}</div></div>` : ''}
+          <p class="meta">Coleção Outgun Player Cards 2026 · ficha revisada pela moderação${p.fict ? ' · exemplo inventado' : ''}. Viu algo errado na história? Use "Relatar um problema" no portal.</p>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ---------- Pintar ----------
+  function paint(root) {
+    $$('.card', root).forEach((el) => {
+      const key = el.dataset.key; const p = key ? getP(key) : null; const t = +(el.dataset.t || 0);
+      const bg = $('canvas[data-bg]', el);
+      if (bg) {
+        const r = bg.getBoundingClientRect(); if (r.width) {
+          bg.width = Math.round(r.width); bg.height = Math.round(r.height);
+          const ctx = bg.getContext('2d'); const c1 = getComputedStyle(el).getPropertyValue('--c1').trim() || '#2c9bff';
+          const rand = rng(hash((p && p.nick) || 'back'));
+          ctx.fillStyle = t === 4 ? '#070504' : '#030405'; ctx.fillRect(0, 0, bg.width, bg.height);
+          if (t >= 1 && t !== 4) {
+            ctx.strokeStyle = c1 + (t >= 3 ? '1c' : '12'); ctx.lineWidth = 1;
+            for (let x = 0; x < bg.width; x += 14) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, bg.height); ctx.stroke(); }
+            for (let y = 0; y < bg.height; y += 14) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(bg.width, y); ctx.stroke(); }
+          }
+          const stars = [25, 60, 90, 120, 50, 180][t];
+          for (let i = 0; i < stars; i++) { ctx.fillStyle = rand() < 0.3 ? c1 + 'cc' : '#ffffff55'; ctx.fillRect(rand() * bg.width, rand() * bg.height, 1.3, 1.3); }
+          const v = ctx.createRadialGradient(bg.width / 2, bg.height / 2, bg.width * 0.3, bg.width / 2, bg.height / 2, bg.width * 0.9);
+          v.addColorStop(0, 'transparent'); v.addColorStop(1, 'rgba(0,0,0,.7)'); ctx.fillStyle = v; ctx.fillRect(0, 0, bg.width, bg.height);
+        }
+      }
+      if (p) $$('canvas[data-art]', el).forEach((cv) => drawArt(cv, p));
+      $$('[data-fitw]', el).forEach((n) => { n.style.fontSize = ''; let s = parseFloat(getComputedStyle(n).fontSize); let k = 0; while (n.scrollWidth > n.clientWidth + 1 && s > 6 && k++ < 60) { s *= 0.94; n.style.fontSize = s + 'px'; } });
+    });
+  }
+  // Reflexo que segue o mouse (Lendário em diante).
+  document.addEventListener('pointermove', (e) => {
+    const el = e.target.closest && e.target.closest('.card[data-t]'); if (!el || +el.dataset.t < 2) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
+    el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
+  });
+
+  // ---------- Escada ----------
+  $('#ladder').innerHTML = LADDER.map((k) => { const p = PLAYERS[k]; const c = CLS[p.cls]; return `<figure style="${vars(p)}">${card(p, k)}<figcaption><b>${c.name}</b><span>${c.desc}</span></figcaption></figure>`; }).join('');
+  $('#featTable').innerHTML = `<thead><tr><th></th>${CLASSES.map((c) => `<th style="--c2:${c.c2}">${c.name}</th>`).join('')}</tr></thead><tbody>${FEATURES.map(([n, v]) => `<tr><td>${n}</td>${v.map((x) => `<td class="${x === '—' ? 'off' : ''}">${x}</td>`).join('')}</tr>`).join('')}</tbody>`;
+
+  // ---------- Página ----------
+  const state = { player: 'slan', view: 'own' };
+  const pickers = [['spinal', 'SPINAL'], ['nix', 'NIX'], ['slan', 'SLAN'], ['kobra', 'KOBRA*'], ['jarule', 'JARULE'], ['draft', 'Sua ficha']];
+  $('#pickPlayer').innerHTML = pickers.map(([k, n]) => `<button type="button" data-p="${k}" aria-pressed="false">${n}</button>`).join('');
+  function renderShowcase() {
+    const sc = $('#showcase');
+    $$('#pickPlayer button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.p === state.player)));
+    $$('#pickView button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === state.view)));
+    sc.innerHTML = detailPage(getP(state.player), state.player, state.view);
+    requestAnimationFrame(() => paint(sc));
+  }
+  const goto = (k) => { state.player = k; renderShowcase(); $('#pagina').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }); };
+  $('#pickPlayer').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { state.player = b.dataset.p; renderShowcase(); } });
+  $('#pickView').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { state.view = b.dataset.v; renderShowcase(); } });
+  $('#showcase').addEventListener('click', (e) => {
+    const g = e.target.closest('[data-goto]'); if (g) { goto(g.dataset.goto); return; }
+    const a = e.target.closest('[data-act]');
+    if (a) { const m = $('[data-actmsg]', $('#showcase')); if (m) m.textContent = a.dataset.act === 'share' ? 'No jogo, isto gera o PNG da carta com o link da página.' : 'No jogo, a carta vai para a vitrine do seu perfil.'; }
+  });
+
+  // ---------- Formulário ----------
+  $('#f-pos').innerHTML = POSITIONS.map((x) => `<option>${x}</option>`).join('') + '<option value="">Outra</option>';
+  $('#f-cls').innerHTML = CLASSES.map((c) => `<label><input type="radio" name="cls" value="${c.id}"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,${c.c1} 50%,${c.c2} 50%)"></span>${c.name} <small>${'★'.repeat(c.t + 1)}</small></label>`).join('');
+  $('#f-gen').innerHTML = GENS.map(([k, n]) => `<label><input type="checkbox" name="gen" value="${k}">${n}</label>`).join('');
+  $('#qc').innerHTML += CLASSES.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+  $('#force').innerHTML += CLASSES.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+  const swHtml = (list, name) => list.map((h) => `<button type="button" class="sw" data-${name}="${h}" style="background:${h}" aria-label="Cor ${h}" aria-pressed="false"></button>`).join('');
+  $('#sw-ring').innerHTML = swHtml(RING, 'ring');
+  $('#sw-center').innerHTML = swHtml(CENTER, 'center');
+  const iconOpts = (sel) => Object.keys(ICON_NAMES).map((k) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${ICON_NAMES[k]}</option>`).join('');
+  const itemsHtml = (kind) => draft[kind].map((x, i) => `<div class="item" data-kind="${kind}" data-i="${i}">
+      <select aria-label="Ícone" data-k="i">${iconOpts(x.i)}</select>
+      <input type="text" aria-label="Título" maxlength="28" data-k="t" value="${esc(x.t)}" placeholder="Título">
+      <input type="text" aria-label="Texto" maxlength="160" data-k="d" value="${esc(x.d)}" placeholder="Texto curto">
+      <button type="button" class="rm" aria-label="Remover" data-rm>×</button></div>`).join('');
+  const BIO_MAX = 3000;
+  function fillForm() {
+    $('#f-nick').value = draft.nick; $('#f-epi').value = draft.epi;
+    if (POSITIONS.includes(draft.pos)) { $('#f-pos').value = draft.pos; $('#f-pos2').value = ''; } else { $('#f-pos').value = ''; $('#f-pos2').value = draft.pos; }
+    $('#f-bio').value = draft.bio; $('#f-quote').value = draft.quote; $('#f-mem').value = draft.mem;
+    $('#f-clans').value = draft.clans.join(', '); $('#f-rel').value = draft.rel.map((r) => r.n).join(', ');
+    $$('#f-cls input').forEach((r) => { r.checked = r.value === draft.cls; });
+    $$('#f-gen input').forEach((r) => { r.checked = draft.gens.includes(r.value); });
+    $('#f-ok').checked = draft.ok; $('#f-src').value = draft.src || ''; $('#f-link').value = draft.link || '';
+    for (const k of ['ach', 'tra', 'abi']) $('#it-' + k).innerHTML = itemsHtml(k);
+    syncSwatches(); counts();
+  }
+  function syncSwatches() {
+    $$('#sw-ring .sw').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.ring === draft.ring)));
+    $$('#sw-center .sw').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.center === draft.center)));
+  }
+  function counts() {
+    const n = draft.bio.length; const cb = $('#c-bio'); cb.textContent = `${n} / ${BIO_MAX} letras`; cb.classList.toggle('over', n > BIO_MAX);
+    $('#c-quote').textContent = `${draft.quote.length} / 90`;
+  }
+  const knownByNick = (n) => (Object.entries(PLAYERS).find(([k, p]) => k !== 'pack' && p.nick === n) || [])[0];
+  function readForm() {
+    draft.nick = $('#f-nick').value.toUpperCase(); draft.epi = $('#f-epi').value;
+    draft.pos = $('#f-pos').value || $('#f-pos2').value;
+    draft.bio = $('#f-bio').value; draft.quote = $('#f-quote').value; draft.mem = $('#f-mem').value;
+    draft.clans = $('#f-clans').value.split(',').map((x) => x.trim()).filter(Boolean);
+    draft.rel = $('#f-rel').value.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean).map((n) => ({ n, k: knownByNick(n) }));
+    draft.cls = ($('#f-cls input:checked') || {}).value || 'classico';
+    const g = $$('#f-gen input:checked').map((x) => x.value); draft.gens = g.includes('all') ? ['all'] : g;
+    draft.ok = $('#f-ok').checked; draft.src = $('#f-src').value; draft.link = $('#f-link').value;
+    counts();
+  }
+  function renderPreview() { const box = $('#livePreview'); box.innerHTML = card(draft, 'draft'); requestAnimationFrame(() => paint(box)); }
+  let tmr = 0;
+  const update = () => { clearTimeout(tmr); tmr = setTimeout(() => { renderPreview(); renderSheetSide(); if (state.player === 'draft') renderShowcase(); }, 120); };
+  const sheet = $('#sheet');
+  const onField = (e) => { const it = e.target.closest('.item'); if (it) draft[it.dataset.kind][+it.dataset.i][e.target.dataset.k] = e.target.value; else readForm(); update(); };
+  sheet.addEventListener('submit', (e) => e.preventDefault());
+  sheet.addEventListener('input', onField);
+  sheet.addEventListener('change', onField);
+  sheet.addEventListener('click', (e) => {
+    const add = e.target.closest('[data-add]');
+    if (add) { const k = add.dataset.add; if (draft[k].length >= 8) return; draft[k].push({ i: 'estrela', t: '', d: '' }); $('#it-' + k).innerHTML = itemsHtml(k); update(); return; }
+    const rm = e.target.closest('[data-rm]');
+    if (rm) { const it = rm.closest('.item'); draft[it.dataset.kind].splice(+it.dataset.i, 1); $('#it-' + it.dataset.kind).innerHTML = itemsHtml(it.dataset.kind); update(); return; }
+    const op = e.target.closest('[data-open]'); if (op) { openCard(op.dataset.open); return; }
+    const sw = e.target.closest('.sw');
+    if (sw) { if (sw.dataset.ring) draft.ring = sw.dataset.ring; else draft.center = sw.dataset.center; syncSwatches(); update(); }
+  });
+  $('#btnShow').addEventListener('click', () => { state.view = 'own'; goto('draft'); });
+  // ---------- Moderação ----------
+  const ST = { pub: ['st-pub', 'Publicada'], rev: ['st-rev', 'Em revisão'], dra: ['st-dra', 'Rascunho'], out: ['st-out', 'Retirada'] };
+  const filled = (p) => [p.nick, p.pos, p.bio, p.cls, p.gens.length, p.clans.length, p.ach.length, p.quote, p.tra.length, p.abi.length, p.ring].filter(Boolean).length;
+  const entries = () => Object.entries(PLAYERS).filter(([k]) => k !== 'pack');
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const clsPill = (c) => `<span class="pill" style="color:${c.c2};border-color:${c.c1}">${c.name} ${'★'.repeat(c.t + 1)}</span>`;
+  const stPill = (st) => `<span class="pill ${ST[st][0]}">${ST[st][1]}</span>`;
+  const slug = (n) => String(n).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '…';
+  let editKey = null; let seq = 0; let modView = 'cat'; let openKey = null; let paused = false;
+
+  function checklist(p) {
+    return [
+      { t: 'Nick, classe e cores', ok: !!(p.nick && p.cls && p.ring && p.center), req: true },
+      { t: 'Biografia', ok: paras(p.bio).length > 0 && p.bio.length <= BIO_MAX, req: true },
+      { t: 'Frase dourada', ok: !!p.quote, req: true },
+      { t: 'Posição e geração', ok: !!(p.pos && p.gens.length) },
+      { t: 'Clãs', ok: p.clans.length > 0 },
+      { t: 'Ao menos 1 característica e 1 habilidade', ok: p.tra.length > 0 && p.abi.length > 0 },
+      { t: 'Fontes informadas', ok: !!p.src },
+      { t: 'Aval do jogador ou de alguém próximo (P9)', ok: !!p.ok },
+    ];
+  }
+  const canSend = (p) => checklist(p).every((x) => !x.req || x.ok);
+  const checksHtml = (p) => checklist(p).map((x) => `<li class="${x.ok ? '' : 'no'} ${x.req ? 'req' : ''}">${esc(x.t)}</li>`).join('');
+
+  // Diferenças entre duas versões da ficha (histórico de revisões).
+  const FIELDS = [['nick', 'Nick'], ['epi', 'Epíteto'], ['pos', 'Posição'], ['cls', 'Classe'], ['bio', 'Biografia'], ['quote', 'Frase dourada'], ['mem', 'Lembrança'], ['clans', 'Clãs'], ['gens', 'Geração'], ['ring', 'Cor do anel'], ['center', 'Cor do centro'], ['ach', 'Conquistas'], ['tra', 'Características'], ['abi', 'Habilidades'], ['src', 'Fontes'], ['ok', 'Aval']];
+  const showVal = (k, v) => (k === 'cls' ? CLS[v].name : k === 'gens' ? genLabel(v) : k === 'clans' ? v.join(', ') || '—' : Array.isArray(v) ? `${v.length} itens` : k === 'ok' ? (v ? 'sim' : 'não') : String(v || '—'));
+  const short = (x) => (x.length > 160 ? x.slice(0, 160) + '…' : x);
+  const diffOf = (a, b) => FIELDS.filter(([k]) => JSON.stringify(a[k]) !== JSON.stringify(b[k])).map(([k, n]) => [n, short(showVal(k, a[k])), short(showVal(k, b[k]))]);
+
+  const lev = (a, b) => { const d = Array.from({ length: a.length + 1 }, (_, i) => [i]); for (let j = 1; j <= b.length; j++) d[0][j] = j; for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return d[a.length][b.length]; };
+  const norm = (x) => String(x || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  function dupes(nick) {
+    const n = norm(nick); if (n.length < 2) return '';
+    const others = entries().filter(([k]) => k !== editKey).map(([k, p]) => [k, p, norm(p.nick)]);
+    const ex = others.find((o) => o[2] === n);
+    if (ex) return `<div class="dupe"><span>Já existe uma ficha de <b>${esc(ex[1].nick)}</b> (${ST[ex[1].status][1]}).</span><button type="button" class="btn" data-open="${ex[0]}">Abrir a ficha</button></div>`;
+    const sim = others.filter((o) => n.length >= 3 && (o[2].startsWith(n) || n.startsWith(o[2]) || lev(o[2], n) <= 1));
+    return sim.length ? `<div class="dupe"><span>Parecido com ${sim.map((o) => `<b>${esc(o[1].nick)}</b>`).join(', ')}. Confira se não é a mesma pessoa.</span></div>` : '';
+  }
+
+  // ---- Catálogo ----
+  function renderTiles() {
+    const all = entries().map(([, p]) => p); const n = (st) => all.filter((p) => p.status === st).length;
+    const goal = CLASSES.filter((c) => c.odds > 0).reduce((s, c) => s + c.n, 0);
+    const pubDrop = all.filter((p) => p.status === 'pub' && CLS[p.cls].odds > 0).length;
+    $('#modTiles').innerHTML = `<div><b>${n('pub')}</b><small>publicadas</small></div><div><b>${n('rev')}</b><small>em revisão</small></div><div><b>${n('dra')}</b><small>rascunhos</small></div><div><b>${n('out')}</b><small>retiradas</small></div><div><b>${pubDrop}/${goal}</b><small>no sorteio / meta do lançamento</small></div>`;
+    $('#modMeter').innerHTML = CLASSES.map((c) => { const k = all.filter((p) => p.cls === c.id && p.status === 'pub').length; return `<div><span><b style="color:${c.c2}">${c.name}</b><span class="muted">${k} de ${c.n}</span></span><div class="bar"><i style="width:${Math.min(100, (k / c.n) * 100)}%;background:${c.c1}"></i></div></div>`; }).join('');
+    const nr = n('rev'); $('#revBadge').textContent = nr ? String(nr) : '';
+  }
+  function renderRows() {
+    const q = $('#q').value.trim().toLowerCase(), qc = $('#qc').value, qs = $('#qs').value;
+    const rows = entries().filter(([, p]) => (!qc || p.cls === qc) && (!qs || p.status === qs) && (!q || [p.nick, p.epi, ...p.clans].join(' ').toLowerCase().includes(q)));
+    $('#modrows').innerHTML = rows.map(([k, p]) => { const c = CLS[p.cls]; return `<tr data-p="${k}" tabindex="0">
+      <td><span class="dot" style="background:${p.ring};box-shadow:inset 0 0 0 3px ${p.center}"></span><b>${esc(p.nick || '(sem nick)')}</b>${p.author === ME ? ' <small>(sua)</small>' : ''}</td>
+      <td>${clsPill(c)}</td><td>${esc(p.pos || '—')}</td><td>${esc(genLabel(p.gens))}</td><td>${stPill(p.status)}</td>
+      <td style="font-variant-numeric:tabular-nums">${filled(p)}/11</td><td style="font-variant-numeric:tabular-nums">${p.status === 'pub' ? p.owners : '—'}</td>
+      <td><small>${esc(p.edited)} · ${esc(p.revs[p.revs.length - 1]?.by || p.author)}</small></td></tr>`; }).join('') || '<tr><td colspan="8" class="muted">Nenhuma carta encontrada. <button type="button" class="linkbtn" data-m="new">Criar uma nova</button></td></tr>';
+  }
+  ['#q', '#qc', '#qs'].forEach((s) => $(s).addEventListener('input', renderRows));
+  const openRow = (tr) => { if (tr && tr.dataset.p) openCard(tr.dataset.p); };
+  $('#modrows').addEventListener('click', (e) => openRow(e.target.closest('tr')));
+  $('#modrows').addEventListener('keydown', (e) => { if (e.key === 'Enter') openRow(e.target.closest('tr')); });
+
+  // ---- Ficha da carta (consulta) ----
+  function actsHtml(k, p) {
+    const c = CLS[p.cls]; const b = (a, label, opts = {}) => `<button type="button" class="btn ${opts.primary ? 'primary' : ''}" data-ma="${a}" ${opts.off ? 'disabled' : ''}>${label}</button>${opts.why ? `<span class="why">${opts.why}</span>` : ''}`;
+    const out = [];
+    if (p.status === 'dra') {
+      const ok = canSend(p);
+      out.push(b('send', 'Enviar para revisão', { primary: true, off: !ok, why: ok ? '' : 'Falta preencher o que está com ×.' }));
+    }
+    if (p.status === 'rev') {
+      const need = c.id === 'nefasto' ? 2 : 1; const mine = p.author === ME;
+      const label = need === 2 ? `Aprovar (${p.approvals + 1} de 2)` : 'Aprovar e publicar';
+      out.push(b('approve', label, { primary: true, off: mine, why: mine ? 'Quem escreveu não aprova a própria ficha.' : need === 2 ? 'Nefasto precisa de dois moderadores.' : '' }));
+      if (mine) out.push('<button type="button" class="linkbtn" data-ma="other">No protótipo: simular a aprovação de CRONISTA*</button>');
+      out.push(`<input type="text" id="retNote" maxlength="200" placeholder="Nota para quem escreveu" aria-label="Nota da devolução">`);
+      out.push(b('return', 'Devolver com nota'));
+    }
+    out.push(b('edit', p.status === 'pub' ? 'Corrigir a ficha' : 'Editar a ficha'));
+    if (p.status === 'pub') out.push(b('retire', 'Retirar do ar', { why: '' }), '<small>Sai dos drops e da página pública. Quem já tem continua com a carta.</small>');
+    if (p.status === 'out') out.push(b('repub', 'Publicar de novo'));
+    out.push(b('public', 'Ver a página pública'));
+    return `<div class="acts">${out.join('')}</div>`;
+  }
+  function modCardHtml(k) {
+    const p = PLAYERS[k]; const c = CLS[p.cls]; const last = p.revs[p.revs.length - 1];
+    const revRows = [...p.revs].reverse().map((r) => `<tr><td><b>${r.n}</b></td><td>${esc(r.at)}</td><td>${esc(r.by)}</td><td>${esc(r.note)}${r.diff && r.diff.length ? `<details><summary>${r.diff.length} ${r.diff.length > 1 ? 'campos mudaram' : 'campo mudou'}</summary><div class="diff">${r.diff.map(([n, a, b2]) => `<div><b>${esc(n)}:</b> <del>${esc(a)}</del> → <ins>${esc(b2)}</ins></div>`).join('')}</div></details>` : ''}</td></tr>`).join('');
+    const aud = AUDIT.filter((x) => x.k === k);
+    return `<div style="display:grid;gap:16px;${vars(p)}">
+      <div><button type="button" class="btn" data-ma="back">‹ Voltar ao catálogo</button></div>
+      <div class="mhead"><h3>${esc(p.nick)}</h3>${clsPill(c)}${stPill(p.status)}<span class="muted" style="font-size:.9rem">/cartas/${esc(slug(p.nick))} · revisão ${p.revs.length} · ${esc(last.note.toLowerCase())} em ${esc(last.at)} por ${esc(last.by)}</span></div>
+      <div class="mgrid">
+        <aside>${card(p, k)}${actsHtml(k, p)}<small data-mamsg aria-live="polite"></small></aside>
+        <div class="dmain">
+          <div class="two">
+            <div><h4>Ficha</h4><ul class="checks">${checksHtml(p)}</ul></div>
+            <div><h4>Na coleção</h4><div class="stats">
+              <div><b>${p.status === 'pub' ? p.owners : '—'}</b><small>jogadores têm</small></div>
+              <div><b>${p.status === 'pub' ? Math.round(p.owners * 1.2) : '—'}</b><small>cópias entregues</small></div>
+              <div><b>${p.status === 'pub' ? cardChance(p) : '—'}</b><small>chance por pacote</small></div>
+            </div></div>
+          </div>
+          <div class="facts">
+            <div class="fact"><small>Posição</small><b>${esc(p.pos || '—')}</b></div>
+            <div class="fact"><small>Geração</small><b>${esc(genLong(p.gens))}</b></div>
+            <div class="fact"><small>Clãs</small><b>${esc(p.clans.join(', ') || '—')}</b></div>
+            <div class="fact"><small>Escreveu</small><b>${esc(p.author)}</b></div>
+            <div class="fact"><small>Revisou</small><b>${esc(p.reviewer || '—')}</b></div>
+            <div class="fact"><small>Conta atual</small><b>${esc(p.link || '—')}</b></div>
+          </div>
+          <div><h4>Fontes</h4><p>${esc(p.src || 'Nenhuma fonte informada.')}</p></div>
+          ${p.quote ? `<p class="gold">“${esc(p.quote)}”</p>` : ''}
+          <div><h4>Revisões</h4><div class="tbl"><table class="revs"><thead><tr><th>Rev.</th><th>Quando</th><th>Quem</th><th>O que aconteceu</th></tr></thead><tbody>${revRows}</tbody></table></div></div>
+          <div><h4>Registro</h4><div class="audit">${aud.length ? aud.map((x) => `<span>${esc(x.at)} · <b>${esc(x.who)}</b> ${esc(x.what)}</span>`).join('') : '<span>Nada ainda.</span>'}</div></div>
+        </div>
+      </div>
+    </div>`;
+  }
+  function renderCard() { if (!openKey || !PLAYERS[openKey]) return; const box = $('#modCard'); box.innerHTML = modCardHtml(openKey); requestAnimationFrame(() => paint(box)); }
+  function openCard(k) { openKey = k; setMod('card'); }
+  const addRev = (p, note, diff) => { p.revs.push({ n: p.revs.length + 1, by: ME, at: TODAY, note, ...(diff ? { diff } : {}) }); p.edited = TODAY; };
+  function publish(p, k, by) { p.status = 'pub'; p.reviewer = by; p.approvals = 0; p.revs.push({ n: p.revs.length + 1, by, at: TODAY, note: 'Aprovada e publicada' }); p.edited = TODAY; AUDIT.unshift({ at: '05/11 agora', who: by, what: `publicou ${p.nick}`, k }); }
+  $('#modCard').addEventListener('click', (e) => {
+    const g = e.target.closest('[data-goto]'); if (g) { goto(g.dataset.goto); return; }
+    const a = e.target.closest('[data-ma]'); if (!a || a.disabled) return;
+    const k = openKey; const p = PLAYERS[k]; const act = a.dataset.ma;
+    if (act === 'back') { setMod('cat'); return; }
+    if (act === 'public') { state.view = 'own'; goto(k); return; }
+    if (act === 'edit') { editKey = k; draft = clone(p); fillForm(); renderPreview(); setMod('new'); return; }
+    if (act === 'send') { p.status = 'rev'; p.approvals = 0; addRev(p, 'Enviada para revisão'); log(`enviou ${p.nick} para revisão`, k); }
+    if (act === 'approve' || act === 'other') {
+      const by = act === 'other' ? 'CRONISTA*' : ME;
+      if (p.cls === 'nefasto' && p.approvals < 1) { p.approvals = 1; p.reviewer = by; p.revs.push({ n: p.revs.length + 1, by, at: TODAY, note: 'Aprovada (1 de 2, Nefasto)' }); AUDIT.unshift({ at: '05/11 agora', who: by, what: `aprovou ${p.nick} (1 de 2)`, k }); }
+      else publish(p, k, by);
+    }
+    if (act === 'return') { const note = ($('#retNote') || {}).value || 'sem nota'; p.status = 'dra'; p.approvals = 0; addRev(p, `Devolvida: ${note}`); log(`devolveu ${p.nick} (${note})`, k); }
+    if (act === 'retire') { p.status = 'out'; addRev(p, 'Retirada do ar'); log(`retirou ${p.nick} do ar`, k); }
+    if (act === 'repub') { p.status = 'rev'; addRev(p, 'Enviada de novo para revisão'); log(`pediu para publicar ${p.nick} de novo`, k); }
+    if (editKey === k) { draft = clone(p); fillForm(); }
+    refreshMod(); renderCard();
+  });
+
+  // ---- Nova carta / edição ----
+  function renderSheetSide() {
+    const cur = editKey ? PLAYERS[editKey] : null; const st = cur ? cur.status : null;
+    $('#sheetTitle').textContent = cur ? `Editando ${cur.nick} · revisão ${cur.revs.length}` : 'Nova carta (ainda não salva)';
+    const order = ['dra', 'rev', 'pub']; const at = st === 'out' ? -1 : order.indexOf(st || 'dra');
+    $('#sheetSteps').innerHTML = [['dra', '1 · Rascunho'], ['rev', '2 · Revisão de outro moderador'], ['pub', '3 · Publicada e no sorteio']].map(([id, n], i) => `<span class="${i < at ? 'done' : i === at ? 'on' : ''}">${n}</span>`).join('') + (st === 'out' ? '<span class="on">Retirada</span>' : '');
+    $('#sheetChecks').innerHTML = checksHtml(draft);
+    $('#dupe').innerHTML = dupes(draft.nick);
+    const ok = canSend(draft); const send = $('#btnSend'); const save = $('#btnSave');
+    send.hidden = st === 'rev' || st === 'pub'; send.disabled = !ok; send.title = ok ? '' : 'Falta preencher o que está com × em "Antes de enviar".';
+    save.textContent = st === 'pub' ? 'Salvar a correção' : st === 'rev' ? 'Salvar (continua em revisão)' : 'Salvar rascunho';
+  }
+  function saveSheet(send) {
+    readForm(); const snap = clone(draft); const msg = $('#sheetMsg');
+    if (!snap.nick.trim()) { msg.textContent = 'Preencha o nick antes de salvar.'; return; }
+    if (editKey && PLAYERS[editKey]) {
+      const k = editKey; const cur = PLAYERS[k]; const d = diffOf(cur, snap);
+      const big = d.some(([n]) => n === 'Nick' || n === 'Classe');
+      let status = cur.status; let note = 'Ficha editada';
+      if (send) { status = 'rev'; note = 'Enviada para revisão'; }
+      else if (cur.status === 'pub' && big) { status = 'rev'; note = 'Nick ou classe mudou: volta para revisão (P19)'; }
+      else if (cur.status === 'pub') note = 'Correção publicada direto (P19)';
+      if (!d.length && status === cur.status) { msg.textContent = 'Nada mudou desde a última revisão.'; return; }
+      const revs = [...cur.revs, { n: cur.revs.length + 1, by: ME, at: TODAY, note, diff: d }];
+      Object.assign(cur, snap, { status, revs, edited: TODAY, approvals: status === 'rev' ? 0 : cur.approvals });
+      log(`${send ? 'enviou' : 'editou'} ${cur.nick} (revisão ${revs.length})`, k);
+      msg.textContent = `Salvo: revisão ${revs.length}. ${note}.`;
+    } else {
+      const k = 'n' + (++seq); editKey = k;
+      PLAYERS[k] = Object.assign(snap, { status: send ? 'rev' : 'dra', author: ME, reviewer: '', created: TODAY, edited: TODAY, owners: 0, approvals: 0, got: '', revs: send ? [{ n: 1, by: ME, at: TODAY, note: 'Ficha criada' }, { n: 2, by: ME, at: TODAY, note: 'Enviada para revisão' }] : [{ n: 1, by: ME, at: TODAY, note: 'Ficha criada' }] });
+      log(`criou ${snap.nick}${send ? ' e enviou para revisão' : ''}`, k);
+      msg.textContent = send ? 'Ficha criada e enviada para a fila de revisão.' : 'Rascunho salvo. Ele já aparece no catálogo.';
+    }
+    draft = clone(PLAYERS[editKey]); fillForm(); refreshMod(); renderSheetSide();
+    if (send) setTimeout(() => setMod('rev'), reduced ? 0 : 700);
+  }
+  $('#btnSave').addEventListener('click', () => saveSheet(false));
+  $('#btnSend').addEventListener('click', () => saveSheet(true));
+  $('#btnClear').addEventListener('click', () => { editKey = null; draft = P({ nick: '', cls: 'classico', status: 'dra', ok: false, fict: true, got: '', author: ME, reviewer: '', revs: [], owners: 0 }); fillForm(); $('#sheetMsg').textContent = ''; update(); renderSheetSide(); });
+
+  // ---- Fila de revisão ----
+  function renderQueue() {
+    const q = entries().filter(([, p]) => p.status === 'rev');
+    const box = $('#queue');
+    box.innerHTML = q.length ? q.map(([k, p]) => { const c = CLS[p.cls]; const miss = checklist(p).filter((x) => !x.ok).map((x) => x.t);
+      return `<div class="qitem" style="${vars(p)}"><div>${card(p, k)}</div><div style="display:grid;gap:4px;min-width:0"><h3 style="color:${c.c2}">${esc(p.nick)}</h3><div class="controls" style="gap:6px">${clsPill(c)}${c.id === 'nefasto' ? `<span class="pill st-rev">${p.approvals} de 2 aprovações</span>` : ''}</div>
+        <p>Escrita por <b>${esc(p.author)}</b>, enviada em ${esc(p.revs[p.revs.length - 1].at)} · ficha ${filled(p)}/11</p>${miss.length ? `<p class="warnline">Falta: ${esc(miss.join(', '))}</p>` : ''}${p.author === ME ? '<p class="muted">Sua ficha: outro moderador precisa revisar.</p>' : ''}</div>
+        <button type="button" class="btn primary" data-open="${k}">Revisar</button></div>`; }).join('') : '<p class="muted">Nada esperando revisão.</p>';
+    requestAnimationFrame(() => paint(box));
+  }
+  $('#queue').addEventListener('click', (e) => { const b = e.target.closest('[data-open]'); if (b) openCard(b.dataset.open); });
+
+  // ---- Drops e entregas ----
+  function renderDrops() {
+    const pub = entries().filter(([, p]) => p.status === 'pub');
+    const inDrop = pub.filter(([, p]) => CLS[p.cls].odds > 0).length;
+    $('#dropTiles').innerHTML = `<div><b>${paused ? 'Pausado' : 'Ter 10/11'}</b><small>${paused ? 'nenhum pacote sai' : 'próximo drop, às 20h (Brasília)'}</small></div><div><b>≈ 312</b><small>jogadores recebem (jogaram nos últimos 7 dias, exemplo)</small></div><div><b>${inDrop}</b><small>cartas no sorteio</small></div><div><b>0</b><small>pacotes fechados guardados</small></div>`;
+    const empty = CLASSES.filter((c) => c.odds > 0 && !pub.some(([, p]) => p.cls === c.id));
+    $('#dropWarn').innerHTML = empty.map((c) => `<div>! ${c.name} tem chance de ${c.odds} % e nenhuma carta publicada: o sorteio passa essa chance para as outras classes.</div>`).join('');
+    $('#agenda').innerHTML = ['Ter 10/11 · 20h', 'Sex 13/11 · 20h', 'Ter 17/11 · 20h', 'Sex 20/11 · 20h'].map((d, i) => `<tr><td>${d}</td><td>${paused ? '<span class="pill st-out">Pausado</span>' : `<span class="pill ${i ? 'st-dra' : 'st-pub'}">${i ? 'Agendado' : 'Próximo'}</span>`}</td><td>${paused ? '—' : '≈ 312'}</td></tr>`).join('');
+    $('#btnPause').textContent = paused ? 'Retomar os drops' : 'Pausar os drops';
+    const sel = $('#g-card'); const v = sel.value;
+    sel.innerHTML = [...pub].sort((a, b) => CLS[a[1].cls].t - CLS[b[1].cls].t).map(([k, p]) => `<option value="${k}">${esc(p.nick)} · ${CLS[p.cls].name}</option>`).join(''); if (v) sel.value = v;
+    $('#auditAll').innerHTML = AUDIT.slice(0, 14).map((x) => `<span>${esc(x.at)} · <b>${esc(x.who)}</b> ${esc(x.what)}</span>`).join('');
+  }
+  $('#btnPause').addEventListener('click', () => { paused = !paused; log(paused ? 'pausou os drops' : 'retomou os drops'); renderDrops(); });
+  $('#btnGive').addEventListener('click', () => {
+    const u = $('#g-user').value.trim(); const k = $('#g-card').value; const p = PLAYERS[k]; const m = $('#giveMsg');
+    if (!u) { m.textContent = 'Informe a conta do jogador.'; return; }
+    if (p.cls === 'mitica') { m.textContent = 'A Mítica só um admin entrega (P20).'; return; }
+    const why = $('#g-why').value; p.owners++;
+    log(`entregou ${p.nick} a ${u}: ${why.toLowerCase()}`, k);
+    m.textContent = `${p.nick} entregue a ${u}. O jogador recebe a notificação no portal.`; $('#g-user').value = ''; renderDrops();
+  });
+
+  // ---- Navegação ----
+  function setMod(v) {
+    modView = v;
+    $$('#modNav button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === v)));
+    $$('[data-mview]').forEach((el) => { el.hidden = el.dataset.mview !== v; });
+    if (v === 'card') renderCard();
+    if (v === 'rev') renderQueue();
+    if (v === 'drop') renderDrops();
+    if (v === 'new') { renderSheetSide(); requestAnimationFrame(() => paint($('#livePreview'))); }
+  }
+  function refreshMod() { renderTiles(); renderRows(); if (modView === 'rev') renderQueue(); if (modView === 'drop') renderDrops(); }
+  document.getElementById('moderacao').addEventListener('click', (e) => { const b = e.target.closest('[data-m]'); if (b) setMod(b.dataset.m); });
+
+  // ---------- Drops ----------
+  function renderOdds() {
+    const total = CLASSES.reduce((s, c) => s + c.odds, 0) || 1;
+    $('#odds').innerHTML = `<div class="r h"><span>Classe</span><span>Chance por pacote</span><span>Chance %</span><span>Cartas</span></div>` + CLASSES.map((c, i) => `<div class="r">
+      <span style="color:${c.c2}">${c.name}</span>
+      <div class="bar"><i style="width:${(c.odds / total) * 100}%;background:${c.c1}"></i></div>
+      <input type="number" min="0" max="100" step="0.5" value="${c.odds}" data-odds="${i}" aria-label="Chance de ${c.name}">
+      <input type="number" min="1" max="200" step="1" value="${c.n}" data-n="${i}" aria-label="Cartas ${c.name} no catálogo"></div>`).join('');
+  }
+  $('#odds').addEventListener('change', (e) => {
+    const isOdds = e.target.dataset.odds != null; const i = isOdds ? e.target.dataset.odds : e.target.dataset.n; if (i == null) return;
+    const v = Math.max(0, Number(e.target.value) || 0);
+    if (isOdds) CLASSES[+i].odds = v; else CLASSES[+i].n = Math.max(1, Math.round(v));
+    renderOdds(); resetAlbum(); simulate(); renderShowcase(); refreshMod();
+  });
+  const pickClass = (r) => { const total = CLASSES.reduce((s, c) => s + c.odds, 0); let x = r() * total; for (const c of CLASSES) { if ((x -= c.odds) < 0) return c; } return CLASSES[0]; };
+  function simulate() {
+    const r = rng(20261105); const runs = 500; const cap = 520;
+    const droppable = CLASSES.filter((c) => c.odds > 0);
+    const total = droppable.reduce((s, c) => s + c.n, 0);
+    const half = [], full = [], dupY = [];
+    for (let k = 0; k < runs; k++) {
+      const got = Object.fromEntries(droppable.map((c) => [c.id, new Set()])); let have = 0, d = 0, h = 0, dup = 0;
+      while (have < total && d < cap) {
+        d++; const c = pickClass(r); const s = got[c.id]; const id = Math.floor(r() * c.n);
+        if (s.has(id)) dup++; else { s.add(id); have++; }
+        if (!h && have >= total / 2) h = d;
+        if (d === 104) dupY.push(dup / 104);
+      }
+      half.push(h || cap); full.push(have >= total ? d : Infinity); if (d < 104) dupY.push(dup / d);
+    }
+    const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)]; };
+    const wk = (d) => (Number.isFinite(d) ? `${Math.round(d / 2)} semanas (~${(d / 2 / 4.35).toFixed(0)} meses)` : 'mais de 5 anos');
+    const mitica = CLASSES.find((c) => c.id === 'mitica');
+    $('#simOut').innerHTML = `<b>Catálogo no drop: ${total} cartas</b>
+      <span>Metade do álbum: ${wk(med(half))} · Álbum completo: ${wk(med(full))} (jogador mediano)</span>
+      <span>No primeiro ano, ${Math.round(med(dupY) * 100)} % dos pacotes vêm com carta repetida.</span>
+      ${mitica.odds === 0 ? '<span class="muted">Mítica fora do drop: não conta para completar.</span>' : ''}`;
+  }
+  $('#btnSim').addEventListener('click', simulate);
+
+  const album = {}; const dropR = rng(Date.now() >>> 0); let opened = 0; let busy = false;
+  function resetAlbum() { for (const c of CLASSES) album[c.id] = new Array(c.n).fill(0); opened = 0; $('#dropLog').innerHTML = ''; renderAlbum(); }
+  function renderAlbum() {
+    $('#album').innerHTML = CLASSES.map((c) => { const a = album[c.id]; const n = a.filter(Boolean).length; return `<div class="cl" style="--c1:${c.c1}"><span style="color:${c.c2}">${c.name}</span><div class="slots">${a.map((v) => `<i class="${v ? 'on' : ''} ${v > 1 ? 'dup' : ''}"></i>`).join('')}</div><span class="muted" style="font-variant-numeric:tabular-nums">${n}/${a.length}</span></div>`; }).join('');
+  }
+  const KNOWN = { classico: 'jarule', epico: 'brasa', lendario: 'nix', especial: 'slan', nefasto: 'kobra', mitica: 'spinal' };
+  const FAKE = ['ZARCO*', 'LUA_PRETA*', 'MESTRE_VENTO*', 'FAROL*', 'QUARK*', 'PIXEL*', 'NEBLINA*', 'GRAFITE*', 'TROVÃO*', 'CORUJA*'];
+  function backFace(c) {
+    $('#faceBack').innerHTML = cardBack();
+    const b = $('#faceBack .card'); if (c) { b.style.setProperty('--c1', c.c1); b.style.setProperty('--c2', c.c2); }
+    requestAnimationFrame(() => paint($('#faceBack')));
+  }
+  const restart = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+  function openPack() {
+    const flip = $('#flip'); if (busy) return;
+    if (flip.classList.contains('open')) { flip.classList.remove('open'); $('#btnOpen').textContent = 'Abrir pacote'; setTimeout(() => backFace(null), reduced ? 0 : 400); return; }
+    const forced = $('#force').value;
+    const c = forced ? CLS[forced] : pickClass(dropR); const t = c.t; const idx = Math.floor(dropR() * c.n);
+    album[c.id][idx]++; opened++;
+    let p, key;
+    if (idx === 0) { key = KNOWN[c.id]; p = PLAYERS[key]; }
+    else { key = 'pack'; p = P({ nick: FAKE[(idx + c.id.length) % FAKE.length], cls: c.id, ring: RING[(idx * 3) % RING.length], center: CENTER[(idx * 7) % CENTER.length], owners: 30 + idx * 7 }); PLAYERS.pack = p; }
+    $('#faceFront').innerHTML = card(p, key);
+    requestAnimationFrame(() => paint($('#faceFront')));
+    // Suspense: o verso brilha na cor da classe antes de virar, mais tempo quanto mais rara.
+    const wait = reduced ? 0 : [0, 200, 600, 1000, 1200, 1800][t];
+    if (t >= 1) { backFace(c); flip.classList.add('charging'); flip.classList.toggle('ct4', t === 4); }
+    busy = true;
+    setTimeout(() => {
+      flip.classList.remove('charging', 'ct4'); flip.classList.add('open'); busy = false;
+      if (!reduced && t >= 2) { const b = $('#burst'); b.style.setProperty('--c1', c.c1); b.className = ''; void b.offsetWidth; b.className = 'b' + Math.min(5, t); }
+      if (!reduced && (t === 3 || t === 5)) restart(flip, 'shake');
+    }, wait);
+    $('#btnOpen').textContent = 'Próximo pacote';
+    const dup = album[c.id][idx] > 1;
+    $('#dropLog').insertAdjacentHTML('afterbegin', `<div>Pacote ${opened}: <b style="color:${c.c2}">${esc(p.nick)}</b> (${c.name})${dup ? ' — repetida' : ''}</div>`);
+    renderAlbum();
+  }
+  $('#btnOpen').addEventListener('click', openPack);
+  $('#flip').addEventListener('click', () => { if (!$('#flip').classList.contains('open')) openPack(); });
+  $('#flip').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPack(); } });
+  $('#btnReset').addEventListener('click', () => { $('#flip').classList.remove('open'); $('#btnOpen').textContent = 'Abrir pacote'; backFace(null); resetAlbum(); });
+
+  // ---------- Início ----------
+  fillForm(); renderShowcase(); renderPreview(); refreshMod(); renderSheetSide(); renderOdds(); resetAlbum(); simulate(); backFace(null);
+  const repaintAll = () => { paint($('#ladder')); paint($('#showcase')); paint($('#livePreview')); paint($('#flip')); paint($('#moderacao')); };
+  requestAnimationFrame(() => paint($('#ladder')));
+  let rt = 0;
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(repaintAll, 150); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(repaintAll);
+})();
+</script>
+</body>
+</html>

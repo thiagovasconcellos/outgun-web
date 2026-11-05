@@ -7,6 +7,7 @@ import { ChoiceField, FieldGroup, SliderField, TextField, ToggleField } from '..
 import { useGamepadKeys } from '../ui/gamepad.js';
 import { MenuList } from '../ui/MenuList.js';
 import { Panel } from '../ui/Panel.js';
+import { PlayerCard } from '../ui/PlayerCard.js';
 import { StyleRadar } from '../ui/StyleRadar.js';
 import { STYLE_AXES, type StyleAxisValue } from '../ui/style-radar.js';
 import { Table } from '../ui/Table.js';
@@ -36,6 +37,16 @@ const radar = (p: readonly number[]): StyleAxisValue[] => STYLE_AXES.map((axis, 
 const RADAR_A = radar([88, 72, 40, 25, 35, 50]);
 const RADAR_B = radar([30, 45, 60, 92, 55, 70]);
 const RADAR_C = radar([50, 20, 85, 40, 90, 35]);
+
+/** Cartas de exemplo (OG-572): uma por classe, da escada de exclusividade. */
+const CARDS = [
+  { nick: 'JARULE', class: 'classico', ringColor: '#00AEDB', centerColor: '#00FF00', serial: 213 },
+  { nick: 'BRASA', class: 'epico', ringColor: '#F07800', centerColor: '#FFFF00', serial: 156 },
+  { nick: 'NIX', class: 'lendario', ringColor: '#E02828', centerColor: '#FFFFFF', serial: 41 },
+  { nick: 'SLAN', class: 'especial', ringColor: '#E02828', centerColor: '#FFFF00', serial: 88 },
+  { nick: 'KOBRA', class: 'nefasto', ringColor: '#80542A', centerColor: '#666666', serial: 19 },
+  { nick: 'SPINAL', class: 'mitica', ringColor: '#2050E0', centerColor: '#00FF00', serial: 1 },
+] as const;
 
 export default function DevUiScreen() {
   useGamepadKeys();
@@ -200,6 +211,30 @@ export default function DevUiScreen() {
               <StyleRadar key={n} mini caption={`Mini ${n + 1}`} series={[{ key: 'm', label: 'Membro', axes }]} />
             ))}
             <StyleRadar mini caption="Mini sem dados" series={[]} empty="—" />
+          </div>
+        </Panel>
+
+        <Panel title="Cartas de jogador">
+          <div className="ui-row" style={{ alignItems: 'flex-start' }}>
+            {CARDS.map(({ serial, ...look }) => (
+              <div key={look.nick} style={{ width: 180 }}>
+                <PlayerCard look={look} serial={serial} />
+              </div>
+            ))}
+          </div>
+          <div className="ui-row" style={{ alignItems: 'flex-start' }}>
+            <div style={{ width: 120 }}>
+              <PlayerCard />
+            </div>
+            <div style={{ width: 120 }}>
+              <PlayerCard backClass="especial" />
+            </div>
+            <div style={{ width: 120 }}>
+              <PlayerCard look={CARDS[5]} silhouette />
+            </div>
+            <div style={{ width: 90 }}>
+              <PlayerCard look={CARDS[3]} serial={0} still />
+            </div>
           </div>
         </Panel>
 
