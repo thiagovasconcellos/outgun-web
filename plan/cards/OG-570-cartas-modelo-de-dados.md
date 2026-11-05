@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | — |
 | Regras de negócio | RN-CRT-01, RN-CRT-02, RN-CRT-03, RN-CRT-05, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -29,12 +29,14 @@ Como desenvolvedor, quero as tabelas e as definições das cartas num lugar só,
 - Número da cópia: sequência por carta a partir de 1; o 0 fica reservado para a conta vinculada (RN-CRT-06).
 
 ## Critérios de aceite
-- [ ] Migração sobe e desce limpa em banco vazio e no banco do beta (cópia).
-- [ ] Validação compartilhada recusa ficha sem nick, classe, cores, biografia ou frase dourada, e cores fora das paletas.
-- [ ] Testes da validação e da migração (`migrate.test.ts`).
+- [x] Migração sobe e desce limpa em banco vazio e no banco do beta (cópia).
+- [x] Validação compartilhada recusa ficha sem nick, classe, cores, biografia ou frase dourada, e cores fora das paletas.
+- [x] Testes da validação e da migração (`migrate.test.ts`).
 
 ## Notas técnicas
 As fichas ficam só no banco: nada de conteúdo das 85 cartas no repositório público (RN-CRT-08).
 
 ## Notas de implementação
-(preenchido durante a execução)
+- Migração `0058_legend_cards`: as listas da ficha (clãs, conquistas, características, habilidades, cartas ligadas) ficaram em colunas da própria `legend_cards` (array/jsonb), não em tabelas filhas: a ficha é gravada e revisada inteira e a revisão já guarda a cópia jsonb. `nick_key` único; uma conta vinculada só a uma carta.
+- `@outgun/protocol` → `legend-cards.ts`: classes, ícones (com o desenho), cores, limites, `legendCardProblems`, `cardNickKey`, `cardSlug`, `cardChance`.
+- Pesos iniciais: Clássico 50, Épico 25, Lendário 13, Especial 8, Nefasto 3,5, Mítica 0,5. Testes de banco (subir/descer) rodam no fechamento (Docker).
