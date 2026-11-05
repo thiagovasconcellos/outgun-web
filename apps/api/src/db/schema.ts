@@ -2,7 +2,7 @@
 // Tabelas para o Drizzle. A fonte de verdade é o SQL de migrations/; schema.test.ts confere que as
 // duas descrições têm as mesmas colunas.
 import { sql } from 'drizzle-orm';
-import type { ClanEmblem, ClanTagStyle } from '@outgun/protocol';
+import type { CardEntry, CardLink, ClanEmblem, ClanTagStyle } from '@outgun/protocol';
 import type { BotNameEntry, RotationKey, TrainingOptions } from '@outgun/settings';
 import {
   bigserial,
@@ -14,6 +14,7 @@ import {
   inet,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   primaryKey,
@@ -1010,6 +1011,90 @@ export const cupAvailability = pgTable(
   (t) => [primaryKey({ columns: [t.matchId, t.userId] })],
 );
 
+// --- Cartas de Jogador (OG-570, D-94) ---
+export const cardGenerations = pgTable('card_generations', {
+  id: serial('id').primaryKey(),
+  ord: smallint('ord').notNull(),
+  name: text('name').notNull(),
+  description: text('description').notNull().default(''),
+  active: boolean('active').notNull().default(true),
+});
+
+/** Ficha da carta (RN-CRT-03); as listas ficam na própria linha e cada gravação vira revisão. */
+export const legendCards = pgTable('legend_cards', {
+  id: serial('id').primaryKey(),
+  slug: text('slug').notNull().unique(),
+  nick: text('nick').notNull(),
+  nickKey: text('nick_key').notNull().unique(),
+  epithet: text('epithet').notNull().default(''),
+  position: text('position').notNull().default(''),
+  bio: text('bio').notNull(),
+  class: text('class').notNull(),
+  generations: integer('generations').array().notNull().default(sql`'{}'`),
+  clans: text('clans').array().notNull().default(sql`'{}'`),
+  achievements: jsonb('achievements').$type<CardEntry[]>().notNull().default([]),
+  traits: jsonb('traits').$type<CardEntry[]>().notNull().default([]),
+  abilities: jsonb('abilities').$type<CardEntry[]>().notNull().default([]),
+  quote: text('quote').notNull(),
+  memory: text('memory').notNull().default(''),
+  ringColor: text('ring_color').notNull(),
+  centerColor: text('center_color').notNull(),
+  linkedUserId: uuid('linked_user_id').references(() => users.id, { onDelete: 'set null' }),
+  links: jsonb('links').$type<CardLink[]>().notNull().default([]),
+  sources: text('sources').notNull().default(''),
+  active: boolean('active').notNull().default(true),
+  revision: integer('revision').notNull().default(1),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: tstz('created_at').notNull().defaultNow(),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: tstz('updated_at').notNull().defaultNow(),
+});
+
+export const legendCardRevisions = pgTable(
+  'legend_card_revisions',
+  {
+    cardId: integer('card_id').notNull().references(() => legendCards.id, { onDelete: 'cascade' }),
+    number: integer('number').notNull(),
+    data: jsonb('data').$type<Record<string, unknown>>().notNull(),
+    note: text('note').notNull().default(''),
+    editedBy: uuid('edited_by').references(() => users.id, { onDelete: 'set null' }),
+    editedAt: tstz('edited_at').notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.cardId, t.number] })],
+);
+
+export const cardClassOdds = pgTable('card_class_odds', {
+  class: text('class').primaryKey(),
+  weight: numeric('weight', { precision: 6, scale: 2, mode: 'number' }).notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: tstz('updated_at').notNull().defaultNow(),
+});
+
+/** Resgates da semana (RN-CRT-04); `week` = segunda-feira em Brasília. */
+export const cardClaims = pgTable(
+  'card_claims',
+  {
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    week: date('week').notNull(),
+    seq: smallint('seq').notNull(),
+    cardId: integer('card_id').notNull().references(() => legendCards.id),
+    claimedAt: tstz('claimed_at').notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.week, t.seq] })],
+);
+
+/** Inventário (RN-CRT-06/07): uma cópia por conta e carta; `serial` 0 = a lenda vinculada. */
+export const userCards = pgTable(
+  'user_cards',
+  {
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    cardId: integer('card_id').notNull().references(() => legendCards.id),
+    serial: integer('serial').notNull(),
+    claimedAt: tstz('claimed_at').notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.cardId] }), unique().on(t.cardId, t.serial), index('user_cards_card_idx').on(t.cardId)],
+);
+
 export const allTables = {
   users,
   sessions,
@@ -1062,4 +1147,10 @@ export const allTables = {
   cup_duos: cupDuos,
   cup_matches: cupMatches,
   cup_availability: cupAvailability,
+  card_generations: cardGenerations,
+  legend_cards: legendCards,
+  legend_card_revisions: legendCardRevisions,
+  card_class_odds: cardClassOdds,
+  card_claims: cardClaims,
+  user_cards: userCards,
 };

@@ -1054,7 +1054,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-568](cards/OG-568-treino-de-mira.md) | Treino de mira: 1 minuto atirando no bot preso no T4 (70 tiros, 90 % de precisão, troca de lado no sucesso) | E11 | 5 | Must | S60 | OG-490, OG-491, OG-492, OG-498 | Concluído |
 | [OG-569](cards/OG-569-treino-de-mira-no-cliente.md) | Treino de mira no cliente: preset na sala privada e placar da tentativa | E11 | 3 | Must | S60 | OG-568 | Concluído |
 | [OG-570](cards/OG-570-cartas-modelo-de-dados.md) | Modelo de dados, catálogo compartilhado e gerações | E18 | 5 | Must | S61 | — | Em revisão |
-| [OG-571](cards/OG-571-cartas-api-da-moderacao.md) | API da moderação | E18 | 5 | Must | S61 | OG-570 | Pronto |
+| [OG-571](cards/OG-571-cartas-api-da-moderacao.md) | API da moderação | E18 | 5 | Must | S61 | OG-570 | Em revisão |
 | [OG-572](cards/OG-572-cartas-componente-da-carta.md) | Componente da carta (escada de exclusividade) | E18 | 5 | Must | S61 | OG-570 | Pronto |
 | [OG-573](cards/OG-573-cartas-painel-catalogo-e-ficha.md) | Painel: catálogo e ficha | E18 | 3 | Must | S61 | OG-571, OG-572 | Pronto |
 | [OG-574](cards/OG-574-cartas-painel-formulario.md) | Painel: criar e editar carta | E18 | 5 | Must | S61 | OG-571, OG-572 | Pronto |

@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-570 |
 | Regras de negócio | RN-CRT-02, RN-CRT-03, RN-CRT-05, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -32,10 +32,12 @@ Como moderador, quero criar e corrigir cartas pela API do painel, com histórico
 - OpenAPI regerado.
 
 ## Critérios de aceite
-- [ ] Moderador cria uma carta e ela já entra no sorteio; edita e o histórico mostra a diferença.
-- [ ] Jogador comum recebe 403 em todas as rotas.
-- [ ] Desativar tira a carta do sorteio sem tirar do inventário de quem tem.
-- [ ] Testes de rota (`routes/legend-cards.test.ts`).
+- [x] Moderador cria uma carta e ela já entra no sorteio; edita e o histórico mostra a diferença.
+- [x] Jogador comum recebe 403 em todas as rotas.
+- [x] Desativar tira a carta do sorteio sem tirar do inventário de quem tem.
+- [x] Testes de rota (`routes/legend-cards.test.ts`).
 
 ## Notas de implementação
-(preenchido durante a execução)
+- Rotas em `apps/api/src/routes/legend-cards.ts` sob `/admin`: `cards` (lista, `positions`, `similar`, `accounts`, ficha com revisões, criar, gravar, `active`, `restore`), `card-odds` e `card-generations`. Auditoria `card-*`.
+- Revisão guarda a ficha inteira (`data`); o painel calcula a diferença entre duas revisões. Gravar sem mudança não cria revisão. Mudar o nick muda o endereço (`slug`).
+- Geração não se apaga, só desativa. Testes de banco (`routes/legend-cards.test.ts`) rodam no fechamento com Docker.
