@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S61 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-570 |
 | Regras de negócio | RN-CRT-01, RN-CRT-06, D-94 |
 | Skills | `outgun-card-workflow` |
@@ -30,9 +30,11 @@ Como jogador, quero que cada classe de carta pareça mais exclusiva que a anteri
 - Página de desenvolvimento (`DevUiScreen`) com as 6 classes lado a lado.
 
 ## Critérios de aceite
-- [ ] As 6 classes batem com a escada da proposta.
-- [ ] Sem animação com `prefers-reduced-motion`.
+- [x] As 6 classes batem com a escada da proposta.
+- [x] Sem animação com `prefers-reduced-motion`.
 - [ ] Uma grade de 60 cartas rola sem travar no computador do beta.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- `ui/PlayerCard.tsx` + `ui/player-card.ts` (desenho: fundo, boneco, moldura, rachaduras) + `ui/player-card.css`, portados da proposta; fonte única (Inter 800–900 itálico sintético) no lugar da Saira da proposta.
+- Abaixo de ~6 px por pixel do boneco, sem vão nem relevo (senão vira pontilhado). Props: `serial`, `silhouette`, `backClass` (verso na cor da classe), `still` (anima só sob o mouse).
+- Vitrine em `/dev/ui`. A medição de rolagem com 60 cartas fica para o fechamento.
