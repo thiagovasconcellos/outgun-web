@@ -58,6 +58,9 @@ export const users = pgTable(
     isAdmin: boolean('is_admin').notNull().default(false),
     /** Moderador (OG-087): salas, denúncias, bans de sala e auditoria no painel. */
     isModerator: boolean('is_moderator').notNull().default(false),
+    /** Conta Steam ligada pelo app desktop (OG-584, D-95): SteamID64. */
+    steamId: text('steam_id'),
+    steamLinkedAt: tstz('steam_linked_at'),
     /** Termos e política aceitos no cadastro (OG-107). */
     termsVersion: text('terms_version'),
     termsAcceptedAt: tstz('terms_accepted_at'),
@@ -1047,6 +1050,8 @@ export const legendCards = pgTable('legend_cards', {
   linkedUserId: uuid('linked_user_id').references(() => users.id, { onDelete: 'set null' }),
   links: jsonb('links').$type<CardLink[]>().notNull().default([]),
   sources: text('sources').notNull().default(''),
+  /** Vai para o inventário Steam (OG-585); a moderação pode deixar fora. */
+  steam: boolean('steam').notNull().default(true),
   active: boolean('active').notNull().default(true),
   revision: integer('revision').notNull().default(1),
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
@@ -1098,6 +1103,24 @@ export const userCards = pgTable(
     claimedAt: tstz('claimed_at').notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.cardId] }), unique().on(t.cardId, t.serial), index('user_cards_card_idx').on(t.cardId)],
+);
+
+/** Entregas das cartas no inventário Steam (OG-586). */
+export const cardSteamGrants = pgTable(
+  'card_steam_grants',
+  {
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    cardId: integer('card_id').notNull().references(() => legendCards.id),
+    steamId: text('steam_id').notNull(),
+    status: text('status').$type<'pending' | 'done' | 'failed'>().notNull().default('pending'),
+    attempts: smallint('attempts').notNull().default(0),
+    nextAt: tstz('next_at').notNull().defaultNow(),
+    steamItemId: text('steam_item_id'),
+    lastError: text('last_error'),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+    doneAt: tstz('done_at'),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.cardId] }), index('card_steam_grants_due_idx').on(t.nextAt)],
 );
 
 export const allTables = {
@@ -1158,4 +1181,5 @@ export const allTables = {
   card_class_odds: cardClassOdds,
   card_claims: cardClaims,
   user_cards: userCards,
+  card_steam_grants: cardSteamGrants,
 };

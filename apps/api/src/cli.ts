@@ -10,6 +10,7 @@ import { ensureAppRole, ensureMonitorRole } from './db/app-role.js';
 import { seed } from './db/seed.js';
 import { importMaps } from './map-import.js';
 import { importLegendCards } from './legend-card-import.js';
+import { steamItemDefs } from './steam-itemdefs.js';
 import { fileURLToPath } from 'node:url';
 import { nativeMapsDir, seedMaps } from './map-catalog.js';
 import { backfillMilestones, calibrateMilestones } from './milestones.js';
@@ -155,6 +156,11 @@ try {
     console.log(
       `${report.dryRun ? 'ENSAIO (nada gravado)' : 'GRAVADO'}: ${report.revisions.length} revisões (${report.revisions.filter((r) => r.created).length} novas), ${report.created.length} mapas novos (${report.created.filter((r) => r.created).length} criados), ${report.untouched.length} intocados, ${report.absorbed.length} duplicatas absorvidas, ${report.problems.length} avisos`,
     );
+  } else if (command === 'cards' && arg1 === 'steam-itemdefs' && arg2) {
+    // OG-585: node dist/cli.js cards steam-itemdefs ARQUIVO.json — definições dos itens para o Steamworks
+    const defs = await steamItemDefs(database.db, config.webUrl);
+    writeFileSync(arg2, JSON.stringify(defs, null, 2));
+    console.log(`${defs.items.length} itens em ${arg2}`);
   } else if (command === 'cards' && arg1 === 'import' && arg2) {
     // OG-581: node dist/cli.js cards import ARQUIVO.json [--dry-run] [--note TEXTO] (o arquivo fica fora do repo, RN-CRT-08)
     const flags = process.argv.slice(5);

@@ -6,8 +6,8 @@
 | Tipo | Feature |
 | Prioridade | Should |
 | Estimativa | 2 pts |
-| Sprint | — |
-| Status | Backlog |
+| Sprint | S62 |
+| Status | Concluído |
 | Dependências | OG-447 |
 | Regras de negócio | RN-CFG-03 |
 | Skills | `outgun-card-workflow` |
@@ -25,8 +25,9 @@ Como jogador na Steam que cria uma sala personalizada, quero chamar meus amigos 
 - Textos em pt-BR, en e demais idiomas do i18n.
 
 ## Critérios de aceite
-- [ ] A opção e o botão só aparecem no app aberto pela Steam.
-- [ ] Com a opção marcada, a janela de convite abre logo depois de entrar na sala criada; desmarcada, nada abre.
-- [ ] O botão da tela da sala abre a janela de convite para aquela sala.
+- [x] A opção e o botão só aparecem no app aberto pela Steam.
+- [x] Com a opção marcada, a janela de convite abre logo depois de entrar na sala criada; desmarcada, nada abre.
+- [x] O botão da tela da sala abre a janela de convite para aquela sala.
 
 ## Notas de implementação
+- Opção "Convidar amigos da Steam ao entrar" na criação (abre a janela quando a sala fica pronta) e botão "Convidar amigos da Steam" na página da sala, só no app aberto pela Steam (`canSteamInvite`).

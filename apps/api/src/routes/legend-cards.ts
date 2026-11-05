@@ -286,6 +286,7 @@ export function legendCardAdminRoutes(deps: AppDeps, services: Services): Fastif
           id: c.id,
           slug: c.slug,
           active: c.active,
+          steam: c.steam,
           revision: c.revision,
           ...cardInput(c),
           linkedUsername: await name(c.linkedUserId),
@@ -363,6 +364,19 @@ export function legendCardAdminRoutes(deps: AppDeps, services: Services): Fastif
         const [c] = await db.update(legendCards).set({ active: request.body.active, updatedBy: user.id, updatedAt: new Date() }).where(eq(legendCards.id, request.params.id)).returning({ nick: legendCards.nick });
         if (!c) return reply.code(404).send({ error: 'not_found', message: 'no such card' });
         await audit(user, request.body.active ? 'card-activate' : 'card-deactivate', c.nick, { card: request.params.id });
+        return reply.code(204).send(null);
+      },
+    );
+
+    app.put(
+      '/cards/:id/steam',
+      { schema: { tags: ['admin'], summary: 'Envia ou não a carta para o inventário Steam (OG-585, D-95)', params: CardId, body: Type.Object({ steam: Type.Boolean() }) } },
+      async (request, reply) => {
+        const user = await guard(request, reply, 'moderator');
+        if (!user) return reply;
+        const [c] = await db.update(legendCards).set({ steam: request.body.steam, updatedBy: user.id, updatedAt: new Date() }).where(eq(legendCards.id, request.params.id)).returning({ nick: legendCards.nick });
+        if (!c) return reply.code(404).send({ error: 'not_found', message: 'no such card' });
+        await audit(user, request.body.steam ? 'card-steam-on' : 'card-steam-off', c.nick, { card: request.params.id });
         return reply.code(204).send(null);
       },
     );

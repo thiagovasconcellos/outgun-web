@@ -54,6 +54,27 @@ export interface DesktopBridge {
   syncSteamAchievements?(ids: readonly string[]): void;
   /** Fecha o app (OG-444); ausente antes da 2.47. */
   quit?(): void;
+  /** Convite pela Steam (OG-447); ausentes antes da 2.62. */
+  steamInvite?(room: string, token: string | null, by?: string | null): Promise<boolean>;
+  steamLeaveRoom?(): void;
+  onSteamJoin?(fn: (join: SteamJoin) => void): () => void;
+  steamPendingJoin?(): Promise<SteamJoin | null>;
+  /** Conta Steam (OG-584): ticket para a API ligar a conta. */
+  steamAuthTicket?(): Promise<{ ticket: string; steamId: string } | null>;
+}
+
+/** Convite da Steam aceito: a sala e, em sala com senha, o token que dispensa a senha. */
+export interface SteamJoin {
+  room: string;
+  token: string | null;
+  /** Conta de quem convidou (OG-450). */
+  by?: string | null;
+}
+
+/** O app abriu pela Steam e sabe convidar amigos (OG-447). */
+export function canSteamInvite(): boolean {
+  const b = desktopBridge();
+  return Boolean(b?.steamInvite && b.steamAvailable?.());
 }
 
 /** Fecha o app desktop (OG-444): no Windows ele abre em tela cheia, sem botão de fechar. Os clientes sem `quit` fecham pela janela. */

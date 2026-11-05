@@ -74,6 +74,8 @@ export interface Identity {
   clanTeam?: ClanOfPlayer;
   /** Administrador da plataforma (moderação, OG-046). */
   admin?: boolean;
+  /** Convite pela Steam no lobby Ranked (OG-450): conta de quem convidou. */
+  invitedBy?: string;
   /** Dono da sala privada (OG-049): pode mudar as regras se o preset não for travado. */
   owner?: boolean;
   /** Rating de habilidade OpenSkill da conta (OG-350); ausente = conta nova, convidado ou bot (μ inicial). */
@@ -568,6 +570,10 @@ export class Room {
     // quem saiu no meio do jogo Ranked volta à vaga, sem prazo (OG-563, D-92)
     const back = this.lobby?.playing && this.inGame && identity.accountId !== null ? this.away.get(identity.accountId) : undefined;
     // lobby Ranked (OG-252, D-43): em jogo ou com a série acabada ninguém entra; entre jogos, se houver vaga
+    // convite pela Steam (OG-450, D-82): depois que todos marcaram "Pronto" o convite não vale mais
+    if (this.lobby && identity.invitedBy && back === undefined && this.lobby.phase === 'countdown') {
+      return { ok: false, reason: 'roomClosed', text: 'O convite expirou: todos já marcaram Pronto.' };
+    }
     if (this.lobby && !this.lobby.acceptsJoins && back === undefined) {
       return this.lobby.members.size >= this.lobby.capacity ? { ok: false, reason: 'serverFull', text: 'Sala cheia.' } : { ok: false, reason: 'roomClosed', text: 'Partida em andamento.' };
     }
@@ -584,7 +590,8 @@ export class Room {
       (this.training
         ? TRAINEE_TEAM
         : this.lobby
-          ? lobbyJoinTeam(this.slots(), this.world.maxPlayers, (p) => this.clients.get(p)?.identity.clanId, identity.clanId, () => this.lessScoredTeam())
+          ? (this.inviterTeam(identity.invitedBy) ??
+            lobbyJoinTeam(this.slots(), this.world.maxPlayers, (p) => this.clients.get(p)?.identity.clanId, identity.clanId, () => this.lessScoredTeam()))
           : joinTeam(this.slots(), this.world.maxPlayers, () => this.lessScoredTeam()));
     const pid = freeSlot(this.slots(), this.world.maxPlayers, team);
     if (pid === -1) return { ok: false, reason: 'serverFull', text: 'Sala cheia.' };
@@ -2237,6 +2244,17 @@ export class Room {
   }
 
   /** Trocar de lado no lobby (RN-RKL-09): vaga livre do outro lado ou pedido a um jogador de lá. */
+  /** Time de quem convidou pela Steam (OG-450), se ele está na sala e o time tem vaga; senão o lado normal. */
+  private inviterTeam(accountId: string | undefined): 0 | 1 | undefined {
+    if (!accountId) return undefined;
+    for (const [pid, c] of this.clients) {
+      if (c.bot || c.identity.accountId !== accountId) continue;
+      const team = this.world.teamOf(pid) as 0 | 1;
+      return freeSlot(this.slots(), this.world.maxPlayers, team) !== -1 ? team : undefined;
+    }
+    return undefined;
+  }
+
   private lobbySide(pid: number, target: number): void {
     const lobby = this.lobby;
     if (!lobby || lobby.playing || lobby.phase === 'finished') return;

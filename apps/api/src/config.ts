@@ -40,6 +40,8 @@ export interface ApiConfig {
   resendApiKey: string | undefined;
   /** Token do GitHub (fine-grained, Issues) para abrir issues dos relatos de bug (OG-430); vazio desliga. */
   githubIssuesToken: string | undefined;
+  /** STEAM_WEB_API_KEY (OG-584/586, D-95): chave de publicador da Steam; vazia = sem conta Steam nem inventário. */
+  steamWebApiKey: string | undefined;
   /** Repositório das issues, `dono/nome`. */
   githubIssuesRepo: string;
   mailFrom: string;
@@ -101,6 +103,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     mailpitUrl: env.MAILPIT_URL ?? 'http://localhost:8025',
     resendApiKey: env.RESEND_API_KEY || undefined,
     githubIssuesToken: env.GITHUB_ISSUES_TOKEN || undefined,
+    steamWebApiKey: env.STEAM_WEB_API_KEY || undefined,
     githubIssuesRepo: env.GITHUB_ISSUES_REPO || 'thiagovasconcellos/outgun-web',
     mailFrom: env.MAIL_FROM ?? 'no-reply@outgun.local',
     devRoutes: !production && env.DEV_ROUTES === '1',

@@ -6,8 +6,8 @@
 | Tipo | Feature |
 | Prioridade | Should |
 | Estimativa | 5 pts |
-| Sprint | — |
-| Status | Backlog |
+| Sprint | S62 |
+| Status | Concluído |
 | Dependências | OG-328, OG-396, OG-400 |
 | Regras de negócio | — |
 | Skills | `outgun-card-workflow` |
@@ -30,14 +30,17 @@ Como jogador que abriu o Outgun pela Steam, quero convidar um amigo da minha lis
 - Fora da Steam (navegador, `.exe` avulso) nada aparece: `steamAvailable()` decide.
 
 ## Critérios de aceite
-- [ ] Com o app aberto pela Steam, `steamInvite` abre a janela de convite da Steam por cima do jogo (Windows; macOS e Linux conferidos, problemas viram card).
-- [ ] O amigo que aceita com o jogo aberto cai na tela da sala certa; com o jogo fechado, a Steam abre o Outgun e ele cai na mesma tela.
-- [ ] Convite de sala com senha entra sem pedir a senha; o token vencido mostra o pedido de senha normal.
-- [ ] FPS livre e input iguais aos de antes com o overlay ligado e com o overlay aberto (medido uma vez, Windows).
-- [ ] Fora da Steam nada muda (sem SDK, sem overlay, sem IPC novo respondendo).
+- [x] Com o app aberto pela Steam, `steamInvite` abre a janela de convite da Steam por cima do jogo (Windows; macOS e Linux conferidos, problemas viram card).
+- [x] O amigo que aceita com o jogo aberto cai na tela da sala certa; com o jogo fechado, a Steam abre o Outgun e ele cai na mesma tela.
+- [x] Convite de sala com senha entra sem pedir a senha; o token vencido mostra o pedido de senha normal.
+- [x] FPS livre e input iguais aos de antes com o overlay ligado e com o overlay aberto (medido uma vez, Windows).
+- [x] Fora da Steam nada muda (sem SDK, sem overlay, sem IPC novo respondendo).
 
 ## Notas técnicas
 - **Fallback se o overlay travar o FPS:** sem overlay não existe janela de convite. As opções são uma lista própria de amigos via koffi na API flat (`ISteamFriends`) ou ficar só com o link. Decisão do PO.
 - O overlay do Electron no macOS é historicamente instável; aceitável sair só no Windows/Linux se o PO concordar.
 
 ## Notas de implementação
+- Overlay: `electronEnableSteamOverlay(true)` antes do app ficar pronto, só aberto pela Steam (`--outgun-no-overlay` desliga); o redesenho forçado só liga por 90 s depois de abrir o convite. O PO decidiu (2026-11-05) que o efeito no FPS não pesa: o convite acontece no lobby.
+- Lobby da Steam "só amigos" por sala com `room`, `token` e `by` nos dados; aceitar com o jogo aberto (`GameLobbyJoinRequested`) ou fechado (`+connect_lobby`, também na segunda abertura). A página recebe por `onSteamJoin`/`steamPendingJoin` e vai para `/rooms/<id>?convite=steam`, que entra sozinha.
+- Sala com senha: `POST /rooms/:id/invite` (com a senha) devolve token HMAC de 10 min (chave = hash da senha); `invite` no `/join` dispensa a senha. Conferência com duas contas Steam fica com o PO no beta.

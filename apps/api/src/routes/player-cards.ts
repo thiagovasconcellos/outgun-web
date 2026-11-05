@@ -7,6 +7,7 @@ import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { CARD_CLASS_IDS, cardChance, cardClass, type CardClassId } from '@outgun/protocol';
 import type { AppDeps, Services } from '../app.js';
 import { claimCard, ClaimError, claimStatus } from '../legend-card-claims.js';
+import { renderCardPng } from '../legend-card-png.js';
 import { cardClassOdds, cardGenerations, legendCards, userCards, users } from '../db/schema.js';
 import { usernameKey } from '../db/keys.js';
 import { ErrorSchema } from './schemas.js';
@@ -107,6 +108,28 @@ export function playerCardRoutes({ database }: AppDeps, { sessions }: Services):
           // recompensa da lenda (OG-580): a própria carta, em destaque, quando já saiu no resgate
           legend: legendOwned ? { ...faceOf(legendOwned.card), serial: 0 } : null,
         };
+      },
+    );
+
+    // --- imagem da carta (OG-583, D-95): a frente parada, para a Steam e para links; nada da ficha ---
+    const pngCache = new Map<string, Buffer>();
+    app.get(
+      '/cards/:slug.png',
+      { schema: { tags: ['cards'], summary: 'Imagem PNG da frente da carta (boneco, nick, classe e moldura), a mesma do jogo; pública, sem texto da ficha', params: Type.Object({ slug: Type.String({ minLength: 1, maxLength: 40 }) }) } },
+      async (request, reply) => {
+        const [c] = await db.select().from(legendCards).where(eq(legendCards.slug, request.params.slug));
+        if (!c) return reply.code(404).send({ error: 'not_found', message: 'no such card' });
+        const key = `${c.id}:${c.revision}`;
+        let png = pngCache.get(key);
+        if (!png) {
+          png = renderCardPng({ nick: c.nick, class: c.class as CardClassId, ringColor: c.ringColor, centerColor: c.centerColor });
+          if (pngCache.size > 300) pngCache.clear();
+          pngCache.set(key, png);
+        }
+        reply.header('content-type', 'image/png');
+        reply.header('cache-control', 'public, max-age=3600');
+        reply.header('etag', `"card-${key}"`);
+        return reply.send(png);
       },
     );
 

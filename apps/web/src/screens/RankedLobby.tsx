@@ -14,6 +14,7 @@ import { phaseLabel } from './ranked-rooms.js';
 import { ClanBadge } from '../ui/Emblem.js';
 import { ARCHETYPE_LABELS } from '../ui/style-radar.js';
 import { MatchupRadar, useLineup, type MatchupSide } from './matchup-radar.js';
+import { SteamInviteButton } from '../app/steam-invite.js';
 
 type LobbyState = MessageOf<'lobbyState'>;
 const NONE = 255;
@@ -49,7 +50,7 @@ export function secondsLeft(view: Pick<LobbyView, 'lobby' | 'at'>, now: number):
 /** Fim da série (ou de uma md1): o resultado fica na tela e todos voltam ao menu inicial (D-41). */
 export const FINISHED_SECONDS = 10;
 
-export function RankedLobby({ view, host, onLeave, onFinished, onReport }: { view: LobbyView; host: GameHost | null; onLeave: () => void; onFinished: () => void; onReport?: () => void }) {
+export function RankedLobby({ view, host, onLeave, onFinished, onReport, room, password }: { view: LobbyView; host: GameHost | null; onLeave: () => void; onFinished: () => void; onReport?: () => void; room?: string | null; password?: string | undefined }) {
   const { t, prefs } = usePrefs();
   const { lobby, me, maxPlayers, names } = view;
   const [now, setNow] = useState(() => performance.now());
@@ -167,6 +168,8 @@ export function RankedLobby({ view, host, onLeave, onFinished, onReport }: { vie
         <Button className="ranked-leave" onClick={leave}>
           {homeIn !== null ? t('Main menu') : t('Leave room')} <kbd>Esc</kbd>
         </Button>
+        {/* convite pela Steam (OG-450, D-82): o amigo entra no meu time; desligado com o time cheio ou todos prontos */}
+        {room && open && <SteamInviteButton room={room} password={password} variant="ghost" disabled={side(mySide).length >= lobby.teamSize || lobby.phase === 'countdown'} />}
         <p className="ranked-series">
           {lobby.bestOf > 1
             ? `${t('Game $1 of $2', String(lobby.gameNo), String(lobby.bestOf))} · ${t('Red')} ${lobby.seriesRed} × ${lobby.seriesBlue} ${t('Blue')}`

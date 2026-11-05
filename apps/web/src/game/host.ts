@@ -132,6 +132,10 @@ export interface OnlineOptions {
   readonly name: string;
   /** Senha da sala privada (pedida no lobby; vale também para as reconexões). */
   readonly password?: string;
+  /** Token de convite pela Steam (OG-447): dispensa a senha da sala. */
+  readonly invite?: string;
+  /** Conta de quem convidou pela Steam (OG-450): no lobby Ranked, entra no time dela. */
+  readonly invitedBy?: string;
   /** `url` veio de ?server= (manda no endereço; senão vale o da API). */
   readonly explicitServer?: boolean;
   /** Rede simulada nos dois sentidos (depuração: ?lag=&loss=). */
@@ -543,7 +547,7 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
     void loadManifest().then((m) => m && player.load(m, client.soundTheme));
     opts.onStatus?.({ kind: 'connecting' });
     const connect = () =>
-      void requestTicket(online.room, online.name, online.url, online.explicitServer ?? false, online.password).then(
+      void requestTicket(online.room, online.name, online.url, online.explicitServer ?? false, online.password, online.invite, online.invitedBy).then(
         ({ ticket, url }) => {
           if (destroyed || ended) return;
           serverBase = serverHttpBase(url);
