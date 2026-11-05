@@ -29,6 +29,22 @@ contextBridge.exposeInMainWorld('outgunDesktop', {
       'outgun:steam-sync',
       Array.isArray(ids) ? ids.filter((x) => typeof x === 'string') : [],
     ),
+  /** Convite pela Steam (OG-447): abre a janela de amigos da Steam para a sala (token: sala com senha). */
+  steamInvite: (room, token, by) =>
+    ipcRenderer.invoke('outgun:steam-invite', typeof room === 'string' ? room : '', typeof token === 'string' ? token : null, typeof by === 'string' ? by : null),
+  /** Saiu da sala: o lobby da Steam do convite fecha. */
+  steamLeaveRoom: () => ipcRenderer.send('outgun:steam-leave-room'),
+  /** Convite aceito: { room, token } (com o app aberto). Devolve a função que para de ouvir. */
+  onSteamJoin: (fn) => {
+    if (typeof fn !== 'function') return () => undefined;
+    const handler = (_e, join) => fn(join);
+    ipcRenderer.on('outgun:steam-join', handler);
+    return () => ipcRenderer.removeListener('outgun:steam-join', handler);
+  },
+  /** Convite aceito antes de a página carregar (jogo aberto pelo convite). */
+  steamPendingJoin: () => ipcRenderer.invoke('outgun:steam-pending-join'),
+  /** Conta Steam (OG-584): { ticket, steamId } para a API ligar a conta, ou null. */
+  steamAuthTicket: () => ipcRenderer.invoke('outgun:steam-auth-ticket'),
   /** Fecha o app (OG-444): no Windows ele abre em tela cheia, sem o botão da janela. */
   quit: () => ipcRenderer.send('outgun:quit'),
 });

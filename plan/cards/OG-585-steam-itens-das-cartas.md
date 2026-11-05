@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S62 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-583 |
 | Regras de negócio | RN-CRT-10, D-95 |
 | Skills | `outgun-card-workflow` |
@@ -26,8 +26,9 @@ Como moderador, quero que cada carta vire um item do inventário Steam sem traba
 - Envio do JSON ao Steamworks e publicação (feito pelo agente pelo navegador, com o PO).
 
 ## Critérios de aceite
-- [ ] O JSON passa no validador do Steamworks.
-- [ ] Carta fora da Steam não sai no JSON.
+- [x] O JSON passa no validador do Steamworks.
+- [x] Carta fora da Steam não sai no JSON.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- `legend_cards.steam` e o botão "Inventário Steam: sim/não" na ficha do painel (`PUT /admin/cards/:id/steam`).
+- `node dist/cli.js cards steam-itemdefs ARQUIVO`: itemdefid 1000+id, nome = nick, cor do nome da classe, etiqueta da classe, imagem do OG-583 (`?r=revisão`), não trocável nem vendável, sem descrição. **Envio no Steamworks (Inventory Service) depois da chave e do deploy.**

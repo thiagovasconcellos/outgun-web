@@ -23,6 +23,8 @@ import '../ui/theme-campo.css';
 import '../ui/theme-placar.css';
 import '../ui/retro.css';
 import '../ui/phone.css';
+import { useSteamJoins } from './steam-invite.js';
+import { useSteamAutoLink } from './steam-link.js';
 
 /** Endereço do código-fonte; até existir o repositório público, a página /source explica a GPL. */
 export const SOURCE_URL: string = import.meta.env.VITE_SOURCE_URL ?? '/source';
@@ -65,6 +67,8 @@ function PhoneNotice() {
 /** Raiz de todas as rotas: idioma do documento, escala dos pixels, fonte bitmap e avisos (OG-200). */
 export function Root() {
   const phone = isPhone();
+  useSteamJoins(); // convite da Steam aceito: vai para a sala (OG-447)
+  useSteamAutoLink(); // conta Steam ligada sozinha no app da Steam (OG-584)
   const { prefs, t } = usePrefs();
   const scale = usePixelScale();
   const { pathname } = useLocation();

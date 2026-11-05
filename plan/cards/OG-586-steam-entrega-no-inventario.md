@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S62 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-584, OG-585, OG-576 |
 | Regras de negócio | RN-CRT-10, D-95 |
 | Skills | `outgun-card-workflow` |
@@ -27,8 +27,9 @@ Como jogador com a conta ligada, quero que cada carta resgatada apareça no meu 
 - Perfil (dono): "Na Steam: 12 de 14"; painel da carta: quantas entregues.
 
 ## Critérios de aceite
-- [ ] Resgatar com a Steam ligada entrega o item; ligar a conta depois entrega as que já tinha.
-- [ ] Erro da Steam deixa a entrega pendente e tenta de novo.
+- [x] Resgatar com a Steam ligada entrega o item; ligar a conta depois entrega as que já tinha.
+- [x] Erro da Steam deixa a entrega pendente e tenta de novo.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- `card_steam_grants` + `card-steam-grants.ts`: fila no resgate e retroativa ao ligar; relógio da API a cada 30 s (`IInventoryService/AddItem`), espera 1, 2, 4... min, até 8 tentativas. Desligar a Steam apaga as pendentes.
+- Teste com a Steam falsa em `routes/steam-account.test.ts`.

@@ -79,6 +79,7 @@ export const TABLES: Readonly<Record<string, 'personal' | 'none'>> = {
   card_class_odds: 'none',
   card_claims: 'personal',
   user_cards: 'personal',
+  card_steam_grants: 'personal',
 };
 
 const b = (pt: string, en: string): Bilingual => ({ 'pt-BR': pt, en });
@@ -127,8 +128,8 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     retention: b('Chave e duplas enquanto o serviço existir (ao excluir a conta o nome vira "(anon)"); horários até a conta ser excluída', 'Bracket and pairs while the service exists (deleting the account replaces the name with "(anon)"); hours until the account is deleted'),
   },
   {
-    what: b('Cartas de Jogador: as cartas que você resgatou (número da cópia e data), os resgates de cada semana e, se você é uma lenda com carta, a ligação da sua conta com a sua carta', 'Player Cards: the cards you claimed (copy number and date), the claims of each week and, if you are a legend with a card, the link between your account and your card'),
-    where: ['user_cards', 'card_claims', 'legend_cards'],
+    what: b('Cartas de Jogador: as cartas que você resgatou (número da cópia e data), os resgates de cada semana, se você é uma lenda com carta a ligação da sua conta com a sua carta e, no app da Steam, o seu SteamID e as entregas das cartas no seu inventário Steam', 'Player Cards: the cards you claimed (copy number and date), the claims of each week, if you are a legend with a card the link between your account and your card and, in the Steam app, your SteamID and the deliveries of the cards to your Steam inventory'),
+    where: ['user_cards', 'card_claims', 'legend_cards', 'card_steam_grants', 'users'],
     why: b('Mostrar a sua coleção no perfil, não repetir cartas, limitar os resgates da semana e dar a cópia nº 0 e o broche Lenda', 'Showing your collection on your profile, never repeating cards, limiting the weekly claims and giving copy no. 0 and the Legend badge'),
     retention: b('Até você excluir a conta (a ligação com a carta some e a carta continua no catálogo)', 'Until you delete the account (the link to the card is removed and the card stays in the catalog)'),
   },

@@ -11,6 +11,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
 import { checkGuestName } from '../auth/names.js';
 import { verifyPassword } from '../auth/password.js';
+import { roomInviteToken, validRoomInvite } from '../room-invite.js';
 import { bans, clanMembers, clans, gameServers, rooms } from '../db/schema.js';
 import { playerSkillRank } from '../skill.js';
 import { botLevelFrom, recentRanked } from '../bot-level.js';
@@ -43,7 +44,7 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
   const fail = (code: Failure['code'], error: string, message: string): Admission => ({ ok: false, code, error, message });
 
   /** Confere tudo e emite o ticket (a senha já foi conferida por quem chama, se a sala tiver). */
-  async function admit(request: FastifyRequest, room: RoomRow, body: { name?: string | undefined; region?: string | undefined; device?: string | undefined }, returning = false): Promise<Admission> {
+  async function admit(request: FastifyRequest, room: RoomRow, body: { name?: string | undefined; region?: string | undefined; device?: string | undefined; invitedBy?: string | undefined }, returning = false): Promise<Admission> {
     const user = await sessions.current(request);
     const device = body.device ? deviceHash(body.device) : null;
     // Convidado só no Casual (RN-PLT-02, RN-MOD-03).
@@ -127,6 +128,8 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
         ...(user && room.mode === 'ranked' ? { botLevel: botLevelFrom({ ...(await recentRanked(db, user.id)), rank: skill?.rank ?? 0, of: skill?.of ?? 0 }) } : {}),
         // pódio do mês anterior (OG-411): a cor da medalha
         ...(medal ? { medal } : {}),
+        // convite pela Steam no lobby Ranked (OG-450): entra no time de quem convidou
+        ...(room.format && user && body.invitedBy && body.invitedBy !== user.id ? { invitedBy: body.invitedBy } : {}),
         // número no boneco (OG-410)
         ...(number ? { number: number.number, ...(number.style ? { numberStyle: number.style } : {}) } : {}),
         ...(place.spawn ? { spawn: place.spawn } : {}),
@@ -161,7 +164,7 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
           tags: ['salas'],
           summary: 'Ticket de entrada (60 s) para o game server da sala',
           params: Type.Object({ id: RoomId }),
-          body: Type.Object({ ...JoinBody, password: Type.Optional(Type.String({ maxLength: 64 })) }),
+          body: Type.Object({ ...JoinBody, password: Type.Optional(Type.String({ maxLength: 64 })), invite: Type.Optional(Type.String({ maxLength: 80 })), invitedBy: Type.Optional(Type.String({ format: 'uuid' })) }),
           response: { 200: JoinOk, ...joinErrors },
         },
       },
@@ -179,7 +182,9 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
         if (room.format && roomOnline(room) && (room.phase === 'game' || room.phase === 'finished') && !returning) {
           return reply.code(409).send({ error: 'room_in_game', message: 'the match is in progress' });
         }
-        if (room.passwordHash) {
+        // convite pela Steam (OG-447): o token da sala dispensa a senha
+        const invited = room.passwordHash !== null && request.body.invite !== undefined && validRoomInvite(request.body.invite, room.id, room.passwordHash);
+        if (room.passwordHash && !invited) {
           if (!(await rateLimit.allow(`join:${request.ip}:${room.id}`, deps.config.limits.joinPasswordPerMinute, MINUTE))) {
             return reply.code(429).send({ error: 'rate_limited', message: 'too many attempts, try later' });
           }
@@ -192,6 +197,31 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
         if (!result.ok) return reply.code(result.code).send({ error: result.error, message: result.message });
         const { ok: _, ...body } = result;
         return body;
+      },
+    );
+
+    app.post(
+      '/rooms/:id/invite',
+      {
+        schema: {
+          tags: ['salas'],
+          summary: 'Token de convite (10 min) para chamar amigos da Steam a uma sala com senha sem passar a senha (OG-447)',
+          params: Type.Object({ id: RoomId }),
+          body: Type.Object({ password: Type.Optional(Type.String({ maxLength: 64 })) }),
+          response: { 200: Type.Object({ token: Type.Union([Type.String(), Type.Null()]) }), 403: ErrorSchema, 404: ErrorSchema, 429: ErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        const [room] = await db.select({ id: rooms.id, passwordHash: rooms.passwordHash }).from(rooms).where(eq(rooms.id, request.params.id));
+        if (!room) return reply.code(404).send({ error: 'room_not_found', message: 'room not found' });
+        if (!room.passwordHash) return { token: null };
+        if (!(await rateLimit.allow(`invite:${request.ip}:${room.id}`, deps.config.limits.joinPasswordPerMinute, MINUTE))) {
+          return reply.code(429).send({ error: 'rate_limited', message: 'too many attempts, try later' });
+        }
+        if (!request.body.password || !(await verifyPassword(room.passwordHash, request.body.password))) {
+          return reply.code(403).send({ error: 'wrong_password', message: 'wrong room password' });
+        }
+        return { token: roomInviteToken(room.id, room.passwordHash) };
       },
     );
 

@@ -931,10 +931,10 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-444](cards/OG-444-nao-tem-botao-de-sair.md) | Botão "Sair do Outgun" no app desktop (issue #9) | E11 | 2 | Should | S47 | — | Concluído |
 | [OG-445](cards/OG-445-sala-com-16-nao-sai-bot.md) | Sala cheia de bots recusa a entrada de humano (issue #10) | E11 | 2 | Must | S47 | — | Concluído |
 | [OG-446](cards/OG-446-bot-com-foguete-de-outro-mapa.md) | Bot quebra com tiro do mapa anterior depois da troca de mapa (Sentry) | E11 | 1 | Should | S47 | — | Concluído |
-| [OG-447](cards/OG-447-convite-pela-steam-base.md) | Convite pela Steam: overlay, lobby da Steam e entrada pelo convite | E9 | 5 | Should | S62 | OG-328, OG-396, OG-400 | Pronto |
-| [OG-448](cards/OG-448-convidar-ao-criar-sala.md) | Convidar amigos da Steam na criação da sala personalizada | E9 | 2 | Should | S62 | OG-447 | Pronto |
-| [OG-449](cards/OG-449-convidar-no-menu-da-partida.md) | "Convidar amigo (Steam)" no menu da partida | E9 | 2 | Should | S62 | OG-447 | Pronto |
-| [OG-450](cards/OG-450-convidar-no-lobby-ranked.md) | Convidar amigo da Steam no lobby Ranked | E12 | 3 | Could | S62 | OG-447, D-82 | Pronto |
+| [OG-447](cards/OG-447-convite-pela-steam-base.md) | Convite pela Steam: overlay, lobby da Steam e entrada pelo convite | E9 | 5 | Should | S62 | OG-328, OG-396, OG-400 | Em revisão |
+| [OG-448](cards/OG-448-convidar-ao-criar-sala.md) | Convidar amigos da Steam na criação da sala personalizada | E9 | 2 | Should | S62 | OG-447 | Em revisão |
+| [OG-449](cards/OG-449-convidar-no-menu-da-partida.md) | "Convidar amigo (Steam)" no menu da partida | E9 | 2 | Should | S62 | OG-447 | Em revisão |
+| [OG-450](cards/OG-450-convidar-no-lobby-ranked.md) | Convidar amigo da Steam no lobby Ranked | E12 | 3 | Could | S62 | OG-447, D-82 | Em revisão |
 | [OG-451](cards/OG-451-cards-no-plane.md) | Cards espelhados no Plane | E7 | 3 | Should | — | — | Concluído |
 | [OG-452](cards/OG-452-alloy-grafana-cloud.md) | Métricas e logs do beta no Grafana Cloud (Grafana Alloy) | E7 | 5 | Must | S48 | — | Concluído |
 | [OG-453](cards/OG-453-metricas-do-banco.md) | Métricas do banco: pg_stat_statements e exporter do Postgres | E7 | 3 | Must | S48 | OG-452 | Concluído |
@@ -1068,9 +1068,9 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-581](cards/OG-581-cartas-importacao-das-85.md) | Importação das 85 cartas | E18 | 3 | Must | S61 | OG-570, OG-571 | Concluído |
 | [OG-582](cards/OG-582-cartas-premio-da-outcup.md) | Carta alta para a dupla campeã da OutCup | E18 | 3 | Could | — | OG-576, OG-528 | Backlog |
 | [OG-583](cards/OG-583-cartas-imagem-png.md) | Imagem PNG da carta (servidor) | E18 | 3 | Must | S62 | OG-572 | Em revisão |
-| [OG-584](cards/OG-584-steam-ligar-conta.md) | Ligar a conta Steam (app desktop) | E18 | 5 | Must | S62 | OG-328, OG-396 | Pronto |
-| [OG-585](cards/OG-585-steam-itens-das-cartas.md) | Itens da Steam gerados do catálogo | E18 | 3 | Must | S62 | OG-583 | Pronto |
-| [OG-586](cards/OG-586-steam-entrega-no-inventario.md) | Entrega no inventário Steam | E18 | 3 | Must | S62 | OG-584, OG-585, OG-576 | Pronto |
+| [OG-584](cards/OG-584-steam-ligar-conta.md) | Ligar a conta Steam (app desktop) | E18 | 5 | Must | S62 | OG-328, OG-396 | Em revisão |
+| [OG-585](cards/OG-585-steam-itens-das-cartas.md) | Itens da Steam gerados do catálogo | E18 | 3 | Must | S62 | OG-583 | Em revisão |
+| [OG-586](cards/OG-586-steam-entrega-no-inventario.md) | Entrega no inventário Steam | E18 | 3 | Must | S62 | OG-584, OG-585, OG-576 | Em revisão |
 
 **Total:** 423 cards, 1342 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 354 cards, 1047 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 

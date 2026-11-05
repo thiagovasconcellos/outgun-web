@@ -28,6 +28,8 @@ import { OptionsBody, SaveStatusLine, type OptionsTab } from './options.js';
 import { TouchControls } from './TouchControls.js';
 import { PhoneBoard } from './PhoneBoard.js';
 import type { ScreenLayout } from '../game/hud/screen-layout.js';
+import { canSteamInvite } from '../app/install.js';
+import { inviteSteamFriends, leaveSteamRoom, steamJoinFor } from '../app/steam-invite.js';
 
 /** Opções do jogador que valem na partida (OG-068). */
 function clientOptions(p: Prefs): ClientOptions {
@@ -87,7 +89,14 @@ export default function GameScreen() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   // senha da sala privada vem do lobby pelo estado da navegação (nunca na URL)
-  const password = (useLocation().state as { password?: string } | null)?.password;
+  const navState = useLocation().state as { password?: string; invite?: string; steamInvite?: boolean } | null;
+  const password = navState?.password;
+  const sala0 = new URLSearchParams(useLocation().search).get('sala');
+  const steamJoin = steamJoinFor(sala0);
+  const invite = navState?.invite ?? steamJoin.invite;
+  const invitedBy = steamJoin.invitedBy;
+  /** Sala criada com "convidar amigos da Steam ao entrar" (OG-448). */
+  const inviteOnEnter = navState?.steamInvite === true;
   const hostRef = useRef<HTMLDivElement>(null);
   /** Contêiner do jogo inteiro: é ele que entra em tela cheia no modo foco (OG-315). */
   const gameRef = useRef<HTMLDivElement>(null);
@@ -138,6 +147,8 @@ export default function GameScreen() {
         room: params.get('sala') ?? 'main',
         name: params.get('name') ?? joinName(user, prefs.playerName),
         ...(password ? { password } : {}),
+        ...(invite ? { invite } : {}),
+        ...(invitedBy ? { invitedBy } : {}),
         telemetry: prefs.shareNetStats,
         ...(lag > 0 || loss > 0 ? { simulate: { rttMs: lag, jitterMs: lag / 10, loss } } : {}),
       };
@@ -338,6 +349,15 @@ export default function GameScreen() {
   }, [menuOpen, inLobby]);
 
   const sala = params.get('sala');
+  // OG-448: ao entrar na sala criada com o convite marcado, abre a janela de amigos da Steam uma vez
+  const invitedOnce = useRef(false);
+  useEffect(() => {
+    if (!inviteOnEnter || invitedOnce.current || status?.kind !== 'ready' || !sala) return;
+    invitedOnce.current = true;
+    void inviteSteamFriends(sala, password, user?.id);
+  }, [inviteOnEnter, status, sala, password, user]);
+  // saiu da sala: o lobby da Steam do convite fecha (OG-447)
+  useEffect(() => () => leaveSteamRoom(), []);
   // margem de 1 min para o relógio do servidor (ended_at) e o do navegador
   const openReport = () => lastGameOverAt !== null && sala && void navigate(`/rooms/${encodeURIComponent(sala)}/report?${new URLSearchParams({ after: new Date(lastGameOverAt - 60_000).toISOString() })}`);
   // variação do meu rating no modal de fim de partida (OG-351): só com conta; no Casual não acha nada
@@ -362,6 +382,8 @@ export default function GameScreen() {
   const onOff = (on: boolean) => (on ? t('On') : t('Off'));
   const items: MenuItem[] = [
     { kind: 'action', label: t('Back to game'), onActivate: () => setMenuOpen(false) },
+    // convite pela Steam (OG-449): só no app aberto pela Steam e numa sala online
+    ...(canSteamInvite() && sala ? [{ kind: 'action' as const, label: t('Invite Steam friend'), onActivate: () => void inviteSteamFriends(sala, password, user?.id) }] : []),
     // ajustes rápidos sem sair da partida (OG-339)
     { kind: 'choice', label: t('Music'), value: onOff(prefs.musicEnabled), onChange: () => setPrefs({ musicEnabled: !prefs.musicEnabled }) },
     { kind: 'choice', label: t('Sound effects'), value: onOff(prefs.soundEnabled), onChange: () => setPrefs({ soundEnabled: !prefs.soundEnabled }) },
@@ -446,7 +468,7 @@ export default function GameScreen() {
           </p>
         )}
         {lobby && !menuOpen && (
-          <RankedLobby view={lobby} host={host.current} onLeave={() => void navigate('/rooms', { state: { mode: 'ranked' } })} onFinished={() => void navigate('/')}
+          <RankedLobby view={lobby} host={host.current} room={sala} password={password} onLeave={() => void navigate('/rooms', { state: { mode: 'ranked' } })} onFinished={() => void navigate('/')}
             {...(lastGameOverAt !== null && sala ? { onReport: openReport } : {})} />
         )}
         {info && !menuOpen && <InfoOverlay kind={info.kind} host={host.current} onClose={() => setInfo(null)} />}

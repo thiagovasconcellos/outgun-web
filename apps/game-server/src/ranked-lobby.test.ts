@@ -213,6 +213,23 @@ describe('sala Ranked 3x3 com lobby (OG-252)', () => {
   };
   const team = (r: Room, pid: number) => r.world.teamOf(pid);
 
+  it('convite pela Steam: o convidado entra no time de quem convidou (OG-450, D-82)', () => {
+    const r = room();
+    const a = joinClan(r, 1, null);
+    const b = joinClan(r, 2, null);
+    const host = team(r, a.pid) === team(r, b.pid) ? a : team(r, a.pid) === 0 ? a : b;
+    const inviter = host === a ? '00000000-0000-4000-8000-000000000001' : '00000000-0000-4000-8000-000000000002';
+    for (let n = 3; n <= 4; n++) {
+      const res = r.join(new TestConnection(), { name: `C${n}`, accountId: `00000000-0000-4000-8000-0000000000${n}0`, invitedBy: inviter });
+      if (!res.ok) throw new Error(res.text);
+      expect(team(r, res.pid)).toBe(team(r, host.pid));
+    }
+    // time de quem convidou cheio (3x3): o convidado entra no outro lado
+    const res = r.join(new TestConnection(), { name: 'C5', accountId: '00000000-0000-4000-8000-000000000050', invitedBy: inviter });
+    if (!res.ok) throw new Error(res.text);
+    expect(team(r, res.pid)).not.toBe(team(r, host.pid));
+  });
+
   it('clã "nn" entrando intercalado com outros termina do mesmo lado (OG-253)', () => {
     const r = room();
     const nn = [joinClan(r, 1, 'nn'), joinClan(r, 2, null), joinClan(r, 3, 'nn'), joinClan(r, 4, 'bc'), joinClan(r, 5, 'nn'), joinClan(r, 6, null)];

@@ -19,6 +19,9 @@ import { liveRoutes } from './routes/live.js';
 import { adminRoutes } from './routes/admin.js';
 import { legendCardAdminRoutes } from './routes/legend-cards.js';
 import { playerCardRoutes } from './routes/player-cards.js';
+import { steamAccountRoutes } from './routes/steam-account.js';
+import { deliverSteamGrants } from './card-steam-grants.js';
+import { steamWebApi, type SteamApi } from './steam-web-api.js';
 import { GitHubIssues, type IssueTracker } from './github.js';
 import { feedbackRoutes } from './routes/feedback.js';
 import { telemetryRoutes } from './routes/telemetry.js';
@@ -58,6 +61,8 @@ export interface AppDeps {
   lifecycle?: { stopping: boolean };
   /** Substitui as issues do GitHub configuradas em GITHUB_ISSUES_TOKEN (testes; null desliga). */
   issues?: IssueTracker | null;
+  /** Substitui a Web API da Steam configurada em STEAM_WEB_API_KEY (testes; null desliga). */
+  steam?: SteamApi | null;
 }
 
 /** Serviços montados a partir das dependências, usados pelas rotas de conta. */
@@ -126,6 +131,8 @@ declare module 'fastify' {
     security: SecurityWatch;
     /** Um passo do relógio da OutCup (OG-520), para o main.ts e os testes. */
     cupTick: (now?: Date) => Promise<void>;
+    /** Um passo da entrega das cartas no inventário Steam (OG-586). */
+    steamGrantsTick: (now?: Date) => Promise<{ done: number; failed: number }>;
   }
   interface FastifyRequest {
     /** Corpo cru (JSON), usado na verificação HMAC das rotas internas. */
@@ -151,6 +158,8 @@ export async function buildApp(deps: AppDeps): Promise<App> {
   };
   app.decorate('security', services.security);
   // relógio da OutCup (OG-520): o main chama a cada minuto
+  const steam = deps.steam !== undefined ? deps.steam : deps.config.steamWebApiKey ? steamWebApi(deps.config.steamWebApiKey) : null;
+  app.decorate('steamGrantsTick', (now?: Date) => deliverSteamGrants(deps.database.db, steam, now));
   app.decorate('cupTick', (now?: Date) => cupTick({ db: deps.database.db, mailer: services.mailer, webUrl: deps.config.webUrl, devRoomWsUrl: deps.config.devRoomWsUrl, region: deps.config.defaultRegion, log: (err, msg) => app.log.error({ err }, msg) }, now));
 
   observe(app, deps);
@@ -228,6 +237,7 @@ export async function buildApp(deps: AppDeps): Promise<App> {
   await app.register(adminRoutes(deps, services), { prefix: '/admin' });
   await app.register(legendCardAdminRoutes(deps, services), { prefix: '/admin' });
   await app.register(playerCardRoutes(deps, services));
+  await app.register(steamAccountRoutes(deps, services, steam), { prefix: '/account' });
   await app.register(feedbackRoutes(deps, services));
   await app.register(telemetryRoutes(deps, services));
   return app;

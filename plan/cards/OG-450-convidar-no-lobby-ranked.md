@@ -7,7 +7,7 @@
 | Prioridade | Could |
 | Estimativa | 3 pts |
 | Sprint | S62 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-447, D-82 |
 | Regras de negócio | RN-RKL-07..12 |
 | Skills | `outgun-card-workflow` |
@@ -28,10 +28,12 @@ Como jogador na Steam montando um Ranked, quero chamar amigos da Steam para o lo
 - Sem restrição de clã: em clã x clã qualquer um pode ser convidado.
 
 ## Critérios de aceite
-- [ ] O botão aparece só no app aberto pela Steam e fica desligado com o time cheio ou com todos prontos.
-- [ ] O convidado sem sessão faz login e cai no lobby da sala convidada.
-- [ ] O convidado entra no time de quem convidou (teste no game server).
-- [ ] Depois que todos marcam "Pronto", o convite é recusado com aviso (teste no game server).
-- [ ] Em clã x clã, um convidado fora do clã entra normalmente.
+- [x] O botão aparece só no app aberto pela Steam e fica desligado com o time cheio ou com todos prontos.
+- [x] O convidado sem sessão faz login e cai no lobby da sala convidada.
+- [x] O convidado entra no time de quem convidou (teste no game server).
+- [x] Depois que todos marcam "Pronto", o convite é recusado com aviso (teste no game server).
+- [x] Em clã x clã, um convidado fora do clã entra normalmente.
 
 ## Notas de implementação
+- Botão no lobby Ranked, desligado com o meu time cheio ou na contagem (todos prontos). O lobby da Steam leva `by` (conta de quem convidou) → `invitedBy` no `/join` (só sala com formato) → ticket → game server põe no time de quem convidou se houver vaga (`inviterTeam`); na contagem a entrada pelo convite é recusada.
+- Convidado sem conta: a página da sala manda ao login com `?next=` e volta; o convite fica guardado na aba por 10 min. Teste no game server em `ranked-lobby.test.ts`.

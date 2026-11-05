@@ -3,7 +3,7 @@
 // exportação e exclusão de dados). No design system v2 (OG-202): formulários web de verdade, com
 // autocomplete para os gerenciadores de senha e o erro junto do campo.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { useAccount, type AccountUser } from '../app/account.js';
 import { isPhone } from '../app/phone.js';
 import { TERMS_VERSION } from '@outgun/content';
@@ -17,6 +17,8 @@ import { Panel } from '../ui/Panel.js';
 import { lightColour, loadNumberFonts, NUMBER_STYLES, paintNumber } from '../game/render/number-styles.js';
 import { PLAYER_COLOURS } from '../ui/icons.js';
 import { medalColor } from '@outgun/protocol';
+import { linkSteamAccount, type SteamLinkState } from '../app/steam-link.js';
+import { desktopBridge } from '../app/install.js';
 
 const MIN_PASSWORD = 8;
 
@@ -155,9 +157,12 @@ export function LoginScreen() {
   const { t } = usePrefs();
   const navigate = useNavigate();
   const { user } = useAccount();
+  // depois do login, volta para onde pediram (ex.: a sala do convite da Steam, OG-450); só caminhos do site
+  const next = new URLSearchParams(useLocation().search).get('next');
+  const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/';
   // Quem chega já logado vai para a conta; quem acabou de entrar aqui segue para o início.
   const [signedIn, setSignedIn] = useState(false);
-  if (user && !signedIn) return <Navigate to="/account" replace />;
+  if (user && !signedIn) return <Navigate to={next ? target : '/account'} replace />;
 
   return (
     <Page title={t('Sign in')} width="narrow" onBack={() => void navigate('/')} backLabel={t('Back')}>
@@ -166,7 +171,7 @@ export function LoginScreen() {
           autoFocus
           onSignedIn={() => {
             setSignedIn(true);
-            void navigate('/');
+            void navigate(target);
           }}
         />
       </Panel>
@@ -383,6 +388,7 @@ export function AccountScreen() {
       <FormMessageLine message={general} />
       <NumberPanel />
       <PrivacyPanel />
+      <SteamPanel />
       <CupEmailsPanel />
     </Page>
   );
@@ -507,6 +513,51 @@ function NumberPanel() {
 }
 
 /** Privacidade do perfil social (OG-211, D-39): o perfil é público; dá para esconder companheiros e histórico. */
+/** Conta Steam e as cartas no inventário Steam (OG-584/586, D-95). */
+function SteamPanel() {
+  const { t } = usePrefs();
+  const [state, setState] = useState<SteamLinkState | null>(null);
+  const [msg, setMsg] = useState('');
+  useEffect(() => {
+    let alive = true;
+    api<SteamLinkState>('/account/steam').then(
+      (s) => alive && setState(s),
+      () => undefined,
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
+  if (!state?.available) return null;
+  const inApp = Boolean(desktopBridge()?.steamAuthTicket && desktopBridge()?.steamAvailable?.());
+  const link = () =>
+    void linkSteamAccount().then(
+      (s) => (s ? setState(s) : setMsg(t('Open Outgun from Steam to link your account.'))),
+      () => setMsg(t('Could not link your Steam account.')),
+    );
+  const unlink = () => void api('/account/steam', { method: 'DELETE' }).then(() => setState({ ...state, linked: false, steamId: null }));
+  return (
+    <Panel title="Steam">
+      {state.linked ? (
+        <>
+          <p>{t('Your Steam account is linked. Your player cards also go to your Steam inventory: $1 of $2 delivered.', String(state.cards.done), String(state.cards.total))}</p>
+          <div className="ui-row">
+            <Button variant="ghost" onClick={unlink}>
+              {t('Unlink Steam')}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="ui-muted">{t('Link your Steam account to also get your player cards in your Steam inventory (only the card picture; they cannot be traded or sold).')}</p>
+          {inApp ? <Button onClick={link}>{t('Link Steam account')}</Button> : <p className="ui-muted">{t('Open Outgun from Steam to link your account.')}</p>}
+        </>
+      )}
+      {msg && <p className="stats-note">{msg}</p>}
+    </Panel>
+  );
+}
+
 function PrivacyPanel() {
   const { t } = usePrefs();
   const [privacy, setPrivacy] = useState<{ hideCompanions: boolean; hideHistory: boolean } | null>(null);

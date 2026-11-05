@@ -89,7 +89,7 @@ interface Revision {
   editedBy: string | null;
 }
 interface CardDetail {
-  card: LegendCardInput & { id: number; slug: string; active: boolean; revision: number; linkedUsername: string | null; createdBy: string | null; createdAt: string; updatedBy: string | null; updatedAt: string; owners: number };
+  card: LegendCardInput & { id: number; slug: string; active: boolean; steam: boolean; revision: number; linkedUsername: string | null; createdBy: string | null; createdAt: string; updatedBy: string | null; updatedAt: string; owners: number };
   revisions: Revision[];
 }
 interface OddsRow {
@@ -342,6 +342,22 @@ function CardSheet({ t, id, gens, phone, back, edit }: { t: T; id: number; gens:
               )}
               {c.active && <small className="admin-muted">{t('Deactivated cards leave the draw; whoever has it keeps it.')}</small>}
             </div>
+          )}
+          {!phone && (
+            <Button
+              variant="ghost"
+              onClick={() =>
+                void api(`/admin/cards/${id}/steam`, { method: 'PUT', body: { steam: !c.steam } }).then(
+                  () => {
+                    setStatus({ text: c.steam ? t('This card will not go to the Steam inventory.') : t('This card goes to the Steam inventory.') });
+                    d.reload();
+                  },
+                  (e: unknown) => setStatus({ error: errorText(e) }),
+                )
+              }
+            >
+              {c.steam ? t('Steam inventory: yes') : t('Steam inventory: no')}
+            </Button>
           )}
           <Link to={`/cartas/${c.slug}`}>{t('See the card page')}</Link>
         </aside>

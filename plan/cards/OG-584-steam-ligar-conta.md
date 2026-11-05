@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 5 pts |
 | Sprint | S62 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-328, OG-396 |
 | Regras de negócio | RN-CRT-10, D-95 |
 | Skills | `outgun-card-workflow` |
@@ -28,8 +28,9 @@ Como jogador do app da Steam, quero ligar minha conta do Outgun à Steam, para r
 - Sem a chave configurada, a ligação fica desligada e o resto do jogo segue normal.
 
 ## Critérios de aceite
-- [ ] Ticket inválido ou de outro app é recusado.
-- [ ] O mesmo SteamID não fica em duas contas.
+- [x] Ticket inválido ou de outro app é recusado.
+- [x] O mesmo SteamID não fica em duas contas.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- App: `steamAuthTicket` (ticket `getAuthTicketForWebApi("outgun")`); site liga sozinho uma vez por sessão (`useSteamAutoLink`) e a Conta ganhou o painel Steam (ligar/desligar, entregues).
+- API `GET/POST/DELETE /account/steam` confere em `ISteamUserAuth/AuthenticateUserTicket` com `STEAM_WEB_API_KEY` (sem chave = desligado); `users.steam_id` único (migração `0062`). Privacidade atualizada. **Falta a chave de publicador no `.env` do servidor (PO).**

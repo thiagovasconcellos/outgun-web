@@ -37,6 +37,20 @@ if (!vsync) {
   app.commandLine.appendSwitch('disable-gpu-vsync');
 }
 
+// Overlay da Steam (OG-447, D-95): sem ele não existe a janela de convite. Só quando a Steam abriu o
+// jogo; `--outgun-no-overlay` desliga (diagnóstico). As chaves do overlay entram antes do app ficar
+// pronto; o redesenho forçado só liga enquanto a janela de convite pode estar aberta (o portal é
+// estático e o overlay precisa de quadros novos para aparecer).
+const launchedBySteamEarly = Number(process.env.SteamAppId ?? process.env.SteamGameId) === 663760;
+const overlay = launchedBySteamEarly && !app.commandLine.hasSwitch('outgun-no-overlay');
+if (overlay) {
+  try {
+    createRequire(import.meta.url)('steamworks.js').electronEnableSteamOverlay(true);
+  } catch (error) {
+    console.error('overlay da Steam indisponível:', error);
+  }
+}
+
 // Log do app (OG-539) em `outgun-desktop.log`, na pasta de dados do app (ao lado do
 // `outgun-desktop.json`, em %APPDATA% no Windows): versão, chaves, estado da GPU, quedas dos
 // processos e avisos/erros da página. O jogador manda o arquivo junto com o relato; passa de 1 MB,
@@ -56,7 +70,7 @@ function log(line) {
   }
 }
 log(
-  `início: app ${app.getVersion()}, electron ${process.versions.electron}, chrome ${process.versions.chrome}, ${process.platform} ${process.getSystemVersion()}; vsync=${vsync} windowed=${windowed} noGpu=${app.commandLine.hasSwitch('outgun-no-gpu')}`,
+  `início: app ${app.getVersion()}, electron ${process.versions.electron}, chrome ${process.versions.chrome}, ${process.platform} ${process.getSystemVersion()}; vsync=${vsync} windowed=${windowed} noGpu=${app.commandLine.hasSwitch('outgun-no-gpu')} overlay=${overlay}`,
 );
 app.on('child-process-gone', (_event, details) => {
   log(
@@ -286,6 +300,15 @@ function createWindow() {
     releaseDisplay();
   });
   void win.loadURL(GAME_URL.href);
+  // Steam liga depois que o jogo desenhou (OG-400): ouve os convites e, se a Steam abriu o app por um
+  // convite (`+connect_lobby`), entra no lobby e leva à sala (OG-447)
+  if (launchedBySteam)
+    win.webContents.once('did-finish-load', () =>
+      setTimeout(() => {
+        steamReady();
+        if (startLobby !== null) void acceptLobby(startLobby);
+      }, 2500),
+    );
 }
 
 // Conquistas da Steam (OG-396, D-77): o marco da conta é a fonte de verdade e o app só desbloqueia na
@@ -340,10 +363,127 @@ ipcMain.on('outgun:steam-sync', (event, ids) => {
   if (changed) steam.stats.store();
 });
 
+// Convite pela Steam (OG-447, D-95): um lobby da Steam "só amigos" por sala serve de envelope do id da
+// sala (e do token de convite, em sala com senha). O amigo aceita e cai na sala: com o jogo aberto pelo
+// callback GameLobbyJoinRequested; com o jogo fechado a Steam abre o app com `+connect_lobby <id>`.
+const ROOM_ID = /^[A-Za-z0-9_-]{1,64}$/;
+const INVITE_TOKEN = /^\d{1,12}\.[A-Za-z0-9_-]{43}$/;
+const ACCOUNT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** @type {{ room: string, lobby: import('steamworks.js/client.d').matchmaking.Lobby } | null} */
+let inviteLobby = null;
+let repaintUntil = 0;
+/** Convite aceito que a página ainda não usou (ela pode estar carregando). */
+let pendingJoin = null;
+/** @type {ReturnType<typeof setInterval> | undefined} */
+let repaintTimer;
+function keepRepainting(ms) {
+  repaintUntil = Date.now() + ms;
+  if (repaintTimer) return;
+  repaintTimer = setInterval(() => {
+    if (!win || win.isDestroyed() || Date.now() > repaintUntil) {
+      clearInterval(repaintTimer);
+      repaintTimer = undefined;
+    } else if (!win.webContents.isPainting()) win.webContents.invalidate();
+  }, 1000 / 60);
+}
+/** Manda a página para a sala do convite. */
+function joinFromLobby(lobby) {
+  const room = lobby.getData('room') ?? '';
+  const token = lobby.getData('token') ?? '';
+  const by = lobby.getData('by') ?? '';
+  if (!ROOM_ID.test(room)) return;
+  log(`convite: entrando na sala ${room}`);
+  pendingJoin = { room, token: INVITE_TOKEN.test(token) ? token : null, by: ACCOUNT_ID.test(by) ? by : null };
+  win?.webContents.send('outgun:steam-join', pendingJoin);
+  try {
+    lobby.leave();
+  } catch {
+    // o lobby é só o envelope
+  }
+}
+async function acceptLobby(id) {
+  const steam = steamClient();
+  if (!steam) return;
+  try {
+    joinFromLobby(await steam.matchmaking.joinLobby(id));
+  } catch (error) {
+    log(`convite: não entrou no lobby ${id}: ${error}`);
+  }
+}
+let joinCallbackOn = false;
+function steamReady() {
+  const steam = steamClient();
+  if (!steam || joinCallbackOn) return steam;
+  joinCallbackOn = true;
+  steam.callback.register(steam.callback.SteamCallback.GameLobbyJoinRequested, (e) => void acceptLobby(e.lobby_steam_id));
+  return steam;
+}
+/** `+connect_lobby <id>` na linha de comando (jogo aberto pelo convite, ou segunda abertura). */
+function connectLobbyArg(argv) {
+  const i = argv.indexOf('+connect_lobby');
+  const raw = i >= 0 ? argv[i + 1] : undefined;
+  return raw && /^\d{1,20}$/.test(raw) ? BigInt(raw) : null;
+}
+const startLobby = launchedBySteam ? connectLobbyArg(process.argv) : null;
+
+ipcMain.handle('outgun:steam-invite', async (event, room, token, by) => {
+  if (!launchedBySteam || !sameOrigin(event.senderFrame?.url ?? '') || typeof room !== 'string' || !ROOM_ID.test(room)) return false;
+  const steam = steamReady();
+  if (!steam) return false;
+  try {
+    if (!inviteLobby || inviteLobby.room !== room) {
+      inviteLobby?.lobby.leave();
+      inviteLobby = null;
+      const lobby = await steam.matchmaking.createLobby(steam.matchmaking.LobbyType?.FriendsOnly ?? 1, 16);
+      lobby.setData('room', room);
+      inviteLobby = { room, lobby };
+    }
+    if (typeof token === 'string' && INVITE_TOKEN.test(token)) inviteLobby.lobby.setData('token', token);
+    // quem convidou (OG-450): no lobby Ranked o convidado entra no time dele
+    if (typeof by === 'string' && ACCOUNT_ID.test(by)) inviteLobby.lobby.setData('by', by);
+    keepRepainting(90_000);
+    inviteLobby.lobby.openInviteDialog();
+    return true;
+  } catch (error) {
+    log(`convite: falhou: ${error}`);
+    return false;
+  }
+});
+ipcMain.handle('outgun:steam-pending-join', (event) => {
+  if (!sameOrigin(event.senderFrame?.url ?? '')) return null;
+  const p = pendingJoin;
+  pendingJoin = null;
+  return p;
+});
+ipcMain.on('outgun:steam-leave-room', (event) => {
+  if (!sameOrigin(event.senderFrame?.url ?? '') || !inviteLobby) return;
+  try {
+    inviteLobby.lobby.leave();
+  } catch {
+    // já saiu
+  }
+  inviteLobby = null;
+});
+// Conta Steam (OG-584, D-95): ticket de sessão para a API conferir quem é o jogador na Steam
+ipcMain.handle('outgun:steam-auth-ticket', async (event) => {
+  if (!launchedBySteam || !sameOrigin(event.senderFrame?.url ?? '')) return null;
+  const steam = steamReady();
+  if (!steam) return null;
+  try {
+    const ticket = await steam.auth.getAuthTicketForWebApi('outgun');
+    return { ticket: ticket.getBytes().toString('hex'), steamId: steam.localplayer.getSteamId().steamId64.toString() };
+  } catch (error) {
+    log(`steam: sem ticket: ${error}`);
+    return null;
+  }
+});
+
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
     if (!win) return;
+    const lobby = launchedBySteam ? connectLobbyArg(argv) : null;
+    if (lobby !== null) void acceptLobby(lobby);
     if (win.isMinimized()) win.restore();
     win.focus();
   });

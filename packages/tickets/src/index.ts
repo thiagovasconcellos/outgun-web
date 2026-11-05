@@ -32,6 +32,8 @@ export interface TicketClaims {
   skill?: TicketSkill;
   /** Nível do bot que substitui a conta se ela sair de vez (OG-266, 1..5; só nas salas Ranked). */
   botLevel?: number;
+  /** Convite pela Steam no lobby Ranked (OG-450, D-82): conta de quem convidou; entra no time dela. */
+  invitedBy?: string;
   /** Pódio (1..3) do "Melhor do mês" do mês anterior (OG-411): libera a cor da medalha. */
   medal?: number;
   /** Número no boneco (OG-410): 2..99 da conta, ou 1 para o líder do mês anterior que o usa. */

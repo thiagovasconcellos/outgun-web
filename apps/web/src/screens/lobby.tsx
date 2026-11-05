@@ -14,8 +14,8 @@ import {
   AIM_TRAINING_MAP,
   type TrainingModeId,
 } from '@outgun/settings';
-import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useLocation, useNavigate, useParams } from 'react-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { loadManifest } from '../assets.js';
 import { joinName, useAccount } from '../app/account.js';
 import { deviceId } from '../app/device.js';
@@ -33,6 +33,8 @@ import { Tabs } from '../ui/Tabs.js';
 import { RankedRoomsPanel, WatchButton } from './ranked-rooms.js';
 import { MapPreview } from './MapPreview.js';
 import { fallbackMs, useLive, useLiveConnected } from '../app/live.js';
+import { canSteamInvite } from '../app/install.js';
+import { SteamInviteButton } from '../app/steam-invite.js';
 
 type Mode = 'casual' | 'ranked';
 
@@ -313,6 +315,16 @@ export function JoinRoomScreen() {
   const [room, setRoom] = useState<RoomSummary | null | undefined>(undefined);
   const [password, setPassword] = useState('');
   const [copied, setCopied] = useState<boolean | null>(null);
+  // convite aceito na Steam (OG-447/450): entra sozinho (a senha vem no token do convite)
+  const [search] = useSearchParams();
+  const fromSteam = search.get('convite') === 'steam';
+  const autoJoined = useRef(false);
+  useEffect(() => {
+    if (!fromSteam || !room || autoJoined.current) return;
+    if (room.mode === 'ranked' && !user) return;
+    autoJoined.current = true;
+    void navigate(`/play?sala=${encodeURIComponent(room.id)}`, { replace: true });
+  }, [fromSteam, room, user, navigate]);
   useEffect(() => {
     let alive = true;
     api<{ room: RoomSummary }>(`/rooms/${encodeURIComponent(id)}`).then(
@@ -326,7 +338,7 @@ export function JoinRoomScreen() {
   if (room === undefined) return null;
   if (room === null) return <Navigate to="/rooms" replace />;
   const play = () => {
-    if (room.mode === 'ranked' && !user) return void navigate('/login');
+    if (room.mode === 'ranked' && !user) return void navigate(`/login?next=${encodeURIComponent(`/rooms/${room.id}${fromSteam ? '?convite=steam' : ''}`)}`);
     void navigate(
       `/play?sala=${encodeURIComponent(room.id)}`,
       room.hasPassword ? { state: { password } } : undefined,
@@ -357,6 +369,7 @@ export function JoinRoomScreen() {
                 {t('Watch live')}
               </Button>
             )}
+            <SteamInviteButton room={room.id} password={room.hasPassword ? password || undefined : undefined} variant="ghost" />
             <Button variant="ghost" onClick={copy}>
               {copied === null
                 ? t('Copy invite link')
@@ -391,6 +404,7 @@ export function CreateRoomScreen() {
   const [name, setName] = useState(() => (user ? `${user.username}` : ''));
   const [preset, setPreset] = useState('classic');
   const [password, setPassword] = useState('');
+  const [steamInviteOnEnter, setSteamInviteOnEnter] = useState(false);
   const [maxPlayers, setMaxPlayers] = useState(16);
   const [maps, setMaps] = useState<readonly string[]>([]);
   // bots da sala (OG-289): começam com os das opções; desligado, valem os do preset
@@ -485,6 +499,7 @@ export function CreateRoomScreen() {
 
   const create = () => {
     if (!name.trim()) return;
+    const navState = { ...(password ? { password } : {}), ...(steamInviteOnEnter ? { steamInvite: true } : {}) };
     setError(null);
     const body = trainingMode
       ? {
@@ -507,10 +522,7 @@ export function CreateRoomScreen() {
       .then((nearest) => api<{ room: RoomSummary; inviteUrl: string }>('/rooms', { body: nearest }))
       .then(
       ({ room }) =>
-        void navigate(
-          `/play?sala=${encodeURIComponent(room.id)}`,
-          password ? { state: { password } } : undefined,
-        ),
+        void navigate(`/play?sala=${encodeURIComponent(room.id)}`, Object.keys(navState).length ? { state: navState } : undefined),
       (e: unknown) =>
         setError(
           e instanceof ApiError && e.code === 'rate_limited'
@@ -567,6 +579,9 @@ export function CreateRoomScreen() {
           onChange={setPassword}
           maxLength={15}
         />
+        {canSteamInvite() && trainingMode !== 'aim' && (
+          <ToggleField label={t('Invite Steam friends when entering')} checked={steamInviteOnEnter} onChange={setSteamInviteOnEnter} />
+        )}
         {trainingMode === 'aim' ? (
           // Treino de mira (OG-569): T4 fixo, um alvo, sem nível nem power-ups; só o início
           <ToggleField
