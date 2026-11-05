@@ -50,9 +50,10 @@ describe.skipIf(!pgAdminUrl)('resgate no banco (OG-576)', () => {
   const now = new Date('2026-11-12T15:00:00Z');
   const card = (nick: string, cls: string, linked: string | null = null) =>
     t.db.insert(legendCards).values({ slug: nick.toLowerCase(), nick, nickKey: nick, bio: 'x', class: cls, quote: 'x', ringColor: '#E02828', centerColor: '#00FF00', linkedUserId: linked }).returning({ id: legendCards.id });
+  let played = 0;
   const play = async (userId: string, n: number, at = now) => {
-    for (let i = 0; i < n; i++) {
-      const [m] = await t.db.insert(matches).values({ serverId: 't', serverMatchId: `${userId}-${at.getTime()}-${i}`, mode: 'casual', ranked: false, map: 'x', redScore: 0, blueScore: 0, startedAt: at, endedAt: at }).returning();
+    for (let i = 0; i < n; i++, played++) {
+      const [m] = await t.db.insert(matches).values({ serverId: 't', serverMatchId: `${userId}-${played}`, mode: 'casual', ranked: false, map: 'x', redScore: 0, blueScore: 0, startedAt: at, endedAt: at }).returning();
       await t.db.insert(matchPlayers).values({ matchId: m!.id, slot: 0, userId, name: 'p', team: 0 });
     }
   };

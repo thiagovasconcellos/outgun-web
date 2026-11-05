@@ -108,6 +108,10 @@ export function similarNick(a: string, b: string): boolean {
   return a.startsWith(b) || b.startsWith(a) || lev(a, b) <= 1;
 }
 
+/** JSON com as chaves em ordem (o jsonb do Postgres reordena as chaves dos objetos). */
+export const canonical = (v: unknown): string =>
+  JSON.stringify(v, (_k, x: unknown) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))) : x));
+
 class CardError extends Error {
   constructor(readonly status: number, readonly code: string, message = code) {
     super(message);
@@ -332,7 +336,7 @@ export function legendCardAdminRoutes(deps: AppDeps, services: Services): Fastif
           await check(card);
           const [cur] = await db.select().from(legendCards).where(eq(legendCards.id, request.params.id));
           if (!cur) return reply.code(404).send({ error: 'not_found', message: 'no such card' });
-          if (JSON.stringify(cardInput(cur)) === JSON.stringify(card)) return { id: cur.id, slug: cur.slug, revision: cur.revision, changed: false };
+          if (canonical(cardInput(cur)) === canonical(card)) return { id: cur.id, slug: cur.slug, revision: cur.revision, changed: false };
           const slug = card.nick === cur.nick ? cur.slug : await freeSlug(card.nick, cur.id);
           const revision = cur.revision + 1;
           await db.transaction(async (tx) => {
@@ -409,7 +413,9 @@ export function legendCardAdminRoutes(deps: AppDeps, services: Services): Fastif
         const user = await guard(request, reply, 'moderator');
         if (!user) return reply;
         const entries = Object.entries(request.body.weights).filter(([k]) => (CARD_CLASS_IDS as string[]).includes(k));
-        if (!entries.length || entries.every(([, w]) => w === 0)) return reply.code(400).send({ error: 'invalid_odds', message: 'at least one class needs weight' });
+        const merged = new Map((await db.select().from(cardClassOdds)).map((w) => [w.class, Number(w.weight)]));
+        for (const [k, w] of entries) merged.set(k, w);
+        if (!entries.length || [...merged.values()].every((w) => w === 0)) return reply.code(400).send({ error: 'invalid_odds', message: 'at least one class needs weight' });
         await db.transaction(async (tx) => {
           for (const [cls, weight] of entries) {
             await tx

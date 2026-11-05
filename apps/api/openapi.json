@@ -19278,6 +19278,12 @@
                                 "enum": [
                                   "cup"
                                 ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "cards"
+                                ]
                               }
                             ]
                           },
@@ -19318,6 +19324,9 @@
                                 }
                               },
                               "number": {
+                                "type": "integer"
+                              },
+                              "cards": {
                                 "type": "integer"
                               },
                               "cup": {
@@ -25912,6 +25921,1348 @@
             },
             "in": "path",
             "name": "tag",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/cards": {
+      "get": {
+        "summary": "Catálogo das Cartas de Jogador (OG-571): busca por nick, epíteto ou clã; filtros de classe, geração e ativa",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "in": "query",
+            "name": "q",
+            "required": false
+          },
+          {
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "classico"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "epico"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "lendario"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "especial"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "nefasto"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "enum": [
+                    "mitica"
+                  ]
+                }
+              ]
+            },
+            "in": "query",
+            "name": "class",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "query",
+            "name": "generation",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "active",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria uma carta: salvar publica na hora (P8, P19) e grava a revisão 1",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nick",
+                  "epithet",
+                  "position",
+                  "bio",
+                  "class",
+                  "generations",
+                  "clans",
+                  "achievements",
+                  "traits",
+                  "abilities",
+                  "quote",
+                  "memory",
+                  "ringColor",
+                  "centerColor",
+                  "linkedUserId",
+                  "links",
+                  "sources"
+                ],
+                "properties": {
+                  "nick": {
+                    "type": "string",
+                    "maxLength": 16
+                  },
+                  "epithet": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "position": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "bio": {
+                    "type": "string",
+                    "maxLength": 3000
+                  },
+                  "class": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "classico"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "epico"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "lendario"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "especial"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "nefasto"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "mitica"
+                        ]
+                      }
+                    ]
+                  },
+                  "generations": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "maxItems": 12
+                  },
+                  "clans": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 24
+                    },
+                    "maxItems": 12
+                  },
+                  "achievements": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "icon",
+                        "title",
+                        "text"
+                      ],
+                      "properties": {
+                        "icon": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 28
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 160
+                        }
+                      }
+                    },
+                    "maxItems": 8
+                  },
+                  "traits": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "icon",
+                        "title",
+                        "text"
+                      ],
+                      "properties": {
+                        "icon": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 28
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 160
+                        }
+                      }
+                    },
+                    "maxItems": 8
+                  },
+                  "abilities": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "icon",
+                        "title",
+                        "text"
+                      ],
+                      "properties": {
+                        "icon": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 28
+                        },
+                        "text": {
+                          "type": "string",
+                          "maxLength": 160
+                        }
+                      }
+                    },
+                    "maxItems": 8
+                  },
+                  "quote": {
+                    "type": "string",
+                    "maxLength": 90
+                  },
+                  "memory": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "ringColor": {
+                    "type": "string",
+                    "maxLength": 7
+                  },
+                  "centerColor": {
+                    "type": "string",
+                    "maxLength": 7
+                  },
+                  "linkedUserId": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "links": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "nick"
+                      ],
+                      "properties": {
+                        "nick": {
+                          "type": "string",
+                          "maxLength": 16
+                        },
+                        "cardId": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    },
+                    "maxItems": 12
+                  },
+                  "sources": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "slug",
+                    "revision"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "revision": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/cards/positions": {
+      "get": {
+        "summary": "Posições já usadas nas fichas, para sugerir no formulário (P11)",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/cards/similar": {
+      "get": {
+        "summary": "Nick igual (bloqueia) ou parecido (aviso) com uma carta já cadastrada",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 16
+            },
+            "in": "query",
+            "name": "nick",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "query",
+            "name": "except",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/cards/accounts": {
+      "get": {
+        "summary": "Busca de contas para ligar à carta (P13)",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 15
+            },
+            "in": "query",
+            "name": "q",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/cards/{id}": {
+      "get": {
+        "summary": "Ficha de uma carta com o histórico de revisões",
+        "tags": [
+          "admin"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "put": {
+        "summary": "Grava a ficha: vale na hora e cria uma revisão nova (sem mudança, nada acontece)",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "card"
+                ],
+                "properties": {
+                  "card": {
+                    "type": "object",
+                    "required": [
+                      "nick",
+                      "epithet",
+                      "position",
+                      "bio",
+                      "class",
+                      "generations",
+                      "clans",
+                      "achievements",
+                      "traits",
+                      "abilities",
+                      "quote",
+                      "memory",
+                      "ringColor",
+                      "centerColor",
+                      "linkedUserId",
+                      "links",
+                      "sources"
+                    ],
+                    "properties": {
+                      "nick": {
+                        "type": "string",
+                        "maxLength": 16
+                      },
+                      "epithet": {
+                        "type": "string",
+                        "maxLength": 32
+                      },
+                      "position": {
+                        "type": "string",
+                        "maxLength": 32
+                      },
+                      "bio": {
+                        "type": "string",
+                        "maxLength": 3000
+                      },
+                      "class": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "enum": [
+                              "classico"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "epico"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "lendario"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "especial"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "nefasto"
+                            ]
+                          },
+                          {
+                            "type": "string",
+                            "enum": [
+                              "mitica"
+                            ]
+                          }
+                        ]
+                      },
+                      "generations": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "maxItems": 12
+                      },
+                      "clans": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 24
+                        },
+                        "maxItems": 12
+                      },
+                      "achievements": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "icon",
+                            "title",
+                            "text"
+                          ],
+                          "properties": {
+                            "icon": {
+                              "type": "string",
+                              "maxLength": 20
+                            },
+                            "title": {
+                              "type": "string",
+                              "maxLength": 28
+                            },
+                            "text": {
+                              "type": "string",
+                              "maxLength": 160
+                            }
+                          }
+                        },
+                        "maxItems": 8
+                      },
+                      "traits": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "icon",
+                            "title",
+                            "text"
+                          ],
+                          "properties": {
+                            "icon": {
+                              "type": "string",
+                              "maxLength": 20
+                            },
+                            "title": {
+                              "type": "string",
+                              "maxLength": 28
+                            },
+                            "text": {
+                              "type": "string",
+                              "maxLength": 160
+                            }
+                          }
+                        },
+                        "maxItems": 8
+                      },
+                      "abilities": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "icon",
+                            "title",
+                            "text"
+                          ],
+                          "properties": {
+                            "icon": {
+                              "type": "string",
+                              "maxLength": 20
+                            },
+                            "title": {
+                              "type": "string",
+                              "maxLength": 28
+                            },
+                            "text": {
+                              "type": "string",
+                              "maxLength": 160
+                            }
+                          }
+                        },
+                        "maxItems": 8
+                      },
+                      "quote": {
+                        "type": "string",
+                        "maxLength": 90
+                      },
+                      "memory": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "ringColor": {
+                        "type": "string",
+                        "maxLength": 7
+                      },
+                      "centerColor": {
+                        "type": "string",
+                        "maxLength": 7
+                      },
+                      "linkedUserId": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "links": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "nick"
+                          ],
+                          "properties": {
+                            "nick": {
+                              "type": "string",
+                              "maxLength": 16
+                            },
+                            "cardId": {
+                              "type": "integer",
+                              "minimum": 1
+                            }
+                          }
+                        },
+                        "maxItems": 12
+                      },
+                      "sources": {
+                        "type": "string",
+                        "maxLength": 500
+                      }
+                    }
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/cards/{id}/active": {
+      "put": {
+        "summary": "Desativa ou reativa a carta: desativada sai do sorteio e fica com quem já tem (RN-CRT-02)",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "active"
+                ],
+                "properties": {
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/cards/{id}/restore": {
+      "post": {
+        "summary": "Volta a ficha a uma revisão antiga, gravando uma revisão nova",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "revision"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/card-odds": {
+      "get": {
+        "summary": "Peso de cada classe no sorteio e cartas ativas por classe",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "put": {
+        "summary": "Muda os pesos das classes; vale no próximo resgate",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "weights"
+                ],
+                "properties": {
+                  "weights": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/card-generations": {
+      "get": {
+        "summary": "Gerações das cartas, com quantas cartas usam cada uma",
+        "tags": [
+          "admin"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cria uma geração (só admin)",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "description",
+                  "ord",
+                  "active"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "ord": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 999
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/admin/card-generations/{id}": {
+      "put": {
+        "summary": "Renomeia, reordena, ativa ou desativa uma geração (só admin)",
+        "tags": [
+          "admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "description",
+                  "ord",
+                  "active"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "ord": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 999
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/cards/claims": {
+      "get": {
+        "summary": "Resgates da semana (RN-CRT-04): partidas jogadas, liberados, usados e quando abre a próxima semana",
+        "tags": [
+          "cards"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "week",
+                    "matches",
+                    "matchesNeeded",
+                    "unlocked",
+                    "used",
+                    "available",
+                    "perWeek",
+                    "nextWeekAt",
+                    "remaining",
+                    "owned",
+                    "total"
+                  ],
+                  "properties": {
+                    "week": {
+                      "type": "string"
+                    },
+                    "matches": {
+                      "type": "integer"
+                    },
+                    "matchesNeeded": {
+                      "type": "integer"
+                    },
+                    "unlocked": {
+                      "type": "boolean"
+                    },
+                    "used": {
+                      "type": "integer"
+                    },
+                    "available": {
+                      "type": "integer"
+                    },
+                    "perWeek": {
+                      "type": "integer"
+                    },
+                    "nextWeekAt": {
+                      "type": "string"
+                    },
+                    "remaining": {
+                      "type": "integer"
+                    },
+                    "owned": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Resgata a carta `seq` (1 ou 2) da semana: sorteio no servidor, nunca repete; pedir de novo o mesmo `seq` devolve a mesma carta",
+        "tags": [
+          "cards"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "seq"
+                ],
+                "properties": {
+                  "seq": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 2
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "card",
+                    "serial",
+                    "own",
+                    "seq",
+                    "status"
+                  ],
+                  "properties": {
+                    "card": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "slug",
+                        "nick",
+                        "class",
+                        "ringColor",
+                        "centerColor"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "nick": {
+                          "type": "string"
+                        },
+                        "class": {
+                          "type": "string"
+                        },
+                        "ringColor": {
+                          "type": "string"
+                        },
+                        "centerColor": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "serial": {
+                      "type": "integer"
+                    },
+                    "own": {
+                      "type": "boolean"
+                    },
+                    "seq": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "type": "object",
+                      "required": [
+                        "week",
+                        "matches",
+                        "matchesNeeded",
+                        "unlocked",
+                        "used",
+                        "available",
+                        "perWeek",
+                        "nextWeekAt",
+                        "remaining",
+                        "owned",
+                        "total"
+                      ],
+                      "properties": {
+                        "week": {
+                          "type": "string"
+                        },
+                        "matches": {
+                          "type": "integer"
+                        },
+                        "matchesNeeded": {
+                          "type": "integer"
+                        },
+                        "unlocked": {
+                          "type": "boolean"
+                        },
+                        "used": {
+                          "type": "integer"
+                        },
+                        "available": {
+                          "type": "integer"
+                        },
+                        "perWeek": {
+                          "type": "integer"
+                        },
+                        "nextWeekAt": {
+                          "type": "string"
+                        },
+                        "remaining": {
+                          "type": "integer"
+                        },
+                        "owned": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/players/{name}/cards": {
+      "get": {
+        "summary": "Coleção de um jogador: as cartas que ele tem (frente), contagem por classe e a própria carta, se for uma lenda",
+        "tags": [
+          "cards"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "in": "path",
+            "name": "name",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/cards/legends": {
+      "get": {
+        "summary": "Contas que já tiraram a própria carta: o broche \"Lenda\" ao lado do nick no portal",
+        "tags": [
+          "cards"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/cards/{slug}": {
+      "get": {
+        "summary": "Ficha completa de uma carta, só para quem a tem (quem não tem recebe 403 sem nada da ficha)",
+        "tags": [
+          "cards"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "in": "path",
+            "name": "slug",
             "required": true
           }
         ],

@@ -72,6 +72,13 @@ export const TABLES: Readonly<Record<string, 'personal' | 'none'>> = {
   cup_duos: 'personal',
   cup_matches: 'none',
   cup_availability: 'personal',
+  // Cartas de Jogador (OG-570): a ficha pode ligar a conta da lenda; o inventário e os resgates são da conta
+  card_generations: 'none',
+  legend_cards: 'personal',
+  legend_card_revisions: 'none',
+  card_class_odds: 'none',
+  card_claims: 'personal',
+  user_cards: 'personal',
 };
 
 const b = (pt: string, en: string): Bilingual => ({ 'pt-BR': pt, en });
@@ -118,6 +125,12 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     where: ['cup_entries', 'cup_duos', 'cup_availability', 'player_profiles'],
     why: b('Organizar a copa: sortear as duplas, marcar os jogos e mostrar a chave pública', 'Running the cup: drawing pairs, scheduling matches and showing the public bracket'),
     retention: b('Chave e duplas enquanto o serviço existir (ao excluir a conta o nome vira "(anon)"); horários até a conta ser excluída', 'Bracket and pairs while the service exists (deleting the account replaces the name with "(anon)"); hours until the account is deleted'),
+  },
+  {
+    what: b('Cartas de Jogador: as cartas que você resgatou (número da cópia e data), os resgates de cada semana e, se você é uma lenda com carta, a ligação da sua conta com a sua carta', 'Player Cards: the cards you claimed (copy number and date), the claims of each week and, if you are a legend with a card, the link between your account and your card'),
+    where: ['user_cards', 'card_claims', 'legend_cards'],
+    why: b('Mostrar a sua coleção no perfil, não repetir cartas, limitar os resgates da semana e dar a cópia nº 0 e o broche Lenda', 'Showing your collection on your profile, never repeating cards, limiting the weekly claims and giving copy no. 0 and the Legend badge'),
+    retention: b('Até você excluir a conta (a ligação com a carta some e a carta continua no catálogo)', 'Until you delete the account (the link to the card is removed and the card stays in the catalog)'),
   },
   {
     what: b('Identificador aleatório do navegador (só o hash chega ao servidor)', 'Random browser identifier (only its hash reaches the server)'),

@@ -14,7 +14,7 @@ describe('portão do celular (OG-417, D-80)', () => {
   it('partida no celular (experimental): só o /play do "Jogar agora"', () => {
     expect(isPortalPath('/play')).toBe(true);
   });
-  it('moderação no celular: só as seis abas de moderação (OG-427)', () => {
-    expect([...PHONE_ADMIN_TABS].sort()).toEqual(['audit', 'bans', 'clans', 'feedback', 'reports', 'rooms']);
+  it('moderação no celular: as seis abas de moderação e a consulta das cartas (OG-427, OG-573)', () => {
+    expect([...PHONE_ADMIN_TABS].sort()).toEqual(['audit', 'bans', 'cards', 'clans', 'feedback', 'reports', 'rooms']);
   });
 });
