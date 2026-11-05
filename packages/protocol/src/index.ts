@@ -10,3 +10,4 @@ export * from './replay.js';
 export * from './colors.js';
 export * from './emblem.js';
 export * from './legend-cards.js';
+export * from './legend-card-art.js';

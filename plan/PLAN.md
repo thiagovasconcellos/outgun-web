@@ -1067,7 +1067,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-580](cards/OG-580-cartas-recompensa-da-lenda.md) | Recompensa da lenda (broche, destaque, marco) | E18 | 3 | Should | S61 | OG-576, OG-578 | Concluído |
 | [OG-581](cards/OG-581-cartas-importacao-das-85.md) | Importação das 85 cartas | E18 | 3 | Must | S61 | OG-570, OG-571 | Concluído |
 | [OG-582](cards/OG-582-cartas-premio-da-outcup.md) | Carta alta para a dupla campeã da OutCup | E18 | 3 | Could | — | OG-576, OG-528 | Backlog |
-| [OG-583](cards/OG-583-cartas-imagem-png.md) | Imagem PNG da carta (servidor) | E18 | 3 | Must | S62 | OG-572 | Pronto |
+| [OG-583](cards/OG-583-cartas-imagem-png.md) | Imagem PNG da carta (servidor) | E18 | 3 | Must | S62 | OG-572 | Em revisão |
 | [OG-584](cards/OG-584-steam-ligar-conta.md) | Ligar a conta Steam (app desktop) | E18 | 5 | Must | S62 | OG-328, OG-396 | Pronto |
 | [OG-585](cards/OG-585-steam-itens-das-cartas.md) | Itens da Steam gerados do catálogo | E18 | 3 | Must | S62 | OG-583 | Pronto |
 | [OG-586](cards/OG-586-steam-entrega-no-inventario.md) | Entrega no inventário Steam | E18 | 3 | Must | S62 | OG-584, OG-585, OG-576 | Pronto |

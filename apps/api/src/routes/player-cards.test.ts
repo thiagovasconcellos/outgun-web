@@ -49,6 +49,14 @@ describe.skipIf(!pgAdminUrl)('coleção e página da carta (OG-578/579)', () => 
     expect((await get('/cards/legends', false)).json().legends).toEqual([{ username: 'Jogador1', nick: 'SLAN', class: 'especial' }]);
   });
 
+  it('imagem PNG pública da carta, sem ficha', async () => {
+    const r = await get('/cards/spinal.png', false);
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toBe('image/png');
+    expect(r.rawPayload.subarray(1, 4).toString()).toBe('PNG');
+    expect((await get('/cards/nada.png', false)).statusCode).toBe(404);
+  });
+
   it('página: quem tem lê tudo; quem não tem recebe 403 sem a ficha', async () => {
     const ok = (await get('/cards/slan')).json();
     expect(ok.card.bio).toBe('Bio de SLAN');
