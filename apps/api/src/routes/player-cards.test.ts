@@ -9,6 +9,7 @@ import { legendCards, userCards, users } from '../db/schema.js';
 import { seed } from '../db/seed.js';
 import { MemoryMailer } from '../mail/mailer.js';
 import { createTestDatabase, pgAdminUrl, type TestDatabase } from '../test/db.js';
+import { warmCardPngs } from '../legend-card-png-cache.js';
 
 const ORIGIN = 'http://localhost:5173';
 
@@ -55,6 +56,17 @@ describe.skipIf(!pgAdminUrl)('coleção e página da carta (OG-578/579)', () => 
     expect(r.headers['content-type']).toBe('image/png');
     expect(r.rawPayload.subarray(1, 4).toString()).toBe('PNG');
     expect((await get('/cards/nada.png', false)).statusCode).toBe(404);
+  });
+
+  it('as imagens ficam prontas antes do primeiro pedido, só uma vez, e sem as cartas inativas (OG-588)', async () => {
+    await warmCardPngs(t.db, { pauseMs: 0 });
+    expect(await warmCardPngs(t.db, { pauseMs: 0 })).toBe(0);
+    const [card] = await t.db.select().from(legendCards).where(eq(legendCards.slug, 'spinal'));
+    await t.db.update(legendCards).set({ active: false, revision: card!.revision + 100 }).where(eq(legendCards.id, card!.id));
+    expect(await warmCardPngs(t.db, { pauseMs: 0 })).toBe(0);
+    await t.db.update(legendCards).set({ active: true }).where(eq(legendCards.id, card!.id));
+    expect(await warmCardPngs(t.db, { pauseMs: 0 })).toBe(1);
+    await t.db.update(legendCards).set({ active: card!.active, revision: card!.revision }).where(eq(legendCards.id, card!.id));
   });
 
   it('página: quem tem lê tudo; quem não tem recebe 403 sem a ficha', async () => {
