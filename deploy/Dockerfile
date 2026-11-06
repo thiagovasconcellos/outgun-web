@@ -6,7 +6,7 @@
 #   docker build -f deploy/Dockerfile --target web .
 # Node 22 em Debian: o uWebSockets.js só tem binários para glibc (ABI 127 no Node 22).
 
-FROM node:22.20.0-bookworm-slim AS base
+FROM node:26.12.1-bookworm-slim AS base
 ENV CI=1 PNPM_HOME=/pnpm
 # o corepack do Node 22 não entende o pacote do pnpm 12: instala a versão do packageManager direto
 RUN npm install -g pnpm@12.11.2
@@ -32,7 +32,7 @@ RUN pnpm --filter @outgun/api deploy --prod --legacy /out/api \
  && find /out/game-server -name 'uws_*.node' ! -name 'uws_linux_*_127.node' -delete
 
 # --- API ---
-FROM node:22.20.0-bookworm-slim AS api
+FROM node:26.12.1-bookworm-slim AS api
 ENV NODE_ENV=production PORT=7800 MIGRATE=0 MAPS_DIR=/app/maps
 WORKDIR /app
 COPY --from=build --chown=node:node /out/api /app
@@ -44,7 +44,7 @@ STOPSIGNAL SIGTERM
 CMD ["node", "dist/main.js"]
 
 # --- game server ---
-FROM node:22.20.0-bookworm-slim AS game-server
+FROM node:26.12.1-bookworm-slim AS game-server
 ENV NODE_ENV=production PORT=7700 MAPS_DIR=/app/maps MAPGEN_DIR=/app/mapgen REPLAY_DIR=/data/replays
 WORKDIR /app
 COPY --from=build --chown=node:node /out/game-server /app
