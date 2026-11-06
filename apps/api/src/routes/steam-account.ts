@@ -3,9 +3,9 @@
 // (chave de publicador) e liga o SteamID à conta. Ao ligar, as cartas que a pessoa já tem entram na
 // fila do inventário Steam (OG-586). Desligar apaga o SteamID; os itens já entregues ficam na Steam.
 import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq, inArray, ne } from 'drizzle-orm';
 import type { AppDeps, Services } from '../app.js';
-import { queueSteamGrants, steamGrantSummary } from '../card-steam-grants.js';
+import { queueSteamGrants, retryFailedSteamGrants, steamGrantSummary } from '../card-steam-grants.js';
 import { cardSteamGrants, users } from '../db/schema.js';
 import type { SteamApi } from '../steam-web-api.js';
 import { ErrorSchema } from './schemas.js';
@@ -47,8 +47,10 @@ export function steamAccountRoutes({ database }: AppDeps, { sessions }: Services
           // um SteamID numa conta só: a última que ligou fica com ele
           await tx.update(users).set({ steamId: null, steamLinkedAt: null }).where(and(eq(users.steamId, steamId!), ne(users.id, user.id)));
           await tx.update(users).set({ steamId, steamLinkedAt: new Date() }).where(eq(users.id, user.id));
-          // entregas pendentes de outro SteamID (troca de conta Steam) passam para o novo
-          await tx.update(cardSteamGrants).set({ steamId }).where(and(eq(cardSteamGrants.userId, user.id), eq(cardSteamGrants.status, 'pending')));
+          // entregas ainda não feitas de outro SteamID (troca de conta Steam) passam para o novo
+          await tx.update(cardSteamGrants).set({ steamId }).where(and(eq(cardSteamGrants.userId, user.id), inArray(cardSteamGrants.status, ['pending', 'failed'])));
+          // religar é a saída de quem ficou com entrega presa (OG-587)
+          await retryFailedSteamGrants(tx, user.id);
           await queueSteamGrants(tx, user.id);
         });
         return { linked: true, available: true, steamId, cards: await steamGrantSummary(db, user.id) };
@@ -59,7 +61,8 @@ export function steamAccountRoutes({ database }: AppDeps, { sessions }: Services
       const user = await sessions.current(request);
       if (!user) return reply.code(401).send({ error: 'unauthorized', message: 'sign in first' });
       await db.update(users).set({ steamId: null, steamLinkedAt: null }).where(eq(users.id, user.id));
-      await db.delete(cardSteamGrants).where(and(eq(cardSteamGrants.userId, user.id), eq(cardSteamGrants.status, 'pending')));
+      // o que não foi entregue some; religar põe de novo na fila (OG-587)
+      await db.delete(cardSteamGrants).where(and(eq(cardSteamGrants.userId, user.id), inArray(cardSteamGrants.status, ['pending', 'failed'])));
       return reply.code(204).send(null);
     });
   };

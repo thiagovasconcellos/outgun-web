@@ -1,14 +1,39 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Entrega das cartas no inventário Steam (OG-586, D-95, RN-CRT-10): cada carta de quem tem a conta
 // Steam ligada vira uma entrega pendente; um relógio da API entrega com `AddItem` e tenta de novo com
-// espera crescente. Falha da Steam nunca afeta o resgate.
-import { and, asc, count, eq, isNull, lte } from 'drizzle-orm';
+// espera crescente. Falha da Steam nunca afeta o resgate. Esgotadas as tentativas, a entrega descansa
+// como `failed` e volta à fila depois de um dia, ao religar a conta ou pela CLI (OG-587).
+import { and, asc, count, eq, exists, isNull, lte, sql, type SQL } from 'drizzle-orm';
 import type { Db } from './db/client.js';
 import { cardSteamGrants, legendCards, userCards, users } from './db/schema.js';
 import { cardItemDef, type SteamApi } from './steam-web-api.js';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 const MAX_ATTEMPTS = 8;
+/** Descanso de uma entrega `failed` antes de voltar sozinha à fila (OG-587). */
+const FAILED_REST_MS = 24 * 60 * 60_000;
+
+/**
+ * Devolve à fila as entregas `failed` que atendem `filter`, com as tentativas zeradas. Só as do SteamID
+ * ligado à conta hoje: nada vai para uma conta Steam que a pessoa já desligou ou que ligou em outra conta.
+ */
+async function requeueFailed(tx: Db | Tx, now: Date, filter?: SQL): Promise<number> {
+  const stillLinked = tx
+    .select({ one: sql`1` })
+    .from(users)
+    .where(and(eq(users.id, cardSteamGrants.userId), eq(users.steamId, cardSteamGrants.steamId)));
+  const rows = await tx
+    .update(cardSteamGrants)
+    .set({ status: 'pending', attempts: 0, nextAt: now, lastError: null })
+    .where(and(eq(cardSteamGrants.status, 'failed'), exists(stillLinked), filter))
+    .returning({ cardId: cardSteamGrants.cardId });
+  return rows.length;
+}
+
+/** Devolve à fila, já, as entregas `failed` de uma conta ou de todas (ao religar e na CLI, OG-587). */
+export function retryFailedSteamGrants(tx: Db | Tx, userId?: string, now = new Date()): Promise<number> {
+  return requeueFailed(tx, now, userId ? eq(cardSteamGrants.userId, userId) : undefined);
+}
 
 /** Põe na fila as cartas da conta que ainda não foram para a Steam (no resgate e ao ligar a conta). */
 export async function queueSteamGrants(tx: Db | Tx, userId: string, cardIds?: readonly number[]): Promise<number> {
@@ -29,6 +54,7 @@ export async function queueSteamGrants(tx: Db | Tx, userId: string, cardIds?: re
 /** Um passo do relógio: entrega até `limit` pendentes vencidas. */
 export async function deliverSteamGrants(db: Db, steam: SteamApi | null, now = new Date(), limit = 20): Promise<{ done: number; failed: number }> {
   if (!steam) return { done: 0, failed: 0 };
+  await requeueFailed(db, now, lte(cardSteamGrants.nextAt, now));
   const due = await db
     .select()
     .from(cardSteamGrants)
@@ -46,10 +72,11 @@ export async function deliverSteamGrants(db: Db, steam: SteamApi | null, now = n
     } catch (e) {
       const attempts = g.attempts + 1;
       // 1, 2, 4, 8... minutos, até 8 tentativas
-      const next = new Date(now.getTime() + 60_000 * 2 ** Math.min(attempts - 1, 10));
+      const exhausted = attempts >= MAX_ATTEMPTS;
+      const next = new Date(now.getTime() + (exhausted ? FAILED_REST_MS : 60_000 * 2 ** Math.min(attempts - 1, 10)));
       await db
         .update(cardSteamGrants)
-        .set({ attempts, nextAt: next, lastError: String(e).slice(0, 300), ...(attempts >= MAX_ATTEMPTS ? { status: 'failed' as const } : {}) })
+        .set({ attempts, nextAt: next, lastError: String(e).slice(0, 300), ...(exhausted ? { status: 'failed' as const } : {}) })
         .where(key);
       failed++;
     }
@@ -63,5 +90,3 @@ export async function steamGrantSummary(db: Db, userId: string): Promise<{ done:
   const n = (s: string) => Number(rows.find((r) => r.status === s)?.n ?? 0);
   return { done: n('done'), total: n('done') + n('pending') + n('failed') };
 }
-
-

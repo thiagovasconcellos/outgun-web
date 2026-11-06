@@ -10,6 +10,7 @@ import { ensureAppRole, ensureMonitorRole } from './db/app-role.js';
 import { seed } from './db/seed.js';
 import { importMaps } from './map-import.js';
 import { importLegendCards } from './legend-card-import.js';
+import { retryFailedSteamGrants } from './card-steam-grants.js';
 import { steamItemDefs } from './steam-itemdefs.js';
 import { fileURLToPath } from 'node:url';
 import { nativeMapsDir, seedMaps } from './map-catalog.js';
@@ -161,6 +162,15 @@ try {
     const defs = await steamItemDefs(database.db, config.webUrl);
     writeFileSync(arg2, JSON.stringify(defs, null, 2));
     console.log(`${defs.items.length} itens em ${arg2}`);
+  } else if (command === 'cards' && arg1 === 'steam-retry') {
+    // OG-587: node dist/cli.js cards steam-retry [USUÁRIO] — devolve à fila as entregas que esgotaram as tentativas
+    const [user] = arg2 ? await database.db.select({ id: users.id }).from(users).where(eq(users.usernameKey, usernameKey(arg2))) : [];
+    if (arg2 && !user) {
+      console.error(`conta não encontrada: ${arg2}`);
+      process.exitCode = 1;
+    } else {
+      console.log(`${await retryFailedSteamGrants(database.db, user?.id)} entregas de volta à fila`);
+    }
   } else if (command === 'cards' && arg1 === 'import' && arg2) {
     // OG-581: node dist/cli.js cards import ARQUIVO.json [--dry-run] [--note TEXTO] (o arquivo fica fora do repo, RN-CRT-08)
     const flags = process.argv.slice(5);
