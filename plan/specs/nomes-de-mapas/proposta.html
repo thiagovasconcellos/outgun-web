@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nomes dos mapas: achados e perguntas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Direção: boletim técnico do jogo. Vermelho = nome antigo, azul = nome novo, as cores das duas equipes do Outgun. */
+:root {
+  --bg: #f1f3f6; --panel: #ffffff; --ink: #161b24; --muted: #566072; --line: #d6dbe3;
+  --red: #b3261e; --blue: #1b5fc1; --red-bg: #fbeceb; --blue-bg: #e9f0fb; --good: #1c7a4b; --warn: #94600a; --warn-bg: #fbf2df;
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif; --body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --mono: "IBM Plex Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151c; --panel: #1a2029; --ink: #e8ecf2; --muted: #9aa5b5; --line: #2e3744;
+    --red: #ff8a80; --blue: #7fb2ff; --red-bg: #33201f; --blue-bg: #1b2a40; --good: #5fd19b; --warn: #e8b95c; --warn-bg: #352b17; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151c; --panel: #1a2029; --ink: #e8ecf2; --muted: #9aa5b5; --line: #2e3744;
+  --red: #ff8a80; --blue: #7fb2ff; --red-bg: #33201f; --blue-bg: #1b2a40; --good: #5fd19b; --warn: #e8b95c; --warn-bg: #352b17; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); }
+main { max-width: 980px; margin: 0 auto; padding: 32px 20px 72px; display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); font-weight: 800; }
+h2 { font-size: 25px; font-weight: 800; }
+h3 { font-size: 17px; font-weight: 700; }
+p { margin: 0; max-width: 68ch; }
+section { display: grid; gap: 16px; }
+header { display: grid; gap: 12px; }
+.lead { font-size: 18px; }
+.muted { color: var(--muted); }
+small, .small { font-size: 14px; }
+code { font: 600 .92em var(--mono); overflow-wrap: anywhere; }
+.old { color: var(--red); }
+.new { color: var(--blue); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.tile { background: var(--panel); border: 1px solid var(--line); padding: 14px; display: grid; gap: 2px; align-content: start; }
+.tile b { font: 800 32px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.tile span { font-size: 14px; color: var(--muted); }
+.panel { background: var(--panel); border: 1px solid var(--line); padding: 18px; display: grid; gap: 12px; }
+.verdict { border-left: 5px solid var(--good); }
+.scroll { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 600; color: var(--muted); font-size: 13px; }
+tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; }
+.wrap td { white-space: normal; min-width: 150px; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 3px; background: var(--blue-bg); color: var(--blue); }
+.chip.same { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+button { font: 600 14px var(--body); padding: 8px 14px; border: 1px solid var(--blue); background: var(--blue); color: var(--panel); cursor: pointer; border-radius: 3px; }
+button.ghost { background: transparent; color: var(--blue); }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+label { cursor: pointer; }
+input[type=text], textarea { width: 100%; font: 400 15px var(--body); padding: 10px 12px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 3px; }
+#sim-input { font: 600 18px var(--mono); }
+.result { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.result > div { display: grid; gap: 2px; }
+.status { padding: 10px 12px; font-size: 15px; border-left: 4px solid var(--good); background: var(--bg); }
+.status.conflict { border-color: var(--red); background: var(--red-bg); }
+.status.warn { border-color: var(--warn); background: var(--warn-bg); }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.examples button { padding: 4px 10px; font: 400 13px var(--mono); }
+.finding { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 14px 0; border-top: 1px solid var(--line); }
+.finding:first-of-type { border-top: 0; padding-top: 0; }
+.finding:last-of-type { padding-bottom: 0; }
+.q { background: var(--panel); border: 1px solid var(--line); padding: 18px; display: grid; gap: 10px; }
+.q h3 { display: flex; gap: 10px; align-items: baseline; }
+.q h3 span { font: 600 14px var(--mono); color: var(--blue); flex: none; }
+.opts { display: grid; gap: 6px; }
+.opts label { display: grid; grid-template-columns: 20px 1fr; gap: 8px; align-items: start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 3px; }
+.opts label:has(input:checked) { border-color: var(--blue); background: var(--blue-bg); }
+.opts input { margin: 4px 0 0; }
+.rec { font-size: 12px; font-weight: 600; color: var(--good); white-space: nowrap; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+#answers { font: 400 14px/1.5 var(--mono); min-height: 240px; }
+footer { font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>Nomes dos mapas: achados e perguntas</h1>
+  <p class="lead">Nosf, conferimos a sua proposta de nomenclatura contra o código e contra o banco de produção. A direção está certa e o plano é fazer tudo, inclusive o <code>snake_case</code>. Antes de virar cards, precisamos da sua resposta em 10 pontos que a proposta deixa em aberto.</p>
+  <p class="small muted">Preparado pelo Claude para o Ozzy. Banco lido em 06/11/2026 às 00:08 (Brasília), somente leitura, versão 2.63.0 no ar. Nada foi alterado. Todos os números e nomes desta página são reais.</p>
+</header>
+
+<section aria-labelledby="s-resumo">
+  <h2 id="s-resumo">O que o banco mostra</h2>
+  <div class="tiles">
+    <div class="tile"><b>31</b><span>mapas no catálogo, como a proposta previa (20 nativos, 2 do painel, 9 importados)</span></div>
+    <div class="tile"><b class="new">13</b><span>chaves mudam e 18 já estão na forma certa</span></div>
+    <div class="tile"><b>223</b><span>de 332 partidas guardam uma chave que vai virar alias</span></div>
+    <div class="tile"><b class="old">104</b><span>partidas com título antigo gravado: <code>2 versus 2 (Duel)</code> 53, <code>3x3 (Duel)</code> 42, <code>Pari2</code> 9</span></div>
+    <div class="tile"><b>0</b><span>partidas sem revisão ligada, e 0 com título diferente do da revisão</span></div>
+  </div>
+</section>
+
+<section aria-labelledby="s-pari2">
+  <h2 id="s-pari2">O caso Pari2 foi registrado corretamente</h2>
+  <div class="panel verdict">
+    <p><strong>Não há partida em Pari 2 depois da atualização.</strong> A importação das revisões entrou em 04/11 às 17:12. A última partida nesse mapa terminou 18 horas antes, em 03/11 às 22:54, na revisão 1, cujo título é mesmo <code>Pari2</code>.</p>
+    <p>Portanto, o perfil mostrou o que a partida gravou. Nenhuma correção de dados é necessária. A sua regra continua valendo: com o título oficial atual, essas 9 linhas passam a mostrar <strong>Pari 2</strong>, e a revisão 1 fica indicada como a jogada.</p>
+    <p class="small muted">Testamos também uma hipótese do Claude: sala fixa criada antes de sincronizar com o catálogo, jogando o arquivo antigo. Nenhuma partida confirma isso. O caminho existe no código, mas hoje a sala principal começa em The Blunt, que nunca teve revisão, e isso esconderia o efeito. Entra como correção preventiva.</p>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Partida</th><th>Modo</th><th>Terminou (Brasília)</th><th class="num">Revisão</th><th>Título gravado</th></tr></thead>
+      <tbody>
+        <tr><td><code>f006ac90</code></td><td>Casual</td><td>26/10 23:49</td><td class="num">1</td><td>Pari2</td></tr>
+        <tr><td><code>23884eb8</code></td><td>Ranked 4x4</td><td>27/10 23:22</td><td class="num">1</td><td>Pari2</td></tr>
+        <tr><td><code>9045a4c2</code></td><td>Casual</td><td>29/10 12:32</td><td class="num">1</td><td>Pari2</td></tr>
+        <tr><td><code>25a7baba</code></td><td>Casual</td><td>30/10 20:29</td><td class="num">1</td><td>Pari2</td></tr>
+        <tr><td><code>b02d9948</code></td><td>Casual</td><td>31/10 23:54</td><td class="num">1</td><td>Pari2</td></tr>
+        <tr><td><code>58d1798d</code></td><td>Ranked 2x2</td><td>01/11 20:31</td><td class="num">1</td><td>Pari2</td></tr>
+        <tr><td><code>dae5f533</code></td><td>Ranked 2x2</td><td>02/11 18:39</td><td class="num">1</td><td>Pari2</td></tr>
+        <tr><td><code>cc2ee647</code></td><td>Casual</td><td>03/11 21:12</td><td class="num">1</td><td>Pari2</td></tr>
+        <tr><td><code>161e0ec7</code></td><td>Ranked 5x5</td><td>03/11 22:54</td><td class="num">1</td><td>Pari2</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="s-sim">
+  <h2 id="s-sim">Teste a regra de chave</h2>
+  <p>Digite um <code>P title</code> e veja a chave e o que aconteceria num envio. O simulador usa o catálogo real e as respostas recomendadas das perguntas abaixo, então parte do comportamento ainda depende de você.</p>
+  <div class="panel">
+    <label for="sim-input"><strong>P title</strong></label>
+    <input id="sim-input" type="text" value="Meu_Mapa" maxlength="90" autocomplete="off" spellcheck="false">
+    <div class="examples" id="sim-examples"></div>
+    <div class="result">
+      <div><span class="small muted">Chave gerada</span><code id="sim-key" class="new"></code></div>
+      <div><span class="small muted">Título mostrado na tela</span><strong id="sim-title"></strong></div>
+    </div>
+    <div class="status" id="sim-status" role="status"></div>
+  </div>
+</section>
+
+<section aria-labelledby="s-catalogo">
+  <div class="toolbar">
+    <h2 id="s-catalogo">Catálogo real, antes e depois</h2>
+    <label class="small"><input type="checkbox" id="only-changed"> Mostrar só as 13 chaves que mudam</label>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr><th class="num">ID</th><th>Chave hoje</th><th>Chave nova</th><th>Título ativo</th><th>Origem</th><th class="num">Revisões</th><th class="num">Partidas</th></tr></thead>
+      <tbody id="catalog"></tbody>
+    </table>
+  </div>
+  <p class="small muted">Os IDs ficam iguais. As suas dúvidas da seção 4 estão respondidas: <code>Iron Man</code> tem o título Iron Man e vira <code>iron_man</code>. <code>purgatory</code> tem o título Purgatory e fica como está. <code>attack3</code> vira <code>attack_3</code> por exceção explícita, porque a regra aplicada ao título atual <code>Attack3</code> daria <code>attack3</code>.</p>
+</section>
+
+<section aria-labelledby="s-naocita">
+  <h2 id="s-naocita">O que a proposta não cita</h2>
+  <p>A sua lista de precauções está correta, mas faltavam estes pontos. Eles são trabalho nosso e não pedem resposta.</p>
+  <div class="panel">
+    <div class="finding"><h3>O servidor pode não iniciar se o <code>.env</code> for atualizado</h3><p>A sala principal nasce com <code>ROTATION</code>, antes de falar com o catálogo, e procura os nomes na pasta de arquivos. Só com chaves novas nessa variável, nenhum mapa seria encontrado e o servidor pararia ao subir (<code>main.ts:153</code>). A busca precisa passar a reconhecer os nomes novos antes da troca.</p></div>
+    <div class="finding"><h3>A sala de treino seria recusada</h3><p>Os 5 mapas de treino estão fixos no código com as chaves antigas, e a API exige igualdade exata (<code>rooms.ts:270</code>). Todos os 5 mudam de chave.</p></div>
+    <div class="finding"><h3>Nomes antigos somem das rotações sem aviso</h3><p>Depois de sincronizar, o servidor esconde os arquivos cujo nome saiu do catálogo, e a rotação descarta o que não encontra. As 5 rotações salvas contêm chaves que mudam: Casual 13, 2x2 3, 3x3 2, 4x4 3, 5x5 3. A troca precisa ser atômica e preservar a ordem.</p></div>
+    <div class="finding"><h3>Nativos seriam baixados em vez de lidos da pasta</h3><p>Cliente e servidor procuram o arquivo local pelo nome. Com a chave nova, passariam a baixar o texto a cada vez. Funciona, mas vamos procurar pelo CRC.</p></div>
+    <div class="finding"><h3>A busca por nome antigo não basta do jeito que está</h3><p><code>findMap</code> compara a chave com exatidão e o alias só sem maiúsculas. A proposta pede comparação normalizada, com índice único para resistir a envios simultâneos. A checagem do painel também recusaria chaves antigas com <code>unknown_map</code>.</p></div>
+  </div>
+  <h3>Pontos da proposta que ficam menores</h3>
+  <div class="grid2">
+    <div class="panel"><p><strong>Lista de salas:</strong> <code>room.map</code> já recebe o título do mapa, não a chave (<code>rooms.ts:172</code>). O problema está no seletor de Criar sala e em Rotações, que usam a chave.</p></div>
+    <div class="panel"><p><strong>Marcos e estatísticas:</strong> "jogou em N mapas" e o radar já agrupam por <code>map_id</code>, então a troca de chave não conta o mesmo mapa duas vezes. Falta só o rótulo do radar, que hoje vem de <code>max(mapTitle)</code>.</p></div>
+    <div class="panel"><p><strong>Ligação das partidas:</strong> todas as 332 têm <code>map_id</code> e revisão (6 com revisão inferida). Nenhuma fica ambígua na migração, e não haverá caso para conferir à mão.</p></div>
+    <div class="panel"><p><strong>Aliases:</strong> hoje só existe <code>Mooca</code>, que vira redundante. A migração cria 13 novos, e a simulação pode partir do script de ensaio <code>map-rehearsal.sh</code>, que já existe no repositório.</p></div>
+  </div>
+  <h3>Observações fora do escopo</h3>
+  <div class="panel">
+    <div class="finding"><p><strong>Coliseu tem 0 partidas em 332</strong>, apesar de estar na rotação Casual. Todos os outros nativos têm pelo menos 4. Ainda não sabemos o motivo, e vamos investigar à parte.</p></div>
+    <div class="finding"><p><strong>Os 9 mapas novos têm 0 partidas.</strong> A rotação Casual segue a ordem da lista e eles estão no fim das 31 posições. As partidas desde a importação parecem seguir essa sequência. Ver P10.</p></div>
+    <div class="finding"><p><strong>Autor grafado de duas formas:</strong> o sobrenome do Ozzy está sem um "c" em Iron Man e completo em Purgatory. Os créditos também variam entre <code>coiote &amp; Nosferatu</code> e <code>coiote, Rep &amp; Kiss</code>. Corrigir exige revisão nova do TXT, então não entra na migração.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="s-perguntas">
+  <h2 id="s-perguntas">Perguntas para o Nosf</h2>
+  <p>Marque as respostas e copie o texto no fim da página para mandar no grupo. Vêm marcadas as opções que o Claude recomenda.</p>
+  <form id="form" class="grid2" style="grid-template-columns: minmax(0,1fr)"></form>
+</section>
+
+<section aria-labelledby="s-respostas">
+  <h2 id="s-respostas">Suas respostas</h2>
+  <div class="panel">
+    <textarea id="answers" readonly aria-labelledby="s-respostas"></textarea>
+    <div class="toolbar"><button type="button" id="copy">Copiar respostas</button><span class="small muted" id="copy-status" role="status"></span></div>
+  </div>
+</section>
+
+<section aria-labelledby="s-plano">
+  <h2 id="s-plano">O que acontece depois</h2>
+  <div class="grid2">
+    <div class="panel"><h3>Etapa 1, sem trocar chaves existentes</h3><p>Título oficial atual em todas as telas por um resolvedor central. Regra única de chave e conflito explícito para mapas novos, sem <code>Gavea 2</code>. Código passa a aceitar nomes antigos e novos.</p></div>
+    <div class="panel"><h3>Etapa 2, migração das 13 chaves</h3><p>Ensaio numa cópia do banco com relatório para o Ozzy conferir. Backup, depois uma transação única: chaves, aliases e rotações. <code>matches.map</code>, TXT e CRC ficam intactos.</p></div>
+  </div>
+  <p class="small muted">Em ambas as etapas, o Ozzy só aprova e implanta. Com as respostas, os cards entram no Backlog para o Ozzy agendar.</p>
+</section>
+
+<footer>Outgun Web. Revisão da proposta "Nomenclatura consistente dos mapas". Página privada até o Ozzy compartilhar.</footer>
+</main>
+
+<script id="logic">
+const CATALOG = [
+  [1,'2 versus 2 (duel)','2_versus_2','2 versus 2','nativo',2,56],[2,'3x3 (duel)','3x3','3x3','nativo',2,49],[3,'4x4','4x4','4x4','nativo',1,26],
+  [4,'6_askelta','6_askelta','6 Askelta','nativo',1,14],[5,'attack','attack','Attack','nativo',2,17],[6,'attack3','attack_3','Attack3','nativo',1,14],
+  [7,'cebs park','cebs_park','Cebs Park','nativo',2,28],[8,'coliseu','coliseu','Coliseu','nativo',1,0],[9,'fabiana cecin','fabiana_cecin','Fabiana Cecin','nativo',2,8],
+  [10,'ipiranga','ipiranga','Ipiranga','nativo',2,8],[11,'larhi','larhi','Larhi','nativo',2,7],[12,'lola','lola','Lola','nativo',1,4],
+  [13,'mooca','mooca','Mooca','nativo',3,7],[14,'outgun1','the_blunt','The Blunt','nativo',1,27],[15,'pari','pari','Pari','nativo',2,6],
+  [16,'pari2','pari_2','Pari 2','nativo',2,9],[17,'sisso','sisso','Sisso','nativo',2,8],[18,'the blunt mini','the_blunt_mini','The Blunt Mini','nativo',2,7],
+  [19,'the cover 4','the_cover_4','The Cover 4','nativo',2,22],[20,'verde','verde','Verde','nativo',2,8],[21,'Iron Man','iron_man','Iron Man','painel',1,3],
+  [23,'purgatory','purgatory','Purgatory','painel',1,4],[56,'attack 2','attack_2','Attack 2','importado',1,0],[57,'bauru','bauru','Bauru','importado',1,0],
+  [58,'dyeh','dyeh','Dyeh','importado',1,0],[59,'gavea','gavea','Gávea','importado',1,0],[60,'luz','luz','Luz','importado',1,0],
+  [61,'rocinha','rocinha','Rocinha','importado',1,0],[62,'the small ud','the_small_ud','The Small UD','importado',1,0],[63,'the ud','the_ud','The UD','importado',1,0],
+  [64,'vidigal','vidigal','Vidigal','importado',1,0],
+];
+const TRANSLIT = { 'ß': 'ss', 'æ': 'ae', 'ø': 'o', 'ð': 'd', 'þ': 'th' };
+function mapKeyOf(title) {
+  return title.toLowerCase().replace(/[ßæøðþ]/g, (c) => TRANSLIT[c]).normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/['’`´]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+function checkTitle(title) {
+  const key = mapKeyOf(title);
+  if (!key) return { key: '', level: 'conflict', text: 'Título recusado: não sobra nenhuma letra ou número para formar a chave.' };
+  if (key.length > 64) return { key, level: 'conflict', text: 'Título recusado: a chave passaria de 64 caracteres. Nada é cortado sem avisar.' };
+  if (/^mapgen_\d+$/.test(key) || key.startsWith('random_map') || key === 't4') return { key, level: 'conflict', text: 'Título recusado: essa chave é reservada para mapas gerados ou para o Treino de mira (P8).' };
+  const hit = CATALOG.find((m) => m[2] === key);
+  if (hit) return { key, level: 'conflict', text: `Conflito com ${hit[3]}. Opções: enviar uma nova revisão desse mapa ou corrigir o P title (P1). Não se cria variante numerada.` };
+  const alias = CATALOG.find((m) => mapKeyOf(m[1]) === key);
+  if (alias) return { key, level: 'conflict', text: `Conflito com ${alias[3]}: "${alias[1]}" é um nome antigo desse mapa e continua reservado. Opções: nova revisão ou corrigir o P title.` };
+  const compact = key.replace(/_/g, '');
+  const near = CATALOG.find((m) => m[2].replace(/_/g, '') === compact);
+  if (near) return { key, level: 'warn', text: `Grafia muito parecida com ${near[3]} (${near[2]}). O moderador confirma se é outro mapa (P5).` };
+  if (/_|\s{2,}/.test(title)) return { key, level: 'warn', text: 'Chave válida. Aviso: o título tem underscore ou espaços repetidos e aparece assim na tela. O moderador corrige ou confirma (P7).' };
+  return { key, level: 'ok', text: 'Mapa novo: pode ser cadastrado com essa chave.' };
+}
+const QUESTIONS = [
+  { id: 'P1', title: 'Dois mapas diferentes podem ter o mesmo título oficial?', body: 'A seção 3 oferece, no conflito, cadastrar um mapa diferente "com identificação distinta e confirmada". A seção 2 diz que a chave sai só do P title. Com o mesmo título, a chave distinta não teria de onde sair, e a tela mostraria dois mapas com nome igual.', options: [['a', 'Não. O moderador envia nova revisão ou muda o P title no TXT', true], ['b', 'Sim. O painel ganha um campo para digitar uma chave diferente, com título repetido na tela']] },
+  { id: 'P2', title: 'Uma revisão pode trocar o título para um já usado por outro mapa?', body: 'A proposta impede a colisão no cadastro, mas uma revisão de Pari 2 com P title Pari criaria dois mapas chamados Pari, com chaves distintas.', options: [['a', 'Recusar a publicação, com mensagem indicando o outro mapa', true], ['b', 'Só avisar e deixar o moderador confirmar']] },
+  { id: 'P3', title: 'Avisar quando uma revisão muda o título?', body: 'Como a tela mostra sempre o título atual, a mudança reescreve o nome em todo o histórico, inclusive em OutCups passadas, e não dá para corrigir isso nos PDFs já exportados.', options: [['a', 'Sim. O painel mostra título antigo e novo, e explica o efeito no histórico antes de publicar', true], ['b', 'Não. Publica normalmente']] },
+  { id: 'P4', title: 'Um título abandonado continua reservado?', body: 'A chave é permanente. Se The UD for renomeado para UD Arena pela revisão, a chave continua the_ud. Quem enviar depois um mapa novo chamado The UD recebe conflito, mesmo sem nenhum mapa com esse título na tela. O mesmo vale para os aliases: Pari2 e Outgun1 ficam reservados para sempre.', options: [['a', 'Sim, reservado para sempre. Evita apontar links e replays antigos para outro mapa', true], ['b', 'Não. A moderação pode liberar um nome com uma ação explícita']] },
+  { id: 'P5', title: 'Grafias que diferem só por um espaço ou uma junção contam como o mesmo mapa?', body: 'A sua regra de equivalência cobre maiúsculas, acentos e separadores trocados, mas não separadores ausentes: Iron Man dá iron_man e IronMan dá ironman. Hoje as duas chaves seriam aceitas como mapas diferentes.', options: [['a', 'Mostrar aviso e exigir confirmação do moderador. Não bloquear', true], ['b', 'Bloquear como conflito: comparar também sem nenhum separador']] },
+  { id: 'P6', title: 'Como tratar pontuação e letras sem acento separável?', body: 'A proposta diz "tratar de modo consistente" e deixa o resto em aberto. Exemplos da recomendação: Rocky\'s dá rockys, Kiss & Rep dá kiss_rep, A+B dá a_b, 3x3 (Duel) dá 3x3_duel, Bjørn dá bjorn e Straße dá strasse. Teste no simulador acima.', options: [['a', 'Apóstrofo some, o resto vira separador, ø/æ/ß/ð/þ viram letras equivalentes', true], ['b', 'Apóstrofo também vira separador: Rocky\'s dá rocky_s'], ['c', 'Outra regra (explique em comentário)']] },
+  { id: 'P7', title: 'Título com underscore ou espaços repetidos: avisar ou recusar?', body: 'A seção 2 usa os dois verbos, "avisar" e "solicitando correção". Hoje nenhum título ativo tem esse problema. Meu_Mapa geraria a chave certa, mas apareceria com underscore na tela.', options: [['a', 'Avisar e deixar o moderador confirmar', true], ['b', 'Recusar até corrigir o TXT']] },
+  { id: 'P8', title: 'Títulos que caem em chaves reservadas são recusados?', body: 'A proposta protege mapgen_* e o mapa T4 da normalização, mas não trata o caminho inverso: um mapa titulado Random Map, Mapgen 12 ou T4 geraria chave que o jogo já usa para outra coisa.', options: [['a', 'Recusar, com mensagem pedindo outro título', true], ['b', 'Liberar T4 e mover o mapa do treino para outra chave']] },
+  { id: 'P9', title: 'A chave técnica ainda aparece para o moderador?', body: 'A proposta tira a chave dos rótulos, mas ela ajuda a identificar um mapa em conflito ou ao falar de um mapa com o suporte. Na lista da aba Mapas ela aparece hoje junto ao autor.', options: [['a', 'Só no histórico do mapa e nas mensagens de conflito', true], ['b', 'Continua pequena em cada linha da aba Mapas'], ['c', 'Nunca aparece']] },
+  { id: 'P10', title: 'E os 9 mapas novos, que nunca foram jogados?', body: 'A proposta pede ordenar Rotações pelo título. Vamos aplicar isso só à lista de escolha, porque a ordem salva da Casual é a ordem de jogo, e a migração a preserva. Essa mesma ordem deixa os mapas novos no fim da fila de 31.', options: [['a', 'Manter a ordem e tratar isso à parte, fora desta proposta', true], ['b', 'Reposicionar os 9 uma vez, intercalando com os demais'], ['c', 'Embaralhar a rotação Casual']] },
+];
+if (typeof module !== 'undefined') module.exports = { mapKeyOf, checkTitle };
+</script>
+<script>
+const $ = (id) => document.getElementById(id);
+function el(tag, props = {}, ...kids) { const n = document.createElement(tag); Object.assign(n, props); n.append(...kids); return n; }
+
+function renderCatalog() {
+  const only = $('only-changed').checked;
+  $('catalog').replaceChildren(...CATALOG.filter((m) => !only || m[1] !== m[2]).map((m) => {
+    const changed = m[1] !== m[2];
+    return el('tr', {},
+      el('td', { className: 'num', textContent: m[0] }),
+      el('td', {}, el('code', { className: changed ? 'old' : '', textContent: m[1] })),
+      el('td', {}, changed ? el('code', { className: 'new', textContent: m[2] }) : el('span', { className: 'chip same', textContent: 'igual' })),
+      el('td', { textContent: m[3] }), el('td', { textContent: m[4] }),
+      el('td', { className: 'num', textContent: m[5] }), el('td', { className: 'num', textContent: m[6] }));
+  }));
+}
+$('only-changed').addEventListener('change', renderCatalog);
+
+function renderSim() {
+  const title = $('sim-input').value;
+  const r = checkTitle(title);
+  $('sim-key').textContent = r.key || '(vazia)';
+  $('sim-title').textContent = title.trim() || '(vazio)';
+  $('sim-status').textContent = r.text;
+  $('sim-status').className = 'status' + (r.level === 'ok' ? '' : ' ' + r.level);
+}
+$('sim-input').addEventListener('input', renderSim);
+['Meu_Mapa', 'meu mapa', 'Gávea', 'Pari2', 'Pari 2', 'Attack 3', 'IronMan', "Rocky's", 'Kiss & Rep', '3x3 (Duel)', 'Random Map', 'T4', '¡¡¡'].forEach((s) => {
+  $('sim-examples').append(el('button', { type: 'button', className: 'ghost', textContent: s, onclick: () => { $('sim-input').value = s; renderSim(); } }));
+});
+
+function renderQuestions() {
+  $('form').replaceChildren(...QUESTIONS.map((q) => {
+    const opts = q.options.map(([v, text, rec]) => {
+      const input = el('input', { type: 'radio', name: q.id, id: `${q.id}-${v}`, value: v, checked: !!rec });
+      input.addEventListener('change', renderAnswers);
+      const span = el('span', {}, text);
+      if (rec) span.append(' ', el('span', { className: 'rec', textContent: 'recomendada' }));
+      return el('label', { htmlFor: input.id }, input, span);
+    });
+    const note = el('input', { type: 'text', id: `${q.id}-note`, placeholder: 'Comentário (opcional)', ariaLabel: `Comentário sobre ${q.id}` });
+    note.addEventListener('input', renderAnswers);
+    return el('div', { className: 'q' }, el('h3', {}, el('span', { textContent: q.id }), q.title), el('p', { className: 'small', textContent: q.body }), el('div', { className: 'opts' }, ...opts), note);
+  }));
+}
+function renderAnswers() {
+  const lines = ['Respostas do Nosf: nomes dos mapas', ''];
+  for (const q of QUESTIONS) {
+    const v = document.querySelector(`input[name="${q.id}"]:checked`)?.value;
+    const opt = q.options.find((o) => o[0] === v);
+    const note = $(`${q.id}-note`).value.trim();
+    lines.push(`${q.id}: ${opt ? opt[1] : 'sem resposta'}${note ? ` | Comentário: ${note}` : ''}`);
+  }
+  $('answers').value = lines.join('\n');
+}
+$('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('answers').value); $('copy-status').textContent = 'Copiado. Cole no grupo.'; }
+  catch { $('answers').select(); $('copy-status').textContent = 'O navegador não deixou copiar. O texto está selecionado: use Ctrl+C.'; }
+});
+renderCatalog(); renderSim(); renderQuestions(); renderAnswers();
+</script>
+</body>
+</html>
