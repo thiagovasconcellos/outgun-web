@@ -10,6 +10,14 @@ cd "$(dirname "$0")/../.."
 command -v docker >/dev/null || export PATH="/Applications/Docker.app/Contents/Resources/bin:$PATH"
 host="${1:?uso: deploy.sh root@IP}"
 tag="$(git rev-parse --short HEAD)$(git diff --quiet HEAD -- apps packages deploy || echo -dirty)"
+
+# o beta roda a main: só sobe o commit que está no GitHub, sem mudanças locais.
+# DEPLOY_ANY_REF=1 libera outro commit numa emergência.
+if [ -z "${DEPLOY_ANY_REF:-}" ]; then
+  git fetch -q origin main
+  case "$tag" in *-dirty) echo "deploy recusado: há mudanças locais em apps, packages ou deploy" >&2; exit 1 ;; esac
+  [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] || { echo "deploy recusado: HEAD não é a origin/main (use DEPLOY_ANY_REF=1 numa emergência)" >&2; exit 1; }
+fi
 ssh_() { ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "$host" "$@"; }
 
 case "$(ssh_ uname -m)" in

@@ -2,8 +2,7 @@ name: CI
 
 on:
   push:
-    # main = v1 (correções do beta); v2 = desenvolvimento atual
-    branches: [main, v2]
+    branches: [main]
   pull_request:
 
 # Actions fixadas por SHA e token só de leitura (OG-309, OWASP CI/CD e GitHub Actions Security)

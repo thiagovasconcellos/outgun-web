@@ -136,7 +136,7 @@ for (const line of plan.split('\n')) {
 // --- Markdown do card → HTML do editor do Plane -------------------------------------------------
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const repo = 'https://github.com/thiagovasconcellos/outgun-web/blob/v2';
+const repo = 'https://github.com/thiagovasconcellos/outgun-web/blob/main';
 function inline(s) {
   return esc(s)
     .replace(/`([^`]+)`/g, '<code>$1</code>')
