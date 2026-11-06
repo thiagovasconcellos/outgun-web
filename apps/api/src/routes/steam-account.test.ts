@@ -71,11 +71,12 @@ describe.skipIf(!pgAdminUrl)('conta Steam e inventário (OG-584/586)', () => {
     expect((await call('GET', '/account/steam')).json().cards).toEqual({ done: 1, total: 1 });
   });
 
-  // OG-587: uma carta nova na fila, e a Steam fora até esgotar as 8 tentativas
+  // OG-587: uma carta nova na fila, e a Steam fora até esgotar as 8 tentativas. O nextAt vem no passado
+  // porque o padrão usa o relógio do banco, que pode estar à frente do relógio do teste
   const exhaust = async (nick: string) => {
     const [c] = await t.db.insert(legendCards).values({ slug: nick.toLowerCase(), nick, nickKey: nick, bio: 'x', class: 'classico', quote: 'q', ringColor: '#E02828', centerColor: '#00FF00' }).returning();
     await t.db.insert(userCards).values({ userId: me, cardId: c!.id, serial: 1 });
-    await t.db.insert(cardSteamGrants).values({ userId: me, cardId: c!.id, steamId: STEAM_ID, attempts: 7 });
+    await t.db.insert(cardSteamGrants).values({ userId: me, cardId: c!.id, steamId: STEAM_ID, attempts: 7, nextAt: new Date(Date.now() - 1000) });
     steamDown = true;
     await app.steamGrantsTick();
     steamDown = false;
