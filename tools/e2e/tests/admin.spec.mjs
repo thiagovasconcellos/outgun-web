@@ -43,10 +43,9 @@ test('moderação pelo painel: mute e kick numa sala ao vivo, com auditoria', as
   await admin.getByLabel('Nome de usuário').fill('Admin');
   await admin.getByLabel('Senha', { exact: true }).fill('outgun-dev');
   await admin.keyboard.press('Enter');
-  await expect(admin.locator('.ui-menu')).toContainText('Moderação');
-  await admin.locator('button.ui-menu-item', { hasText: 'Moderação' }).click();
+  await admin.getByRole('button', { name: 'Moderação' }).click();
   await expect(admin).toHaveURL(/\/admin$/);
-  const row = admin.locator('tr', { hasText: victim });
+  const row = admin.locator('.admin-roster li', { hasText: victim });
   await expect(row).toBeVisible({ timeout: 15_000 });
   await admin.screenshot({ path: prints('1-salas.png'), fullPage: true });
 
@@ -69,15 +68,14 @@ test('moderação pelo painel: mute e kick numa sala ao vivo, com auditoria', as
   await expect(audit).toContainText('mute');
   await expect(audit.locator('tr', { hasText: 'kick' }).first()).toContainText(victim);
   await admin.screenshot({ path: prints('2-auditoria.png'), fullPage: true });
-  // feedback do beta (o teste do fluxo, que roda antes, mandou um de veterano com nota 5)
   await admin.getByRole('tab', { name: 'Feedback' }).click();
-  await expect(admin.locator('.stats-section')).toContainText('Fidelidade, veteranos');
+  await expect(admin.locator('.admin-tiles')).toContainText('Fidelidade, veteranos');
   await admin.screenshot({ path: prints('4-feedback.png'), fullPage: true });
   await admin.getByRole('tab', { name: 'Convites' }).click();
   await expect(admin.locator('table')).toContainText(victim);
   await admin.screenshot({ path: prints('5-convites.png'), fullPage: true });
   await admin.getByRole('tab', { name: 'Presets' }).click();
-  await expect(admin.locator('table')).toContainText('ranked');
+  await expect(admin.locator('.admin-presets')).toContainText('ranked');
   await admin.screenshot({ path: prints('3-presets.png'), fullPage: true });
   await playerCtx.close();
   await adminCtx.close();

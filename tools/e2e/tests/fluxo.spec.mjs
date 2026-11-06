@@ -42,11 +42,8 @@ test('o cliente é servido com CSP e cabeçalhos de segurança', async ({ reques
 const menuItem = (page, label) => page.locator('button.menu-item', { hasText: label });
 // lobby no design system v2 (OG-203)
 const lobbyPlay = (page) => page.locator('.lobby').getByRole('button', { name: 'Jogar agora' });
-// tela inicial no design system v2 (OG-201)
-const homeItem = (page, label) =>
-  page.locator('button.ui-menu-item').filter({
-    has: page.locator('.ui-menu-label', { hasText: new RegExp(`^${label}$`) }),
-  });
+// botão principal da tela inicial
+const homePlay = (page) => page.locator('.home-retro-button');
 
 test('cadastro com convite, partida até o fim, feedback, histórico e ranking', async ({
   page,
@@ -88,7 +85,11 @@ test('cadastro com convite, partida até o fim, feedback, histórico e ranking',
   // 5. Feedback do beta pelo menu do jogo (OG-106): leva a sala e o mapa como contexto
   await page.keyboard.press('Escape'); // fecha o modal do fim de partida
   await expect(page.getByRole('dialog')).toBeHidden();
-  await page.keyboard.press('Escape');
+  // o Esc só abre o menu depois que o fim de partida libera o teclado: repete até abrir
+  await expect(async () => {
+    await page.keyboard.press('Escape');
+    await expect(menuItem(page, 'Enviar feedback')).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
   await menuItem(page, 'Enviar feedback').click();
   await expect(page).toHaveURL(/\/feedback\?sala=main&mapa=/);
   // nota de fidelidade: a escolha começa em "—"; ← volta para 5
@@ -111,7 +112,7 @@ test('cadastro com convite, partida até o fim, feedback, histórico e ranking',
 
   // 6. Ranking da temporada (Casual não pontua, mas a página tem de abrir com a temporada)
   await page.goto('/ranking');
-  await expect(page.locator('body')).toContainText('Só partidas ranqueadas contam');
+  await expect(page.locator('body')).toContainText('Só partidas Ranqueadas contam');
   await page.screenshot({ path: prints('7-ranking.png'), fullPage: true });
 
   // 7. Telemetria de rede (OG-108): ao sair da partida o cliente mandou o resumo anônimo
@@ -150,13 +151,13 @@ test('beta fechado: cadastro sem convite recusado; "Jogar agora" sem conta vai p
     page.locator('.ui-field', { has: page.getByLabel('Código de convite') }),
   ).toContainText('O beta fechado precisa de um código de convite.');
   await page.goto('/');
-  await homeItem(page, 'Jogar agora').click();
+  await homePlay(page).click();
   await expect(page).toHaveURL(/\/login$/);
 });
 
 test('termos, privacidade e sobre no rodapé (OG-107)', async ({ page }) => {
   await page.goto('/');
-  await page.locator('.app-footer a', { hasText: 'Privacidade' }).click();
+  await page.locator('.home-footer-legal a', { hasText: 'Privacidade' }).click();
   await expect(page).toHaveURL(/\/privacy$/);
   await expect(page.locator('.ui-prose')).toContainText(
     'O que guardamos, por quê e por quanto tempo',
@@ -170,48 +171,38 @@ test('termos, privacidade e sobre no rodapé (OG-107)', async ({ page }) => {
   await page.screenshot({ path: prints('9-sobre.png'), fullPage: true });
 });
 
-test('tela inicial: cada ação do menu, da barra e do rodapé leva à sua tela (OG-201)', async ({
-  page,
-}) => {
+test('tela inicial: cada link do rodapé e da barra leva à sua tela (OG-201)', async ({ page }) => {
   const home = async () => {
     await page.goto('/');
-    await expect(homeItem(page, 'Jogar agora')).toBeFocused();
+    await expect(homePlay(page)).toBeVisible();
   };
   for (const [label, url] of [
     ['Salas', /\/rooms$/],
-    ['Criar sala privada', /\/login$/],
     ['Ranking', /\/ranking$/],
+    ['OutCup', /\/outcup$/],
+    ['Jogadores', /\/players$/],
+    ['Clãs', /\/clans$/],
     ['Replays', /\/replays$/],
     ['Opções', /\/options$/],
+    ['Enviar feedback', /\/feedback\?tipo=bug$/],
     ['Ajuda', /\/help$/],
-    ['Créditos', /\/credits$/],
-    ['Entrar', /\/login$/],
   ]) {
     await home();
-    await homeItem(page, label).click();
+    await page.locator('.home-footer-nav a', { hasText: label }).click();
     await expect(page, label).toHaveURL(url);
   }
-  // teclado: atalho numérico e Enter, como nos menus do original
+  // nas outras telas, a barra superior leva de volta
   await home();
-  await page.keyboard.press('4');
-  await expect(page).toHaveURL(/\/ranking$/);
-  await home();
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(/\/rooms$/);
-  // barra superior e rodapé
+  await page.getByRole('link', { name: 'Entrar', exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
   for (const [label, url] of [
     ['Salas', /\/rooms$/],
     ['Ranking', /\/ranking$/],
     ['Replays', /\/replays$/],
   ]) {
-    await home();
     await page.locator('.app-nav a', { hasText: label }).click();
     await expect(page).toHaveURL(url);
   }
-  await home();
-  await page.locator('.app-topbar a', { hasText: 'Entrar' }).click();
-  await expect(page).toHaveURL(/\/login$/);
   await page.locator('.app-logo').click();
   await expect(page).toHaveURL(/\/$/);
   for (const [label, url] of [
@@ -221,7 +212,7 @@ test('tela inicial: cada ação do menu, da barra e do rodapé leva à sua tela 
     ['Código-fonte', /\/source$/],
   ]) {
     await home();
-    await page.locator('.app-footer a', { hasText: label }).click();
+    await page.locator('.home-footer-legal a', { hasText: label }).click();
     await expect(page).toHaveURL(url);
   }
 });

@@ -6,3 +6,5 @@ useDefault = true
 [allowlist]
 description = "segredos fictícios dos testes"
 paths = ['''(^|/)[^/]+\.test\.ts$''']
+# branch cheat-anticheat-testing: ticket de jogo de 60 s, sem privilégio, expirado em 2026-11-04
+commits = ['851e635a30ae805f6d3be28cb25e5f94d0b9abfd']
