@@ -634,6 +634,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | S60 | v2: mapas com revisões (D-91, proposta de Nosferatu) — identidade e revisões imutáveis, partida presa à revisão, replays e relatórios com o mapa exato, estatísticas pela família, painel de revisões, importação das 23 revisões, rascunho testável em sala privada e implantação com backup; Treino de mira no mapa T4 (D-93) | OG-552, OG-553, OG-554, OG-555, OG-556, OG-557, OG-558, OG-559, OG-560, OG-561, OG-562, OG-568, OG-569 | |
 | S61 | v2: Cartas de Jogador (D-94) — modelo e gerações, API e aba Cartas no painel (catálogo, ficha, formulário, chances e gerações), componente da carta com a escada de exclusividade, resgate semanal sem repetir, abertura, coleção no perfil, página da carta, recompensa da lenda e importação das 85 cartas | OG-570, OG-571, OG-572, OG-573, OG-574, OG-575, OG-576, OG-577, OG-578, OG-579, OG-580, OG-581 | |
 | S62 | v2: Steam (D-95) — convidar amigos da Steam (base, criar sala, menu da partida, lobby Ranked) e Cartas de Jogador no inventário Steam (imagem PNG da carta, ligar a conta Steam, itens gerados do catálogo, entrega no resgate e retroativa) | OG-447, OG-448, OG-449, OG-450, OG-583, OG-584, OG-585, OG-586 | |
+| S63 | v2: inventário Steam, ajustes depois da primeira entrega real — entregas presas voltam à fila e imagens das cartas geradas de antemão | OG-587, OG-588 | |
 
 > Duração total estimada: **13 sprints (~26 semanas)**. Replanejar após S2 com a velocidade real.
 
@@ -1071,8 +1072,10 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-584](cards/OG-584-steam-ligar-conta.md) | Ligar a conta Steam (app desktop) | E18 | 5 | Must | S62 | OG-328, OG-396 | Concluído |
 | [OG-585](cards/OG-585-steam-itens-das-cartas.md) | Itens da Steam gerados do catálogo | E18 | 3 | Must | S62 | OG-583 | Concluído |
 | [OG-586](cards/OG-586-steam-entrega-no-inventario.md) | Entrega no inventário Steam | E18 | 3 | Must | S62 | OG-584, OG-585, OG-576 | Concluído |
+| [OG-587](cards/OG-587-steam-entregas-presas.md) | Entrega que esgotou as tentativas volta à fila | E18 | 2 | Should | S63 | OG-586 | Concluído |
+| [OG-588](cards/OG-588-cartas-imagens-ao-subir.md) | Imagens das cartas geradas de antemão na API | E18 | 2 | Should | S63 | OG-583 | Concluído |
 
-**Total:** 423 cards, 1342 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 354 cards, 1047 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
+**Total:** 425 cards, 1346 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 356 cards, 1051 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
 ---
 

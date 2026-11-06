@@ -9,6 +9,7 @@ import { nativeMapsDir, seedMaps } from './map-catalog.js';
 import { rollSeason } from './ranking.js';
 import { connectRedis } from './redis.js';
 import { releaseIdleNumbers } from './player-numbers.js';
+import { warmCardPngs } from './legend-card-png-cache.js';
 
 const config = loadConfig();
 const database = connect(config.databaseUrl);
@@ -40,6 +41,13 @@ const numbersTimer = setInterval(() => void releaseNumbers(), 60 * 60_000);
 const cupTimer = setInterval(() => void app.cupTick().catch((err: unknown) => app.log.error({ err }, 'falha no relógio da OutCup')), 60_000);
 // cartas no inventário Steam (OG-586): entrega as pendentes a cada 30 s
 const steamTimer = setInterval(() => void app.steamGrantsTick().catch((err: unknown) => app.log.error({ err }, 'falha na entrega das cartas na Steam')), 30_000);
+// imagens das cartas (OG-588): geradas logo ao subir e a cada hora (as novas), para ninguém esperar por elas
+const warmCards = () => warmCardPngs(database.db).then(
+  (n) => n && app.log.info({ rendered: n }, 'imagens das cartas geradas'),
+  (err: unknown) => app.log.error({ err }, 'falha ao gerar as imagens das cartas'),
+);
+void warmCards();
+const cardsTimer = setInterval(() => void warmCards(), 60 * 60_000);
 const watchTimer = statusDir ? setInterval(() => void app.security.check(statusDir), 15 * 60_000) : undefined;
 if (process.env.NODE_ENV === 'production' && !config.metricsToken) app.log.warn('METRICS_TOKEN vazio: /metrics aberto; deixe a porta só na rede interna ou defina o token');
 
@@ -57,6 +65,7 @@ const shutdown = async (graceS: number) => {
   clearInterval(numbersTimer);
   clearInterval(cupTimer);
   clearInterval(steamTimer);
+  clearInterval(cardsTimer);
   if (graceS > 0) await new Promise((r) => setTimeout(r, graceS * 1000));
   await app.close();
   redis?.disconnect();
