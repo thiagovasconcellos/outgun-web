@@ -31,8 +31,11 @@ esac
 echo "== satélite $host: imagem $tag ($platform)"
 docker build -q --platform "$platform" -f deploy/Dockerfile --target game-server -t "outgun-game-server:$tag" . >/dev/null
 sat_ "mkdir -p /opt/outgun"
+# Docker, firewall e swap, em Ubuntu/Debian ou Oracle Linux (OG-599); antes de carregar a imagem
+scp -q "${opts[@]}" deploy/vps/satellite/machine.sh "$host:/opt/outgun/"
+sat_ "bash /opt/outgun/machine.sh"
 if ! sat_ "docker image inspect outgun-game-server:$tag >/dev/null 2>&1" 2>/dev/null; then
-  docker save "outgun-game-server:$tag" | gzip -1 | sat_ "command -v docker >/dev/null || (apt-get update -q && DEBIAN_FRONTEND=noninteractive apt-get install -yq docker.io docker-compose-v2 >/dev/null); gunzip | docker load" | tail -2
+  docker save "outgun-game-server:$tag" | gzip -1 | sat_ "gunzip | docker load" | tail -2
 fi
 scp -q "${opts[@]}" deploy/vps/satellite/compose.yml deploy/vps/satellite/Caddyfile deploy/vps/satellite/install.sh "$host:/opt/outgun/"
 scp -q -r "${opts[@]}" deploy/vps/satellite/fluent-bit "$host:/opt/outgun/"

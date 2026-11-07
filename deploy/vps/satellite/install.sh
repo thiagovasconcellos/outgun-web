@@ -1,44 +1,15 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Instala ou atualiza um servidor satélite (OG-548) numa VPS Ubuntu/Debian. Roda no servidor, como
-# root, em /opt/outgun, depois que deploy-satellite.sh copiou os arquivos e carregou a imagem.
+# Instala ou atualiza um servidor satélite (OG-548). Roda no servidor, como root, em /opt/outgun,
+# depois que deploy-satellite.sh preparou a máquina (machine.sh), copiou os arquivos e carregou a imagem.
 # Idempotente:
 #   TAG=<versão> DOMAIN=mad.exemplo.com REGION=es API_URL=https://exemplo.com/api \
 #     SITE_ORIGIN=https://exemplo.com bash /opt/outgun/install.sh
-# Na primeira vez instala Docker, firewall (22/80/443), swap e gera /opt/outgun/.env com o segredo do
-# game server (GS_SECRET), que o deploy-satellite.sh registra na API principal. Depois, DOMAIN,
+# Na primeira vez gera /opt/outgun/.env com o segredo do game server (GS_SECRET), que o deploy-satellite.sh registra na API principal. Depois, DOMAIN,
 # REGION e o resto vêm do .env (as variáveis só valem na primeira instalação).
 set -euo pipefail
 cd /opt/outgun
 : "${TAG:?defina TAG}"
-
-# --- máquina: igual ao install.sh da principal (Docker, ufw, atualizações automáticas, swap) ---
-pkgs=""
-command -v docker >/dev/null && docker compose version >/dev/null 2>&1 || pkgs="docker.io docker-compose-v2"
-command -v ufw >/dev/null || pkgs="$pkgs ufw"
-dpkg -s unattended-upgrades >/dev/null 2>&1 || pkgs="$pkgs unattended-upgrades"
-if [ -n "$pkgs" ]; then
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get update -q
-  # shellcheck disable=SC2086
-  apt-get install -yq $pkgs
-fi
-systemctl enable --now docker
-# imagens Ubuntu da Oracle Cloud: regras de iptables que rejeitam tudo menos o SSH; quem cuida é o ufw
-if dpkg -s netfilter-persistent >/dev/null 2>&1; then
-  DEBIAN_FRONTEND=noninteractive apt-get purge -yq iptables-persistent netfilter-persistent
-  while iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited 2>/dev/null; do :; done
-  while iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited 2>/dev/null; do :; done
-fi
-if ! ufw status | grep -q "Status: active"; then
-  ufw default deny incoming && ufw default allow outgoing
-  ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
-  ufw --force enable
-fi
-if ! swapon --show | grep -q /swapfile && [ ! -f /swapfile ]; then
-  fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
-  echo '/swapfile none swap sw 0 0' >> /etc/fstab
-fi
 
 # --- configuração do satélite ---
 secret() { head -c 24 /dev/urandom | base64 | tr -d '/+=' ; }
