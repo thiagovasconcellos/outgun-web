@@ -15,7 +15,7 @@ import { roomInviteToken, validRoomInvite } from '../room-invite.js';
 import { bans, clanMembers, clans, gameServers, rooms } from '../db/schema.js';
 import { playerSkillRank } from '../skill.js';
 import { botLevelFrom, recentRanked } from '../bot-level.js';
-import { canSpawnRoom, onlineServers, placeRoom, roomHumans, roomOnline, regionFallback, type RoomRow } from '../registry.js';
+import { canSpawnRoom, onlineServers, placeRoom, roomHumans, roomOnline, regionFallback, serversForMode, type RoomRow } from '../registry.js';
 import { ErrorSchema, GameModeSchema, RoomId } from './schemas.js';
 import { nameBlocked } from '../name-filter.js';
 import { previousPodium } from '../ranking.js';
@@ -89,9 +89,9 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
     if (!returning && roomOnline(room) && roomHumans(room) >= room.maxPlayers) return fail(409, 'room_full', 'room is full');
 
     const region = body.region ?? deps.config.defaultRegion;
-    const place = await placeRoom(db, room, deps.config.devRoomWsUrl, region);
+    const place = await placeRoom(db, room, deps.config.casualOnlyServers, deps.config.devRoomWsUrl, region);
     if (!place.ok) return fail(503, 'room_offline', 'no game server available');
-    if (place.region !== undefined && regionFallback({ region: place.region }, region)) {
+    if (place.region !== undefined && !place.expectedFallback && regionFallback({ region: place.region }, region)) {
       request.log.warn({ event: 'region_fallback', room: room.id, wanted: region, got: place.region }, 'sala aberta fora da região pedida (sem vaga nela)');
     }
 
@@ -245,7 +245,7 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
           .where(and(eq(rooms.mode, mode), isNull(rooms.passwordHash), isNull(rooms.format))) // salas de lobby Ranked: pela lista (RN-RKL-05)
           .orderBy(desc(rooms.players), rooms.id);
         const now = Date.now();
-        const servers = await onlineServers(db, now);
+        const servers = serversForMode(await onlineServers(db, now), mode, deps.config.casualOnlyServers);
         const dev = deps.config.devRoomWsUrl !== undefined;
         // a região pedida tem servidor com vaga para abrir uma sala nova
         const regionCanSpawn = servers.some((s) => s.region === region && s.rooms < s.maxRooms);

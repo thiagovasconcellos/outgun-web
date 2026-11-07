@@ -10,7 +10,7 @@ import type { AppDeps, Services } from '../app.js';
 import { hashPassword } from '../auth/password.js';
 import { gameServers, rooms } from '../db/schema.js';
 import { DRAFT_NAME, draftMaps, findMap, findRevision, findRevisionByCrc, playableMaps } from '../map-catalog.js';
-import { canSpawnRoom, onlineServers, pickServer, regionFallback, roomHumans, roomListed, roomOnline } from '../registry.js';
+import { canSpawnRoom, onlineServers, pickServer, regionFallback, regionOnlyCasual, roomHumans, roomListed, roomOnline, serversForMode } from '../registry.js';
 import { ErrorSchema, GameModeSchema, LobbyPhaseSchema, RankedFormatSchema, RoomId, SeriesBestOfSchema } from './schemas.js';
 
 const RoomSummary = Type.Object({
@@ -101,7 +101,7 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
         const servers = await onlineServers(db, now);
         const dev = config.devRoomWsUrl !== undefined;
         return {
-          rooms: list.filter(({ room }) => roomListed(room, canSpawnRoom(room, servers, dev), now)).map(({ room, region }) => summary(room, region ?? room.region, now)),
+          rooms: list.filter(({ room }) => roomListed(room, canSpawnRoom(room, serversForMode(servers, room.mode, config.casualOnlyServers), dev), now)).map(({ room, region }) => summary(room, region ?? room.region, now)),
         };
       },
     );
@@ -353,8 +353,10 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
           return reply.code(429).send({ error: 'rate_limited', message: 'too many rooms, try later' });
         }
         const region = body.region ?? config.defaultRegion;
-        const server = pickServer(await onlineServers(db), region);
-        if (regionFallback(server, region)) request.log.warn({ event: 'region_fallback', wanted: region, got: server?.region }, 'sala Ranked criada fora da região pedida (sem vaga nela)');
+        const online = await onlineServers(db);
+        // servidor só Casual nunca recebe Ranked (RN-REG-06, OG-597), mesmo sendo o único com vaga
+        const server = pickServer(serversForMode(online, 'ranked', config.casualOnlyServers), region);
+        if (regionFallback(server, region) && !regionOnlyCasual(online, region, config.casualOnlyServers)) request.log.warn({ event: 'region_fallback', wanted: region, got: server?.region }, 'sala Ranked criada fora da região pedida (sem vaga nela)');
         if (!server && !config.devRoomWsUrl) return reply.code(503).send({ error: 'no_server', message: 'no game server available' });
         const id = `r-${randomBytes(6).toString('base64url').toLowerCase().replace(/[^a-z0-9]/g, '0')}`;
         const [row] = await db

@@ -7,10 +7,10 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { buildApp, type App } from '../app.js';
 import { loadConfig } from '../config.js';
 import { migrateUp } from '../db/migrate.js';
-import { gameServers, rooms, users } from '../db/schema.js';
+import { gameServers, matches, rooms, users } from '../db/schema.js';
 import { seed } from '../db/seed.js';
 import { MemoryMailer } from '../mail/mailer.js';
-import { ONLINE_MS, pickServer, regionFallback, type ServerRow } from '../registry.js';
+import { ONLINE_MS, pickServer, regionFallback, regionOnlyCasual, serversForMode, type ServerRow } from '../registry.js';
 import { createTestDatabase, pgAdminUrl, type TestDatabase } from '../test/db.js';
 
 const ORIGIN = 'http://localhost:5173';
@@ -42,6 +42,17 @@ describe('escolha do servidor', () => {
     expect(regionFallback({ region: 'br' }, undefined)).toBe(false);
     expect(regionFallback(undefined, 'br')).toBe(false);
   });
+
+  it('servidor só Casual fica fora do Ranked, mesmo vazio (OG-597)', () => {
+    const only = new Set(['de']);
+    const all = [s('de', 0, 0, 'de'), s('br', 9, 3, 'br')];
+    expect(serversForMode(all, 'casual', only).map((x) => x.id)).toEqual(['de', 'br']);
+    expect(pickServer(serversForMode(all, 'ranked', only), 'de')?.id).toBe('br');
+    expect(pickServer(serversForMode([all[0]!], 'ranked', only), 'de')).toBeUndefined();
+    expect(regionOnlyCasual(all, 'de', only)).toBe(true);
+    expect(regionOnlyCasual(all, 'br', only)).toBe(false);
+    expect(regionOnlyCasual(all, 'es', only)).toBe(false);
+  });
 });
 
 describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
@@ -55,7 +66,7 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
     await migrateUp(t.sql);
     await seed(t.db);
     // como em produção: sem servidor de desenvolvimento, só os que mandam heartbeat
-    const config = { ...loadConfig({ INTERNAL_SECRETS: `gs-1:${SECRET},gs-2:${SECRET}` }), databaseUrl: t.url, devRoomWsUrl: undefined };
+    const config = { ...loadConfig({ INTERNAL_SECRETS: `gs-1:${SECRET},gs-2:${SECRET},gs-de:${SECRET}`, CASUAL_ONLY_SERVERS: 'gs-de' }), databaseUrl: t.url, devRoomWsUrl: undefined };
     app = await buildApp({ config, database: t, mailer: new MemoryMailer(), logger: false });
     keys = fromJwks((await app.inject('/.well-known/jwks.json')).json());
     const login = await app.inject({ method: 'POST', url: '/auth/login', payload: { username: 'Jogador1', password: 'outgun-dev' }, headers: { origin: ORIGIN } });
@@ -100,6 +111,46 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
     if (!r.ok) throw new Error(r.reason);
     return r.claims;
   };
+
+  it('servidor só Casual nunca recebe Ranked nem assume sala Ranked; Casual funciona (OG-597)', async () => {
+    await heartbeat('gs-de', [{ id: 'main-de', players: 0 }], 'de');
+    // só ele no ar: sem servidor para o Ranked, mesmo pedindo a região dele
+    expect((await post('/rooms/ranked', { name: 'R', format: '3x3', bestOf: 1, region: 'de' }, true)).json().error).toBe('no_server');
+    expect((await post('/rooms/ranked/join', { region: 'de' }, true)).json().error).toBe('room_offline');
+    expect((await list('?mode=ranked')).find((r) => r.id === 'ranked')).toBeUndefined();
+    // Casual segue normal nele
+    expect((await post('/rooms/quick-join', { mode: 'casual', name: 'Europeu', region: 'de' })).json().wsUrl).toBe('ws://gs-de.test/rooms/main-de');
+    expect((await post('/rooms', { name: 'Privada DE', preset: 'classic', region: 'de' }, true)).json().room.region).toBe('de');
+    // com o Brasil no ar, o Ranked pedido de lá abre no Brasil
+    await heartbeat('gs-1', [], 'br');
+    const ranked = await post('/rooms/ranked', { name: 'R2', format: '3x3', bestOf: 1, region: 'de' }, true);
+    expect(ranked.json().room.region).toBe('br');
+    // anunciar sala Ranked (nova ou de outro servidor) não adianta
+    const owned = ranked.json().room.id as string;
+    await heartbeat('gs-de', [{ id: 'main-de', players: 0 }, { id: 'r-falsa', players: 0, mode: 'ranked', preset: 'ranked', persistent: false }, { id: owned, players: 0 }], 'de');
+    const [falsa] = await t.db.select().from(rooms).where(eq(rooms.id, 'r-falsa'));
+    expect(falsa).toBeUndefined();
+    const [row] = await t.db.select().from(rooms).where(eq(rooms.id, owned));
+    expect(row!.serverId).toBe('gs-1');
+    await t.db.delete(rooms).where(inArray(rooms.id, ['main-de', owned]));
+  });
+
+  it('partida Ranked de servidor só Casual é recusada; a Casual entra (OG-597)', async () => {
+    const send = (serverMatchId: string, ranked: boolean, mode: string) => {
+      const body = JSON.stringify({ serverMatchId, mode, ranked, map: 'outgun1', redScore: 1, blueScore: 0, startedAt: '2026-11-07T10:00:00.000Z', endedAt: '2026-11-07T10:10:00.000Z', players: [] });
+      const url = '/internal/matches';
+      return app.inject({ method: 'POST', url, payload: body, headers: { 'content-type': 'application/json', ...signInternalRequest('gs-de', SECRET, 'POST', url, body) } });
+    };
+    const refused = await send('de-ranked', true, 'ranked');
+    expect(refused.statusCode).toBe(422);
+    expect(refused.json().error).toBe('casual_only_server');
+    // sem `ranked: true`, mas com modo Ranked: série e OutCup dependem do modo
+    expect((await send('de-modo', false, 'ranked')).json().error).toBe('casual_only_server');
+    expect((await send('de-casual', false, 'casual')).statusCode).toBe(201);
+    const stored = await t.db.select().from(matches).where(eq(matches.serverId, 'gs-de'));
+    expect(stored.map((m) => m.serverMatchId)).toEqual(['de-casual']);
+    await t.db.delete(matches).where(eq(matches.serverId, 'gs-de'));
+  });
 
   it('sem nenhum game server, o lobby fica vazio e a entrada responde 503', async () => {
     expect(await list()).toEqual([]);

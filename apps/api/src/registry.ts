@@ -44,6 +44,17 @@ export function pickServer(servers: readonly ServerRow[], region?: string): Serv
   return [...pool].sort((a, b) => a.players - b.players || a.rooms - b.rooms || a.id.localeCompare(b.id))[0];
 }
 
+/** Servidores que podem hospedar uma sala do modo: os só Casual ficam fora do Ranked e da OutCup (RN-REG-06, OG-597). */
+export function serversForMode(servers: readonly ServerRow[], mode: string, casualOnly: ReadonlySet<string>): ServerRow[] {
+  return mode === 'ranked' ? servers.filter((s) => !casualOnly.has(s.id)) : [...servers];
+}
+
+/** A região pedida tem servidor, mas todos só Casual: o Ranked ir para outra região é o esperado, não desvio. */
+export function regionOnlyCasual(servers: readonly ServerRow[], region: string | undefined, casualOnly: ReadonlySet<string>): boolean {
+  const here = servers.filter((s) => s.region === region);
+  return here.length > 0 && here.every((s) => casualOnly.has(s.id));
+}
+
 /** O servidor escolhido é de outra região que a pedida (sem vaga na pedida): vai para o log. */
 export function regionFallback(server: Pick<ServerRow, 'region'> | undefined, region: string | undefined): boolean {
   return region !== undefined && server !== undefined && server.region !== region;
@@ -64,17 +75,18 @@ export function roomSpawn(room: RoomRow): RoomSpawn {
   };
 }
 
-export type Placement = { ok: true; wsUrl: string; spawn?: RoomSpawn; /** região do servidor escolhido agora (sala que ainda não estava no ar) */ region?: string } | { ok: false };
+export type Placement = { ok: true; wsUrl: string; spawn?: RoomSpawn; /** região do servidor escolhido agora (sala que ainda não estava no ar) */ region?: string; /** Ranked pedido numa região só Casual: sair dela é o esperado (OG-597) */ expectedFallback?: boolean } | { ok: false };
 
 /**
  * Onde o jogador conecta: no servidor que hospeda a sala; se ela não está no ar, no servidor ao
  * qual já foi atribuída (se ainda estiver no ar) ou no menos carregado, com o pedido de abertura.
  * Sem servidor algum, cai em `devRoomWsUrl` (desenvolvimento, servidor sem heartbeat).
  */
-export async function placeRoom(db: Db, room: RoomRow, devRoomWsUrl: string | undefined, region?: string, now = Date.now()): Promise<Placement> {
+export async function placeRoom(db: Db, room: RoomRow, casualOnly: ReadonlySet<string>, devRoomWsUrl: string | undefined, region?: string, now = Date.now()): Promise<Placement> {
   if (roomOnline(room, now) && room.wsUrl) return { ok: true, wsUrl: room.wsUrl };
   // sala fixa com região só abre nela (RN-REG-03, OG-546)
-  const all = await onlineServers(db, now);
+  const online = await onlineServers(db, now);
+  const all = serversForMode(online, room.mode, casualOnly);
   const servers = room.persistent && room.region ? all.filter((s) => s.region === room.region) : all;
   // volta ao servidor de antes se ele ainda aceita salas (maxRooms 0 = drenando, OG-103)
   const server = servers.find((s) => s.id === room.serverId && s.maxRooms > 0) ?? pickServer(servers, room.persistent && room.region ? room.region : region);
@@ -83,7 +95,7 @@ export async function placeRoom(db: Db, room: RoomRow, devRoomWsUrl: string | un
     if (server.id !== room.serverId || wsUrl !== room.wsUrl) {
       await db.update(rooms).set({ serverId: server.id, wsUrl }).where(eq(rooms.id, room.id));
     }
-    return { ok: true, wsUrl, spawn: roomSpawn(room), region: server.region };
+    return { ok: true, wsUrl, spawn: roomSpawn(room), region: server.region, ...(room.mode === 'ranked' && regionOnlyCasual(online, region, casualOnly) ? { expectedFallback: true } : {}) };
   }
   const dev = devRoomWsUrl?.replace('{id}', room.id);
   return dev ? { ok: true, wsUrl: dev, spawn: roomSpawn(room) } : { ok: false };

@@ -366,7 +366,11 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
           }
         }
         const now = new Date();
-        const { server, rooms: hosted } = request.body;
+        const { server } = request.body;
+        // servidor só Casual não hospeda Ranked (RN-REG-06, OG-597): a sala nem entra na lista
+        const casualOnly = config.casualOnlyServers.has(serverId);
+        const hosted = casualOnly ? request.body.rooms.filter((r) => r.mode !== 'ranked') : request.body.rooms;
+        if (hosted.length < request.body.rooms.length) request.log.warn({ event: 'casual_only_ranked_room', server: serverId }, 'servidor só Casual anunciou sala Ranked: ignorada');
         await database.db.transaction(async (tx) => {
           const players = hosted.reduce((n, r) => n + r.players, 0);
           const status = { wsBaseUrl: server.wsBaseUrl, region: server.region, maxRooms: server.maxRooms, rooms: hosted.length, players, lastHeartbeatAt: now, release: server.release ?? null, ...(server.maps ? { maps: server.maps } : {}), ...(server.rotations ? { rotations: server.rotations } : {}) };
@@ -380,6 +384,10 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
               ? (await tx.select({ id: rooms.id }).from(rooms).where(and(inArray(rooms.id, hostedIds), ne(rooms.serverId, serverId), gt(rooms.lastHeartbeatAt, new Date(now.getTime() - ONLINE_MS))))).map((r) => r.id)
               : [],
           );
+          // ...nem assume o id de uma sala Ranked já cadastrada
+          if (casualOnly && hostedIds.length) {
+            for (const r of await tx.select({ id: rooms.id }).from(rooms).where(and(inArray(rooms.id, hostedIds), eq(rooms.mode, 'ranked')))) taken.add(r.id);
+          }
           if (taken.size > 0) request.log.warn({ event: 'room_id_conflict', server: serverId, rooms: [...taken] }, 'sala com o mesmo id no ar em outro servidor: ignorada (use MAIN_ROOM diferente em cada servidor)');
           for (const r of hosted) {
             if (taken.has(r.id)) continue;
@@ -461,6 +469,11 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
         const body = request.body;
         const problem = validateMatch(body);
         if (problem) return reply.code(422).send({ error: 'invalid_match', message: problem });
+        // só Casual: nada de ranking, série nem OutCup (RN-REG-06, OG-597); `mode` também, porque série e formato dependem dele
+        if (config.casualOnlyServers.has(serverId) && (body.ranked || body.mode === 'ranked')) {
+          request.log.warn({ event: 'casual_only_ranked_match', server: serverId, match: body.serverMatchId }, 'partida Ranked de servidor só Casual: recusada');
+          return reply.code(422).send({ error: 'casual_only_server', message: 'this server cannot report ranked matches' });
+        }
 
         const cupOutbox = new CupOutbox();
         const result = await database.db.transaction(async (tx) => {

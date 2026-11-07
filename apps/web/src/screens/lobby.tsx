@@ -27,7 +27,7 @@ import { joinErrorText } from '../game/net/ticket.js';
 import { Badge, Button } from '../ui/Button.js';
 import { ChoiceField, SliderField, TextField, ToggleField } from '../ui/Field.js';
 import { Form, FormMessageLine, Page } from '../ui/Page.js';
-import { RegionCell } from '../ui/Flag.js';
+import { RegionLabel } from '../ui/Flag.js';
 import { Table } from '../ui/Table.js';
 import { Tabs } from '../ui/Tabs.js';
 import { RankedRoomsPanel, WatchButton } from './ranked-rooms.js';
@@ -274,6 +274,7 @@ export function LobbyScreen() {
                     </span>
                   ),
                 },
+                { key: 'region', header: t('Region'), cell: (r) => <RegionLabel region={r.region} /> },
                 { key: 'map', header: t('Map'), cell: (r) => r.map ?? '—' },
                 {
                   key: 'players',
@@ -284,11 +285,7 @@ export function LobbyScreen() {
                 {
                   key: 'ping',
                   header: t('Ping'),
-                  cell: (r) => (
-                    <RegionCell region={r.region}>
-                      {r.region && pings.has(r.region) ? `${pings.get(r.region)} ms` : '—'}
-                    </RegionCell>
-                  ),
+                  cell: (r) => (r.region && pings.has(r.region) ? `${pings.get(r.region)} ms` : '—'),
                   align: 'end',
                 },
                 {

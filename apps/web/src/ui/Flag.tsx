@@ -4,11 +4,12 @@
 // para não levar as ~270 bandeiras ao build; região fora da lista mostra só o nome.
 import type { Locale } from '@outgun/i18n';
 import br from 'flag-icons/flags/4x3/br.svg?url';
+import de from 'flag-icons/flags/4x3/de.svg?url';
 import es from 'flag-icons/flags/4x3/es.svg?url';
 import pt from 'flag-icons/flags/4x3/pt.svg?url';
 import { usePrefs } from '../app/prefs.js';
 
-const FLAGS: Readonly<Record<string, string>> = { br, es, pt };
+const FLAGS: Readonly<Record<string, string>> = { br, de, es, pt };
 
 /** A região é um código de país ISO 3166-1 alfa-2 (`br`, `es`); `local`, `eu` etc. não são. */
 export function isCountryRegion(region: string | null | undefined): region is string {
@@ -33,7 +34,23 @@ export function RegionFlag({ region }: { region: string | null | undefined }) {
   return <img className="og-flag" src={FLAGS[region]} alt={name} title={name} width={20} height={15} />;
 }
 
-/** Bandeira e, ao lado, o ping ou outro texto (lista de salas). */
+/**
+ * Coluna Região das listas de salas (OG-598, RN-REG-07): bandeira e nome do país; sala sem região, "—".
+ * Em tela estreita fica só a bandeira, que leva o nome como texto alternativo.
+ */
+export function RegionLabel({ region }: { region: string | null | undefined }) {
+  const { prefs } = usePrefs();
+  if (!region) return <>—</>;
+  const flagged = isCountryRegion(region) && FLAGS[region] !== undefined;
+  return (
+    <span className="og-region">
+      <RegionFlag region={region} />
+      <span className={flagged ? 'og-region-name' : undefined}>{regionName(region, prefs.locale)}</span>
+    </span>
+  );
+}
+
+/** Bandeira e, ao lado, um texto (ex.: nome da sala no painel da tela inicial). */
 export function RegionCell({ region, children }: { region: string | null | undefined; children: React.ReactNode }) {
   return (
     <span className="og-region">
