@@ -5,6 +5,7 @@
 # variáveis de partida da principal (shared.env), instala e registra o segredo do satélite na API
 # principal (INTERNAL_SECRETS) e a origem dele na CSP do site (SATELLITE_ORIGINS).
 #   Primeira vez: DOMAIN=mad.outgunweb.com.br REGION=es bash deploy/vps/deploy-satellite.sh root@IP
+#   Máquina de terceiros (D-97): acrescente CASUAL_ONLY=1, que marca o servidor como só Casual na API
 #   Depois:       bash deploy/vps/deploy-satellite.sh root@IP     (DOMAIN e REGION ficam no .env de lá)
 # MAIN (padrão root@137.131.202.138): a VPS principal. SITE (padrão https://outgunweb.com.br): o site.
 # O deploy.sh da principal chama este script para cada máquina em SATELLITES (ou
@@ -47,4 +48,11 @@ sat_ "TAG=$tag RELEASE=$version ${DOMAIN:+DOMAIN=$DOMAIN} ${REGION:+REGION=$REGI
 echo "== principal $main: registro do satélite"
 # id, segredo e domínio do satélite vão por stdin (não aparecem na linha de comando de lá)
 scp -q "${opts[@]}" deploy/vps/satellite/register.sh "$main:/opt/outgun/register-satellite.sh"
-sat_ "grep -E '^(GS_ID|GS_SECRET|DOMAIN)=' /opt/outgun/.env" | main_ "bash /opt/outgun/register-satellite.sh"
+# Na primeira vez, id e domínio saem daqui, não da máquina; depois, a principal só aceita o que já
+# está registrado (register.sh). A marca de só Casual também nunca vem do satélite.
+if [ -n "${DOMAIN:-}" ] && [ -n "${REGION:-}" ]; then
+  { printf 'GS_ID=%s\nDOMAIN=%s\n' "${GS_ID:-gs-$REGION}" "$DOMAIN"; sat_ "grep '^GS_SECRET=' /opt/outgun/.env"; } |
+    main_ "NEW_SATELLITE=1 ${CASUAL_ONLY:+CASUAL_ONLY=1} ${REPLACE_SECRET:+REPLACE_SECRET=1} bash /opt/outgun/register-satellite.sh"
+else
+  sat_ "grep -E '^(GS_ID|GS_SECRET|DOMAIN)=' /opt/outgun/.env" | main_ "${CASUAL_ONLY:+CASUAL_ONLY=1} bash /opt/outgun/register-satellite.sh"
+fi

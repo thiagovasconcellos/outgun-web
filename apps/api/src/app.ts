@@ -160,7 +160,7 @@ export async function buildApp(deps: AppDeps): Promise<App> {
   // relógio da OutCup (OG-520): o main chama a cada minuto
   const steam = deps.steam !== undefined ? deps.steam : deps.config.steamWebApiKey ? steamWebApi(deps.config.steamWebApiKey) : null;
   app.decorate('steamGrantsTick', (now?: Date) => deliverSteamGrants(deps.database.db, steam, now));
-  app.decorate('cupTick', (now?: Date) => cupTick({ db: deps.database.db, mailer: services.mailer, webUrl: deps.config.webUrl, devRoomWsUrl: deps.config.devRoomWsUrl, region: deps.config.defaultRegion, log: (err, msg) => app.log.error({ err }, msg) }, now));
+  app.decorate('cupTick', (now?: Date) => cupTick({ db: deps.database.db, mailer: services.mailer, webUrl: deps.config.webUrl, devRoomWsUrl: deps.config.devRoomWsUrl, region: deps.config.defaultRegion, casualOnly: deps.config.casualOnlyServers, log: (err, msg) => app.log.error({ err }, msg) }, now));
 
   observe(app, deps);
   await app.register(cookie);

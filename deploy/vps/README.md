@@ -163,6 +163,12 @@ bash deploy/vps/deploy.sh root@137.131.202.138
   Se a principal cair, as partidas em andamento no satélite seguem; entradas novas esperam a API.
 - Os replays ficam no disco do satélite (30 dias, `REPLAY_RETENTION_DAYS`), sem backup.
 - `MAX_ROOMS` é por máquina (no `.env` do satélite; o install põe 6, pensando numa E2.1.Micro).
+- **Máquina de terceiros (D-97):** na primeira instalação, acrescente `CASUAL_ONLY=1`. O id entra em
+  `CASUAL_ONLY_SERVERS` no `.env` da principal; a API não abre Ranked nem OutCup nele e recusa
+  partida Ranked vinda dele. A marca não depende de nada que esteja na máquina e sair da lista é só à
+  mão. Não rode `grafana-cloud.sh` nela: o token do Grafana Cloud ficaria com quem administra a VM.
+- Depois da primeira instalação, o `register.sh` só aceita id, segredo e domínio já registrados. VM
+  reinstalada (segredo novo): repita o comando da primeira vez com `REPLACE_SECRET=1`.
 
 ## Provedores
 

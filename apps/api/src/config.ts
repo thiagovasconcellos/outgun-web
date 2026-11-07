@@ -13,6 +13,8 @@ export interface ApiConfig {
   redisUrl: string | undefined;
   /** serverId → segredos HMAC aceitos (mais de um durante a rotação de chave). */
   internalSecrets: Map<string, string[]>;
+  /** Servidores só Casual (OG-597, D-97): a marca fica aqui, não no heartbeat de quem controla a máquina. */
+  casualOnlyServers: ReadonlySet<string>;
   /** Região das salas quando o pedido não diz qual (cliente antigo, OutCup); sem ela, qualquer servidor (OG-545). */
   defaultRegion: string | undefined;
   /** Diferença máxima entre o relógio do game server e o da API. */
@@ -83,6 +85,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     databaseUrl: env.DATABASE_URL ?? 'postgres://outgun:outgun@localhost:5432/outgun',
     redisUrl: env.REDIS_URL || undefined,
     internalSecrets: parseSecrets(env.INTERNAL_SECRETS ?? (env.NODE_ENV === 'production' ? '' : 'dev:outgun-dev-secret-0000')),
+    casualOnlyServers: new Set((env.CASUAL_ONLY_SERVERS ?? '').split(',').map((id) => id.trim()).filter(Boolean)),
     defaultRegion: env.DEFAULT_REGION || undefined,
     internalMaxSkewMs: Number(env.INTERNAL_MAX_SKEW_S ?? 30) * 1000,
     logLevel: env.LOG_LEVEL ?? 'info',

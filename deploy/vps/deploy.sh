@@ -58,7 +58,8 @@ ssh_ "TAG=$tag RELEASE=$version ${DOMAIN:+DOMAIN=$DOMAIN} bash /opt/outgun/insta
 # principal; repita com deploy-satellite.sh.
 satellites="${SATELLITES-$(git config --get outgun.satellites || true)}"
 for sat in $satellites; do
-  MAIN="$host" bash deploy/vps/deploy-satellite.sh "$sat" || echo "== satélite $sat: deploy falhou; repita com: bash deploy/vps/deploy-satellite.sh $sat" >&2
+  # sem DOMAIN/REGION: o deploy comum nunca conta como primeira instalação do satélite (OG-597)
+  env -u DOMAIN -u REGION MAIN="$host" bash deploy/vps/deploy-satellite.sh "$sat" || echo "== satélite $sat: deploy falhou; repita com: bash deploy/vps/deploy-satellite.sh $sat" >&2
 done
 
 # app da Steam na mesma versão (pedido do PO, 2026-10-27): espera o build do commit no CI e envia
