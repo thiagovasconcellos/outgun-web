@@ -1076,11 +1076,17 @@ html {
   gap: var(--space-1);
 }
 
-/* Bandeira do país do servidor ao lado do ping (OG-547) */
+/* Bandeira do país do servidor (OG-547) */
 .og-region {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+}
+@media (max-width: 37.5rem) {
+  /* coluna Região (OG-598): só a bandeira, sem rolagem de 360 a 600 px (RN-UI-08) */
+  .og-region-name {
+    display: none;
+  }
 }
 .og-flag {
   display: inline-block;

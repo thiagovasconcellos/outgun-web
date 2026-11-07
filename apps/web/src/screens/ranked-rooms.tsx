@@ -14,7 +14,7 @@ import { defaultServerUrl } from '../game/net/connection.js';
 import { Badge, Button } from '../ui/Button.js';
 import { ChoiceField, TextField } from '../ui/Field.js';
 import { Form, FormMessageLine, Page } from '../ui/Page.js';
-import { RegionCell } from '../ui/Flag.js';
+import { RegionLabel } from '../ui/Flag.js';
 import { Table } from '../ui/Table.js';
 import { REFRESH_MS, type RoomSummary } from './lobby.js';
 import { fallbackMs, useLive, useLiveConnected } from '../app/live.js';
@@ -204,11 +204,12 @@ export function RankedRoomsPanel({ pings }: { pings: ReadonlyMap<string, number>
               </span>
             ),
           },
+          { key: 'region', header: t('Region'), cell: (r) => <RegionLabel region={r.region} /> },
           { key: 'format', header: t('Format'), cell: (r) => r.format },
           { key: 'series', header: t('Series'), cell: (r) => t(seriesLabel(r.bestOf)) },
           { key: 'players', header: t('Players'), cell: (r) => `${r.players}/${r.maxPlayers}`, align: 'end' },
           { key: 'phase', header: t('Phase'), cell: (r) => <Badge tone={r.phase === 'lobby' ? 'success' : 'neutral'}>{t(phaseLabel(r.phase))}</Badge> },
-          { key: 'ping', header: t('Ping'), cell: (r) => <RegionCell region={r.region}>{r.region && pings.has(r.region) ? `${pings.get(r.region)} ms` : '—'}</RegionCell>, align: 'end' },
+          { key: 'ping', header: t('Ping'), cell: (r) => (r.region && pings.has(r.region) ? `${pings.get(r.region)} ms` : '—'), align: 'end' },
           { key: 'watch', header: t('Watch'), cell: (r) => <WatchButton room={r} />, align: 'end' },
         ]}
       />
