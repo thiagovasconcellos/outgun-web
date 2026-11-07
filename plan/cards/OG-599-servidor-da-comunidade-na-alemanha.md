@@ -16,7 +16,7 @@
 > **Só subir depois do OG-597 no beta:** antes disso a máquina poderia receber salas Ranked.
 
 ## Máquina (conferido em 2026-11-07)
-IP 141.147.24.18, `VM.Standard.E2.1.Micro` (1 OCPU, 1 GB, x86_64), `eu-frankfurt-1`, 30 GB de disco, usuário `opc`, SELinux ligado. Chave em `~/.ssh/outgun-de.key`, fora do repo. O Oracle Linux reserva 448 MB para o kernel de crash (`crashkernel=1G-64G:448M`) e sobram 498 MB; o beta, no mesmo shape, tem 952 MB. A porta 22 responde; 80/443 ainda não foram confirmadas na VCN.
+IP 141.147.24.18, `VM.Standard.E2.1.Micro` (1 OCPU, 1 GB, x86_64), `eu-frankfurt-1`, 30 GB de disco, usuário `opc`, SELinux ligado. Chave em `~/.ssh/outgun-de.key`, fora do repo. O Oracle Linux reserva 448 MB para o kernel de crash (`crashkernel=1G-64G:448M`) e sobram 498 MB; o beta, no mesmo shape, tem 952 MB. A porta 22 responde; 80/443 não responderam de fora com o firewall da VM aberto e um servidor de teste subindo, então devem estar fechadas na VCN (teste único, de 2026-11-07, sem conferir se o servidor já escutava).
 
 ## História
 Como jogador na Europa, quero uma sala Casual com ping baixo enquanto o servidor oficial de Madrid não sai.
