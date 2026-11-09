@@ -57,7 +57,7 @@ STOPSIGNAL SIGTERM
 CMD ["node", "dist/main.js"]
 
 # --- cliente web: arquivos estáticos no Caddy, /api repassado para a API ---
-FROM caddy:2.10.2-alpine AS web
+FROM caddy:2.11-alpine AS web
 COPY deploy/web/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /repo/security-headers.caddy /etc/caddy/security-headers.caddy
 COPY --from=build /repo/apps/web/dist /srv
