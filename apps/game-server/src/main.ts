@@ -207,9 +207,25 @@ logger.info({ port: server.port }, `game-server na porta ${server.port}; depura�
 // o heartbeat lê este objeto a cada envio: na drenagem, maxRooms 0 tira o servidor da escolha da API
 const serverInfo = { wsBaseUrl: publicWsUrl, region: env.REGION ?? env.FLY_REGION ?? 'local', ...(env.RELEASE ? { release: env.RELEASE.slice(0, 64) } : {}), maxRooms: manager.maxRooms, maps: listMaps(mapsDir), rotations: { casual: [...rotations.casual], ranked: [...rotations.ranked] } };
 const panel = new AdminPanelLink({ manager, rotations, map: mapFile, generatedMaps, panelMaps, log: (msg, fields) => logger.info({ component: 'painel', ...fields }, msg) });
-if (env.HEARTBEAT !== '0') platform.startHeartbeat(serverInfo, () => manager.hosted(), 3000, panel);
-
 let stopping = false;
+// HEARTBEAT_WATCHDOG_S (120 em produção, 0 = desligado): sem heartbeat aceito por esse tempo e sem
+// humanos nas salas, o processo sai e o Docker o sobe de novo (OG-601). Com gente jogando, espera.
+const watchdogS = Number(env.HEARTBEAT_WATCHDOG_S ?? (production ? 120 : 0));
+let staleWarned = false;
+const onStale = (silentMs: number) => {
+  if (stopping) return;
+  const humans = manager.hosted().reduce((n, r) => n + r.roster.filter((p) => !p.bot).length, 0);
+  if (humans > 0) {
+    if (!staleWarned) logger.warn({ component: 'platform', silentS: Math.round(silentMs / 1000), humans }, 'sem heartbeat aceito pela API: reinicia quando as salas esvaziarem');
+    staleWarned = true;
+    return;
+  }
+  logger.error({ component: 'platform', silentS: Math.round(silentMs / 1000) }, 'sem heartbeat aceito pela API: encerrando para reiniciar');
+  reporter.capture(new Error('game-server sem heartbeat aceito pela API: reiniciando'), { level: 'error' });
+  void shutdown(false);
+};
+if (env.HEARTBEAT !== '0') platform.startHeartbeat(serverInfo, () => manager.hosted(), 3000, panel, watchdogS > 0 ? { staleMs: watchdogS * 1000, onStale } : {});
+
 /**
  * SIGTERM (deploy, OG-103): drena — sem salas novas, cada sala fecha no fim da partida em
  * andamento, até DRAIN_TIMEOUT_S; SIGINT (Ctrl+C) para na hora. Nos dois casos quem ainda está nas

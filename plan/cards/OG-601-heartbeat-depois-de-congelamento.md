@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | — |
-| Status | Backlog |
+| Status | Em revisão |
 | Dependências | OG-599 |
 | Regras de negócio | RN-REG-03 |
 | Skills | `outgun-card-workflow` |
@@ -25,9 +25,12 @@ Como jogador na Europa, quero que o servidor da minha região volte ao lobby soz
 - Avaliar aviso ao PO quando uma região some do registro (hoje ninguém fica sabendo).
 
 ## Critérios de aceite
-- [ ] Teste: envio de heartbeat que nunca responde não impede o envio seguinte.
-- [ ] Game-server sem heartbeat aceito por N segundos se reinicia sozinho e volta ao lobby.
-- [ ] `machine.sh` em Oracle Linux deixa o `dnf-makecache.timer` desligado e o `dnf-automatic` com teto de memória.
+- [x] Teste: envio de heartbeat que nunca responde não impede o envio seguinte.
+- [x] Game-server sem heartbeat aceito por N segundos se reinicia sozinho e volta ao lobby.
+- [x] `machine.sh` em Oracle Linux deixa o `dnf-makecache.timer` desligado e o `dnf-automatic` com teto de memória.
 - [ ] VM da Alemanha conferida com a configuração nova.
 
 ## Notas de implementação
+Cada envio do heartbeat ganhou prazo próprio de 8 s, fora do `fetch`, e a trava é sempre solta. Vigia: `HEARTBEAT_WATCHDOG_S` (120 em produção, 0 desliga); sem heartbeat aceito por esse tempo e sem humanos nas salas, o processo sai e o Docker o sobe de novo; com gente jogando, espera esvaziar. Só arma depois do primeiro heartbeat aceito, então não entra em laço com a API fora do ar. A causa exata do envio preso não foi reproduzida; o vigia cobre qualquer outra.
+Satélite: em vez de teto de memória nos contêineres, `oom_score_adj: -500` no game-server (o teto mataria o jogo, não o protegeria); `dnf-makecache.timer` desligado e `dnf-automatic` com `MemoryMax=450M`, swap próprio e prioridade mínima. O aviso ao PO quando uma região some ficou fora (card novo se o PO quiser).
+Pendente: o reinício pelo vigia só foi coberto pelo teste do aviso, não exercitado em máquina; na VM da Alemanha só o timer foi desligado à mão, o resto entra no próximo deploy do satélite e ao rodar o `machine.sh` de novo.

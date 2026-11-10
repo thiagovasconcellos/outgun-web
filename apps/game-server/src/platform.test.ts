@@ -5,7 +5,7 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseSecrets, verifyInternalRequest } from '@outgun/tickets';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ConsolePlayer } from './moderation.js';
 import type { MatchReport } from './match-report.js';
 import { auditBody, heartbeatBody, PlatformClient } from './platform.js';
@@ -81,5 +81,46 @@ describe('resultado recusado pela API (OG-331)', () => {
     expect(existsSync(join(dir, 'failed', 'r-2.json'))).toBe(false);
     server.close();
     rmSync(dir, { recursive: true });
+  });
+});
+
+describe('heartbeat que não trava (OG-601)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const info = { wsBaseUrl: 'wss://gs1.example', region: 'de', maxRooms: 6 };
+  const accepted = () => new Response(JSON.stringify({}), { status: 200 });
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  it('envio que nunca responde não impede o seguinte', async () => {
+    let calls = 0;
+    // o primeiro pedido nunca termina e ignora o sinal de abortar, como no incidente
+    vi.stubGlobal('fetch', () => (++calls === 1 ? new Promise<Response>(() => {}) : Promise.resolve(accepted())));
+    const lines: string[] = [];
+    const client = new PlatformClient('http://api.example', 'gs-de', 'segredo', (line) => lines.push(line));
+    client.startHeartbeat(info, () => [], 10, undefined, { deadlineMs: 30 });
+    await wait(150);
+    client.stopHeartbeat();
+    expect(calls).toBeGreaterThan(1);
+    expect(lines).toEqual(['registro de salas: API não aceitou o heartbeat', 'registro de salas: heartbeat aceito pela API']);
+  });
+
+  it('avisa quando o heartbeat aceito fica velho, e só depois do primeiro aceito', async () => {
+    let calls = 0;
+    vi.stubGlobal('fetch', () => (++calls === 1 ? Promise.resolve(accepted()) : new Promise<Response>(() => {})));
+    let stale = 0;
+    const client = new PlatformClient('http://api.example', 'gs-de', 'segredo', () => {});
+    client.startHeartbeat(info, () => [], 10, undefined, { deadlineMs: 20, staleMs: 60, onStale: () => void stale++ });
+    await wait(40);
+    expect(stale).toBe(0);
+    await wait(150);
+    client.stopHeartbeat();
+    expect(stale).toBeGreaterThan(0);
+
+    let never = 0;
+    vi.stubGlobal('fetch', () => new Promise<Response>(() => {}));
+    const offline = new PlatformClient('http://api.example', 'gs-de', 'segredo', () => {});
+    offline.startHeartbeat(info, () => [], 10, undefined, { deadlineMs: 20, staleMs: 30, onStale: () => void never++ });
+    await wait(120);
+    offline.stopHeartbeat();
+    expect(never).toBe(0);
   });
 });

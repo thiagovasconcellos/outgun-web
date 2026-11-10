@@ -96,6 +96,15 @@ export interface PanelHandlers {
   onReply(reply: HeartbeatReply): void;
 }
 
+/** Prazo de cada envio e vigia do heartbeat (OG-601). */
+export interface HeartbeatWatch {
+  /** Prazo de um envio, contado fora do `fetch` (padrão 8 s). */
+  deadlineMs?: number;
+  /** Sem heartbeat aceito há mais que isto, chama `onStale` a cada batida. */
+  staleMs?: number;
+  onStale?: (silentMs: number) => void;
+}
+
 function isHeartbeatReply(x: unknown): x is HeartbeatReply {
   const r = x as Partial<HeartbeatReply> | undefined;
   return typeof r === 'object' && r !== null && Array.isArray(r.commands) && typeof r.config === 'object' && r.config !== null;
@@ -103,6 +112,7 @@ function isHeartbeatReply(x: unknown): x is HeartbeatReply {
 
 export class PlatformClient {
   private heartbeat: NodeJS.Timeout | undefined;
+  private watchdog: NodeJS.Timeout | undefined;
 
   constructor(
     private readonly apiUrl: string,
@@ -197,32 +207,61 @@ export class PlatformClient {
   /**
    * Heartbeat a cada `everyMs` (3 s): a API tira do lobby a sala sem heartbeat por 10 s. Uma
    * tentativa por vez, sem repetição (o próximo heartbeat já é a nova tentativa).
+   *
+   * Cada envio tem um prazo próprio (`watch.deadlineMs`), fora do `fetch`: em 2026-11-10 a máquina
+   * da Alemanha congelou por horas e, na volta, um envio nunca terminou nem foi abortado; a trava
+   * ficou presa e o servidor sumiu do lobby até ser reiniciado (OG-601). `watch.onStale` é chamado
+   * a cada batida enquanto o último heartbeat aceito tiver mais de `watch.staleMs`; só vale depois
+   * do primeiro aceito (sem API, no desenvolvimento, nunca dispara).
    */
-  startHeartbeat(server: ServerInfo, rooms: () => readonly HostedRoom[], everyMs = 3000, panel?: PanelHandlers): void {
+  startHeartbeat(server: ServerInfo, rooms: () => readonly HostedRoom[], everyMs = 3000, panel?: PanelHandlers, watch: HeartbeatWatch = {}): void {
+    const deadlineMs = watch.deadlineMs ?? 8000;
     let busy = false;
     let up: boolean | undefined;
+    let acceptedAt: number | undefined;
     const beat = async () => {
       if (busy) return;
       busy = true;
       // confirmações dos comandos do painel (OG-087): voltam para a fila se o envio falhar
       const acks = panel?.takeAcks() ?? [];
+      let deadline: NodeJS.Timeout | undefined;
       try {
-        const { ok, reply } = await this.send('/internal/rooms/heartbeat', { ...heartbeatBody(server, rooms()), ...(acks.length ? { acks } : {}) }, 1, true);
+        const late = new Promise<{ ok: boolean; reply?: unknown }>((resolve) => {
+          deadline = setTimeout(() => resolve({ ok: false }), deadlineMs);
+        });
+        const { ok, reply } = await Promise.race([this.send('/internal/rooms/heartbeat', { ...heartbeatBody(server, rooms()), ...(acks.length ? { acks } : {}) }, 1, true), late]);
         if (!ok) panel?.requeue(acks);
-        else if (panel && isHeartbeatReply(reply)) panel.onReply(reply);
+        else {
+          acceptedAt = performance.now();
+          if (panel && isHeartbeatReply(reply)) panel.onReply(reply);
+        }
         // só a mudança vai para o log (sem API, no desenvolvimento, falharia a cada 3 s)
         if (ok !== up) this.log(ok ? 'registro de salas: heartbeat aceito pela API' : 'registro de salas: API não aceitou o heartbeat', ok ? 'info' : 'error');
         up = ok;
+      } catch (error) {
+        panel?.requeue(acks);
+        this.log(`registro de salas: heartbeat falhou: ${String(error)}`, 'error');
+        up = false;
       } finally {
+        clearTimeout(deadline);
         busy = false;
       }
     };
     void beat();
     this.heartbeat = setInterval(() => void beat(), everyMs);
     this.heartbeat.unref();
+    const { staleMs, onStale } = watch;
+    if (staleMs && onStale) {
+      // relógio à parte do envio: continua valendo mesmo que `beat` nunca mais termine
+      this.watchdog = setInterval(() => {
+        if (acceptedAt !== undefined && performance.now() - acceptedAt > staleMs) onStale(performance.now() - acceptedAt);
+      }, everyMs);
+      this.watchdog.unref();
+    }
   }
 
   stopHeartbeat(): void {
     clearInterval(this.heartbeat);
+    clearInterval(this.watchdog);
   }
 }
