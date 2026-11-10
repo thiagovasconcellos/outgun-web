@@ -1087,8 +1087,9 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-598](cards/OG-598-coluna-regiao-nas-salas.md) | Coluna Região nas listas de salas | E16 | 2 | Must | S64 | OG-547 | Concluído |
 | [OG-599](cards/OG-599-servidor-da-comunidade-na-alemanha.md) | Servidor da comunidade na Alemanha (só Casual) | E16 | 2 | Must | S64 | OG-597, OG-598 | Em andamento |
 | [OG-600](cards/OG-600-limites-servidor-so-casual.md) | Limites das rotas internas para servidor de terceiros | E16 | 3 | Should | — | OG-597 | Backlog |
+| [OG-601](cards/OG-601-heartbeat-depois-de-congelamento.md) | Satélite volta ao lobby sozinho depois de um congelamento | E16 | 3 | Must | — | OG-599 | Backlog |
 
-**Total:** 437 cards, 1385 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 368 cards, 1090 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
+**Total:** 438 cards, 1388 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 369 cards, 1093 pts (OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
 ---
 
