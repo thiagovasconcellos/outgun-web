@@ -43,6 +43,8 @@ services:
       TRUST_PROXY: '1'
       RELEASE: ${RELEASE:-${TAG}}
     stop_grace_period: 300s
+    # sem memória, o kernel mata outra coisa antes do jogo (OG-601)
+    oom_score_adj: -500
     volumes: [replays:/data/replays]
 
   # métricas e logs no Grafana Cloud (OG-550): só com as credenciais (deploy/vps/grafana-cloud.sh)

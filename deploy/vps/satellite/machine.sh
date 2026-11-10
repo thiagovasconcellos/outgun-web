@@ -62,6 +62,20 @@ machine_rhel() {
   rpm -q dnf-automatic >/dev/null 2>&1 || dnf install -y -q dnf-automatic
   sed -i -e 's/^upgrade_type *=.*/upgrade_type = security/' -e 's/^apply_updates *=.*/apply_updates = yes/' /etc/dnf/automatic.conf
   systemctl enable --now dnf-automatic.timer
+  # o índice de pacotes do Oracle Linux tem 189 MB e o dnf passa de 600 MB ao lê-lo: em 2026-11-10 o
+  # dnf-makecache travou a máquina de 1 GB por quase 6 h (OG-601). Sem ele, o dnf-automatic já baixa
+  # o índice uma vez por dia; e fica com teto de memória, para o aperto ser só dele.
+  systemctl disable --now dnf-makecache.timer 2>/dev/null || true
+  mkdir -p /etc/systemd/system/dnf-automatic.service.d
+  cat > /etc/systemd/system/dnf-automatic.service.d/outgun-memory.conf <<'UNIT'
+[Service]
+MemoryHigh=350M
+MemoryMax=450M
+MemorySwapMax=1500M
+Nice=19
+IOSchedulingClass=idle
+UNIT
+  systemctl daemon-reload
   # firewall antes do Docker subir: um reload depois apagaria as regras dele
   systemctl enable --now firewalld
   if ! firewall-cmd --permanent --query-service=http >/dev/null || ! firewall-cmd --permanent --query-service=https >/dev/null; then
