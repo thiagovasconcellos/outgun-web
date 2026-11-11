@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 3 pts |
 | Sprint | S65 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | — |
 | Issue | [#53](https://github.com/thiagovasconcellos/outgun-web/issues/53) |
 | Regras de negócio | — |
@@ -32,10 +32,12 @@ Como jogador, quero que isto deixe de acontecer: se eu saio da sala que criei a 
 - **Confirmado pelo PO em 2026-11-11 (D-98):** fecha quando sai o último humano, com 15 s de carência; se o criador sai e restam outros, a sala continua.
 
 ## Critérios de aceite
-- [ ] Criar sala, sair e esperar a carência: a sala sai da lista em segundos (teste de `rooms.ts` com relógio falso).
-- [ ] Voltar dentro da carência mantém a sala (teste).
-- [ ] Sala persistente, Ranked e sala com outro humano dentro não fecham (testes).
+- [x] Criar sala, sair e esperar a carência: a sala sai da lista em segundos (teste de `rooms.ts` com relógio falso).
+- [x] Voltar dentro da carência mantém a sala (teste).
+- [x] Sala persistente, Ranked e sala com outro humano dentro não fecham (testes).
 - [ ] PO confere.
 
 ## Notas de implementação
-(preenchido durante a execução)
+`RoomManager` ganhou `playerRoomGraceMs` (`PLAYER_ROOM_GRACE_S`, padrão 15): vale para sala não fixa e sem lobby Ranked, e só depois que alguém entrou; a sala recém-criada ainda espera o dono pelos 300 s (`EMPTY_TIMEOUT_S`), senão quem demora a carregar perderia a sala. Bots já saem quando não há humanos (D-27), então não seguram a sala.
+A API não precisou mudar: a sala que some do heartbeat (a cada 3 s) é marcada fora do ar na hora (`internal.ts`), então sai da lista em até ~18 s depois da saída.
+Salas da OutCup têm lobby e ficam na regra do Ranked. Teste em `room.test.ts` com relógio falso.

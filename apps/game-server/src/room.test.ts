@@ -484,6 +484,45 @@ describe('RoomManager', () => {
     expect(m.metrics().rooms).toBe(1);
   });
 
+  it('sala de jogador fecha 15 s depois que o último humano sai; voltar na carência mantém; fixa, Ranked e sala com gente ficam (OG-606, D-98)', () => {
+    let t = 0;
+    const clock = { now: () => t, setTimeout: () => 0, clearTimeout: () => {} };
+    const m = new RoomManager({ emptyTimeoutMs: 300_000, playerRoomGraceMs: 15_000, clock, seed: () => 1 });
+    const wait = (ms: number) => {
+      for (const end = t + ms; t < end; t += 1000) m.tickAll();
+      m.tickAll();
+    };
+    const enter = (id: string, name: string, accountId: string | null = null) => {
+      const res = m.get(id)!.join(new TestConnection(), { name, accountId });
+      if (!res.ok) throw new Error(res.text);
+      return res.pid;
+    };
+    m.create({ id: 'p-nova', preset: 'classic', maps, maxPlayers: 16 });
+    m.create({ id: 'p-sai', preset: 'classic', maps, maxPlayers: 16 });
+    m.create({ id: 'p-volta', preset: 'classic', maps, maxPlayers: 16 });
+    m.create({ id: 'p-dois', preset: 'classic', maps, maxPlayers: 16 });
+    m.create({ id: 'fixa', preset: 'classic', maps, maxPlayers: 16, persistent: true });
+    m.create({ id: 'r-rank', preset: 'ranked', maps, maxPlayers: 4, ranked: { format: '2x2', bestOf: 1 } });
+    const sai = enter('p-sai', 'a');
+    const volta = enter('p-volta', 'b');
+    const dono = enter('p-dois', 'c');
+    enter('p-dois', 'd');
+    const fixa = enter('fixa', 'e');
+    const rank = enter('r-rank', 'f', '00000000-0000-4000-8000-000000000001');
+    m.tickAll();
+    for (const [id, pid] of [['p-sai', sai], ['p-volta', volta], ['p-dois', dono], ['fixa', fixa], ['r-rank', rank]] as const) m.get(id)!.leave(pid);
+    wait(10_000);
+    expect(m.get('p-sai')).toBeDefined(); // ainda na carência
+    enter('p-volta', 'b');
+    wait(10_000);
+    expect(m.get('p-sai')).toBeUndefined();
+    expect(['p-nova', 'p-volta', 'p-dois', 'fixa', 'r-rank'].filter((id) => m.get(id) === undefined)).toEqual([]);
+    // a recém-criada, sem ninguém ter entrado, e a Ranked seguem o prazo geral
+    wait(300_000);
+    expect(['p-nova', 'r-rank'].filter((id) => m.get(id) !== undefined)).toEqual([]);
+    expect(['p-volta', 'p-dois', 'fixa'].filter((id) => m.get(id) === undefined)).toEqual([]);
+  });
+
   it('encerrar a sala avisa e fecha as conexões', () => {
     const m = new RoomManager({ emptyTimeoutMs: 1000, seed: () => 1 });
     const r = m.create({ id: 'x', preset: 'classic', maps, maxPlayers: 16 });
