@@ -7,6 +7,7 @@ import { casualRotation, findPreset, panelPresets, rotationMaps } from '../platf
 import { and, asc, eq, isNotNull } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
+import { EMAIL_NOT_VERIFIED, emailBlocked } from '../auth/sessions.js';
 import { hashPassword } from '../auth/password.js';
 import { gameServers, rooms } from '../db/schema.js';
 import { DRAFT_NAME, draftMaps, findMap, findRevision, findRevisionByCrc, playableMaps } from '../map-catalog.js';
@@ -340,6 +341,7 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
           response: {
             201: Type.Object({ room: RoomSummary, inviteUrl: Type.String() }),
             401: ErrorSchema,
+            403: ErrorSchema,
             429: ErrorSchema,
             503: ErrorSchema,
           },
@@ -348,6 +350,7 @@ export function roomRoutes({ config, database }: AppDeps, { sessions, rateLimit 
       async (request, reply) => {
         const user = await sessions.current(request);
         if (!user) return reply.code(401).send({ error: 'login_required', message: 'sign in to create a room' });
+        if (emailBlocked(config, user)) return reply.code(403).send(EMAIL_NOT_VERIFIED); // RN-EML-01 (OG-610)
         const body = request.body;
         if (!(await rateLimit.allow(`create-room:${user.id}`, config.limits.roomsPerHourPerUser, HOUR))) {
           return reply.code(429).send({ error: 'rate_limited', message: 'too many rooms, try later' });

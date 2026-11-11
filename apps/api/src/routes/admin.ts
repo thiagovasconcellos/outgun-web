@@ -908,9 +908,9 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
         if (!(await guard(request, reply, 'admin'))) return reply;
         const { busca, limit = 200 } = request.query;
         const key = busca?.trim() ? usernameKey(busca.trim()) : '';
-        const rows = await db.execute<{ username: string; role: string; clan_tag: string | null; created_at: Date; last_seen: Date | null }>(sql`
+        const rows = await db.execute<{ username: string; role: string; clan_tag: string | null; created_at: Date; last_seen: Date | null; email_verified: boolean }>(sql`
           SELECT u.username, CASE WHEN u.is_admin THEN 'admin' WHEN u.is_moderator THEN 'moderator' ELSE 'player' END AS role,
-                 u.clan_tag, u.created_at, (SELECT max(s.last_seen_at) FROM sessions s WHERE s.user_id = u.id) AS last_seen
+                 u.clan_tag, u.created_at, u.email_verified_at IS NOT NULL AS email_verified, (SELECT max(s.last_seen_at) FROM sessions s WHERE s.user_id = u.id) AS last_seen
           FROM users u
           WHERE ${key} = '' OR u.username_key LIKE ${`%${key.replace(/[\\%_]/g, (c) => `\\${c}`)}%`}
           ORDER BY (CASE WHEN u.is_admin THEN 0 WHEN u.is_moderator THEN 1 ELSE 2 END), u.username_key
@@ -924,6 +924,7 @@ export function adminRoutes(deps: AppDeps, services: Services): FastifyPluginAsy
             clanTag: r.clan_tag,
             createdAt: new Date(r.created_at).toISOString(),
             lastSeenAt: r.last_seen ? new Date(r.last_seen).toISOString() : null,
+            emailVerified: r.email_verified,
           })),
         };
       },

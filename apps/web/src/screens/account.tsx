@@ -76,6 +76,10 @@ function useErrorText(): (error: unknown) => string {
         return t('This password is too common. Choose another.');
       case 'username_cooldown':
         return t('You can change your name again on $1.', new Date((error as ApiError).message).toLocaleDateString());
+      case 'email_not_verified':
+        return t('Confirm your e-mail first: use the link we sent you, or ask for a new one in Account.');
+      case 'already_verified':
+        return t('Your e-mail is already confirmed.');
       case 'invalid_token':
         return t('This link is invalid or has expired. Ask for a new one.');
       case 'rate_limited':
@@ -358,16 +362,58 @@ async function downloadExport(): Promise<void> {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function AccountScreen() {
+/** Link do e-mail de confirmação: /verify-email#token=... (OG-610; o token fica no fragmento, fora dos logs). */
+export function VerifyEmailScreen() {
   const { t } = usePrefs();
   const navigate = useNavigate();
+  const { setUser } = useAccount();
+  const errorText = useErrorText();
+  const [token] = useState(() => new URLSearchParams(location.hash.slice(1)).get('token') ?? '');
+  const [message, setMessage] = useState<Message>(null);
+  const sent = useRef(false);
+  useEffect(() => {
+    if (location.hash) history.replaceState(null, '', location.pathname);
+    if (sent.current) return; // o link vale uma vez: não mandar de novo no modo estrito do React
+    sent.current = true;
+    if (!token) return setMessage({ text: t('This link is invalid or has expired. Ask for a new one.'), error: true });
+    api('/auth/email/verify', { body: { token } }).then(
+      () => {
+        setMessage({ text: t('E-mail confirmed. Ranked, OutCup, cards, clans and reports are unlocked.'), error: false });
+        // a sessão aberta neste navegador (se houver) passa a mostrar a conta confirmada
+        api<{ user: AccountUser }>('/auth/me').then((r) => setUser(r.user), () => undefined);
+      },
+      (e: unknown) => setMessage({ text: errorText(e), error: true }),
+    );
+  }, [token, t, setUser, errorText]);
+  return (
+    <Page title={t('Confirm e-mail')} width="narrow" onBack={() => void navigate('/')} backLabel={t('Back')}>
+      <Panel>
+        <FormMessageLine message={message ?? { text: t('Confirming...'), error: false }} />
+        <Button variant="primary" block onClick={() => void navigate('/')}>
+          {t('Go to the game')}
+        </Button>
+      </Panel>
+    </Page>
+  );
+}
+
+export function AccountScreen() {
+  const { t, prefs } = usePrefs();
+  const navigate = useNavigate();
   const { user, logout } = useAccount();
-  const { run, general } = useSubmit();
+  const { run, general, setMessage } = useSubmit();
   // Ao sair por aqui, o destino é o início, não o login.
   const [leaving, setLeaving] = useState(false);
   if (user === null) return leaving ? <Navigate to="/" replace /> : <Navigate to="/login" replace />;
   if (!user) return null;
+  // RN-EML-01 (OG-610): sem e-mail confirmado, o primeiro item manda o link de novo
+  const resend = () =>
+    run(async () => {
+      await api('/auth/email/verify/resend', { body: { language: prefs.locale } });
+      setMessage({ text: t('We sent the confirmation link to $1. It is valid for 24 hours.', user.email), error: false });
+    });
   const items: MenuListItem[] = [
+    ...(user.emailVerified === false ? [{ label: t('Confirm e-mail: send the link again'), aside: <Badge tone="warning">{t('pending')}</Badge>, onActivate: () => void resend() }] : []),
     { label: t('My profile'), onActivate: () => void navigate(`/players/${encodeURIComponent(user.username)}`) },
     { label: t('Change name'), aside: user.username, onActivate: () => void navigate('/account/username') },
     { label: t('Clan'), aside: user.clanTag ?? '—', onActivate: () => void navigate(user.clanTag ? `/clans/${encodeURIComponent(user.clanTag)}` : '/clans') },

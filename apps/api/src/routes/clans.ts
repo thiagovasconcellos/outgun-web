@@ -7,7 +7,7 @@ import { and, asc, eq, gt, inArray, isNotNull, lte, ne, sql } from 'drizzle-orm'
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { CLAN_TAG_STYLES, checkClanName, checkClanTag, clanLabel, MAX_CLAN_NAME_LENGTH as MAX_CLAN_NAME, MAX_CLAN_TAG_LENGTH, type ClanTagStyle, clanColoursProblem, DEFAULT_EMBLEM, emblemFrameAllowed, emblemKey, parseEmblem, type ClanEmblem } from '@outgun/protocol';
 import type { AppDeps, Services } from '../app.js';
-import type { SessionUser } from '../auth/sessions.js';
+import { EMAIL_NOT_VERIFIED, emailBlocked, type SessionUser } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
 import { clanKey, usernameKey } from '../db/keys.js';
 import { clanMembers, clanRequests, clans, playerReports, seasonChampions, seasons, users, type ClanRole } from '../db/schema.js';
@@ -233,6 +233,16 @@ export function clanRoutes({ database, config }: AppDeps, { sessions }: Services
     return user;
   }
 
+  /** Criar clã, entrar em clã e denunciar exigem e-mail confirmado (RN-EML-01, OG-610). */
+  async function requireVerified(request: FastifyRequest, reply: FastifyReply): Promise<SessionUser | undefined> {
+    const user = await requireUser(request, reply);
+    if (user && emailBlocked(config, user)) {
+      await reply.code(403).send(EMAIL_NOT_VERIFIED);
+      return undefined;
+    }
+    return user;
+  }
+
   /**
    * Roda `fn` numa transação; ClanError e nome/tag repetidos (corrida entre dois pedidos) viram a
    * resposta de erro e o retorno é `undefined`.
@@ -373,7 +383,7 @@ export function clanRoutes({ database, config }: AppDeps, { sessions }: Services
         },
       },
       async (request, reply) => {
-        const user = await requireUser(request, reply);
+        const user = await requireVerified(request, reply);
         if (!user) return reply;
         const { name, tag, tagStyle = 'paren', description = '' } = request.body;
         const done = await run(reply, async (tx) => {
@@ -766,7 +776,7 @@ export function clanRoutes({ database, config }: AppDeps, { sessions }: Services
           },
         },
         async (request, reply) => {
-          const user = await requireUser(request, reply);
+          const user = await (answer === 'accept' ? requireVerified : requireUser)(request, reply);
           if (!user) return reply;
           const done = await run(reply, async (tx) => {
             const clan = await lockClan(tx, request.params.tag);
@@ -794,7 +804,7 @@ export function clanRoutes({ database, config }: AppDeps, { sessions }: Services
         },
       },
       async (request, reply) => {
-        const user = await requireUser(request, reply);
+        const user = await requireVerified(request, reply);
         if (!user) return reply;
         const done = await run(reply, async (tx) => {
           const clan = await lockClan(tx, request.params.tag);
@@ -883,7 +893,7 @@ export function clanRoutes({ database, config }: AppDeps, { sessions }: Services
         },
       },
       async (request, reply) => {
-        const user = await requireUser(request, reply);
+        const user = await requireVerified(request, reply);
         if (!user) return reply;
         const done = await run(reply, async (tx) => {
           const clan = await lockClan(tx, request.params.tag);

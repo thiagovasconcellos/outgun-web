@@ -1904,6 +1904,28 @@
               }
             }
           },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "429": {
             "description": "Default Response",
             "content": {
@@ -20259,7 +20281,8 @@
                         "clanTag",
                         "clanLabel",
                         "isAdmin",
-                        "isModerator"
+                        "isModerator",
+                        "emailVerified"
                       ],
                       "properties": {
                         "id": {
@@ -20295,6 +20318,9 @@
                           "type": "boolean"
                         },
                         "isModerator": {
+                          "type": "boolean"
+                        },
+                        "emailVerified": {
                           "type": "boolean"
                         }
                       }
@@ -20446,7 +20472,8 @@
                         "clanTag",
                         "clanLabel",
                         "isAdmin",
-                        "isModerator"
+                        "isModerator",
+                        "emailVerified"
                       ],
                       "properties": {
                         "id": {
@@ -20482,6 +20509,9 @@
                           "type": "boolean"
                         },
                         "isModerator": {
+                          "type": "boolean"
+                        },
+                        "emailVerified": {
                           "type": "boolean"
                         }
                       }
@@ -20577,7 +20607,8 @@
                         "clanTag",
                         "clanLabel",
                         "isAdmin",
-                        "isModerator"
+                        "isModerator",
+                        "emailVerified"
                       ],
                       "properties": {
                         "id": {
@@ -20614,6 +20645,9 @@
                         },
                         "isModerator": {
                           "type": "boolean"
+                        },
+                        "emailVerified": {
+                          "type": "boolean"
                         }
                       }
                     }
@@ -20623,6 +20657,214 @@
             }
           },
           "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/email/verify": {
+      "post": {
+        "summary": "Confirma o e-mail com o link recebido (24 h, uso único); não precisa estar com a sessão aberta",
+        "tags": [
+          "contas"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 100
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/email/verify/resend": {
+      "post": {
+        "summary": "Manda de novo o link de confirmação para o e-mail da conta (no máximo 3 por hora)",
+        "tags": [
+          "contas"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "maxLength": 10
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -20776,7 +21018,8 @@
                         "clanTag",
                         "clanLabel",
                         "isAdmin",
-                        "isModerator"
+                        "isModerator",
+                        "emailVerified"
                       ],
                       "properties": {
                         "id": {
@@ -20812,6 +21055,9 @@
                           "type": "boolean"
                         },
                         "isModerator": {
+                          "type": "boolean"
+                        },
+                        "emailVerified": {
                           "type": "boolean"
                         }
                       }
@@ -21023,7 +21269,8 @@
                         "clanTag",
                         "clanLabel",
                         "isAdmin",
-                        "isModerator"
+                        "isModerator",
+                        "emailVerified"
                       ],
                       "properties": {
                         "id": {
@@ -21059,6 +21306,9 @@
                           "type": "boolean"
                         },
                         "isModerator": {
+                          "type": "boolean"
+                        },
+                        "emailVerified": {
                           "type": "boolean"
                         }
                       }
@@ -27372,6 +27622,28 @@
             }
           },
           "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "message"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
             "description": "Default Response",
             "content": {
               "application/json": {

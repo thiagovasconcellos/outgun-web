@@ -11,13 +11,15 @@ import { hashPassword, MAX_PASSWORD, MIN_PASSWORD, validPassword, verifyPassword
 import type { SessionUser } from '../auth/sessions.js';
 import { newToken, tokenHash } from '../auth/tokens.js';
 import { emailKey, usernameKey } from '../db/keys.js';
-import { betaInvites, betaInviteUses, passwordResets, playerProfiles, users } from '../db/schema.js';
-import { mailLocale, passwordResetMail, welcomeMail } from '../mail/templates.js';
+import { betaInvites, betaInviteUses, emailVerifications, passwordResets, playerProfiles, users } from '../db/schema.js';
+import { mailLocale, passwordResetMail, verifyEmailMail, welcomeMail } from '../mail/templates.js';
 import { ErrorSchema } from './schemas.js';
 import { nameBlocked } from '../name-filter.js';
 import { securityEvent } from '../security.js';
 
 export const RESET_TTL_MS = 30 * 60_000;
+/** Validade do link de confirmação de e-mail (OG-610). */
+export const VERIFY_TTL_MS = 24 * 60 * 60_000;
 const HOUR = 60 * 60_000;
 
 export const PublicUser = Type.Object({
@@ -30,11 +32,13 @@ export const PublicUser = Type.Object({
   clanLabel: Type.Union([Type.String(), Type.Null()]),
   isAdmin: Type.Boolean(),
   isModerator: Type.Boolean(),
+  /** E-mail confirmado (OG-610, RN-EML-01): sem isso, Ranked, OutCup, cartas, clã e denúncias ficam travados. */
+  emailVerified: Type.Boolean(),
 });
 const UserReply = Type.Object({ user: PublicUser });
 
 export function toPublic(u: Omit<SessionUser, 'sessionId'>) {
-  return { id: u.id, username: u.username, email: u.email, clanTag: u.clanTag, clanLabel: u.clanLabel, isAdmin: u.isAdmin, isModerator: u.isModerator };
+  return { id: u.id, username: u.username, email: u.email, clanTag: u.clanTag, clanLabel: u.clanLabel, isAdmin: u.isAdmin, isModerator: u.isModerator, emailVerified: u.emailVerifiedAt !== null };
 }
 
 const Password = Type.String({ minLength: MIN_PASSWORD, maxLength: MAX_PASSWORD });
@@ -61,6 +65,14 @@ export function tooMany(reply: FastifyReply, waitMs: number) {
 export function authRoutes(deps: AppDeps, services: Services): FastifyPluginAsyncTypebox {
   const { db } = deps.database;
   const { sessions, throttle, rateLimit, mailer, security } = services;
+
+  /** Link novo de confirmação de e-mail (OG-610): os anteriores da conta, ainda não usados, deixam de valer. */
+  async function verifyLink(user: { id: string; email: string }): Promise<string> {
+    const token = newToken();
+    await db.delete(emailVerifications).where(and(eq(emailVerifications.userId, user.id), isNull(emailVerifications.usedAt)));
+    await db.insert(emailVerifications).values({ tokenHash: tokenHash(token), userId: user.id, emailKey: emailKey(user.email), expiresAt: new Date(Date.now() + VERIFY_TTL_MS) });
+    return `${deps.config.webUrl}/verify-email#token=${token}`;
+  }
 
   return async (app) => {
     app.post(
@@ -131,8 +143,9 @@ export function authRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
         if (created === 'email_taken') return fail(reply, 409, 'email_taken', 'e-mail already in use');
         if (created === 'invalid_invite') return fail(reply, 403, 'invalid_invite', 'invite code is invalid, used up or expired');
         await sessions.create(created.id, request, reply);
-        // boas-vindas: sem esperar o envio (falha do e-mail não impede o cadastro)
-        mailer.send(welcomeMail(created.email, created.username, deps.config.webUrl, mailLocale(language))).catch((error: unknown) => {
+        // boas-vindas com o link de confirmação (OG-610): sem esperar o envio (falha do e-mail não impede o cadastro)
+        const confirmLink = await verifyLink(created);
+        mailer.send(welcomeMail(created.email, created.username, deps.config.webUrl, mailLocale(language), confirmLink)).catch((error: unknown) => {
           request.log.error({ err: error }, 'e-mail de boas-vindas não enviado');
         });
         return reply.code(201).send({ user: toPublic(created) });
@@ -191,6 +204,64 @@ export function authRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
         const user = await sessions.current(request);
         if (!user) return fail(reply, 401, 'unauthenticated', 'not signed in');
         return { user: toPublic(user) };
+      },
+    );
+
+    app.post(
+      '/email/verify',
+      {
+        schema: {
+          tags: ['contas'],
+          summary: 'Confirma o e-mail com o link recebido (24 h, uso único); não precisa estar com a sessão aberta',
+          body: Type.Object({ token: Type.String({ minLength: 10, maxLength: 100 }) }),
+          response: { 200: Type.Object({ ok: Type.Literal(true) }), 400: ErrorSchema, 429: ErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        if (!(await rateLimit.allow(`verify:${request.ip}`, 30, HOUR))) return fail(reply, 429, 'rate_limited', 'too many requests, try later');
+        const done = await db.transaction(async (tx) => {
+          const [used] = await tx
+            .update(emailVerifications)
+            .set({ usedAt: new Date() })
+            .where(and(eq(emailVerifications.tokenHash, tokenHash(request.body.token)), isNull(emailVerifications.usedAt), gt(emailVerifications.expiresAt, new Date())))
+            .returning({ userId: emailVerifications.userId, emailKey: emailVerifications.emailKey });
+          if (!used) return undefined;
+          // o link só confirma o endereço para o qual foi enviado
+          const [user] = await tx
+            .update(users)
+            .set({ emailVerifiedAt: new Date(), updatedAt: new Date() })
+            .where(and(eq(users.id, used.userId), eq(users.emailKey, used.emailKey)))
+            .returning({ username: users.username });
+          return user;
+        });
+        if (!done) return fail(reply, 400, 'invalid_token', 'invalid or expired link');
+        securityEvent(request.log, 'authn_email_verified', { user: done.username, ip: request.ip });
+        return { ok: true as const };
+      },
+    );
+
+    app.post(
+      '/email/verify/resend',
+      {
+        schema: {
+          tags: ['contas'],
+          summary: 'Manda de novo o link de confirmação para o e-mail da conta (no máximo 3 por hora)',
+          body: Type.Object({ language: Language }),
+          response: { 202: Type.Object({ ok: Type.Literal(true) }), 401: ErrorSchema, 409: ErrorSchema, 429: ErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        const user = await sessions.current(request);
+        if (!user) return fail(reply, 401, 'unauthenticated', 'not signed in');
+        if (user.emailVerifiedAt) return fail(reply, 409, 'already_verified', 'e-mail already confirmed');
+        if (!(await rateLimit.allow(`verify-ip:${request.ip}`, deps.config.limits.forgotPerHourPerIp, HOUR)) || !(await rateLimit.allow(`verify-user:${user.id}`, 3, HOUR))) {
+          return fail(reply, 429, 'rate_limited', 'too many requests, try later');
+        }
+        const link = await verifyLink(user);
+        await mailer.send(verifyEmailMail(user.email, user.username, link, mailLocale(request.body.language))).catch((error: unknown) => {
+          request.log.error({ err: error }, 'falha ao enviar o link de confirmação de e-mail');
+        });
+        return reply.code(202).send({ ok: true as const });
       },
     );
 

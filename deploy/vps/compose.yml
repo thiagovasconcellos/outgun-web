@@ -75,6 +75,9 @@ services:
       WEB_URL: https://${DOMAIN}
       TRUST_PROXY: '1'
       MAILER: ${MAILER:-log}
+      # RN-EML-01 (OG-610): Ranked, OutCup, cartas, clã e denúncias só com e-mail confirmado; 0 desliga
+      # (se o envio de e-mail parar, ninguém novo consegue confirmar)
+      EMAIL_VERIFICATION: ${EMAIL_VERIFICATION:-1}
       # região das salas quando o cliente não diz qual (cliente antigo, OutCup; OG-545)
       DEFAULT_REGION: ${DEFAULT_REGION:-br}
       RELEASE: ${RELEASE:-${TAG}}

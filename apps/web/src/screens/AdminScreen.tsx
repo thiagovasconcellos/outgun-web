@@ -1250,6 +1250,8 @@ interface UserRow {
   clanTag: string | null;
   createdAt: string;
   lastSeenAt: string | null;
+  /** E-mail confirmado (OG-610). */
+  emailVerified?: boolean;
 }
 
 const ROLE_TONE = { admin: 'danger', moderator: 'accent', player: 'neutral' } as const;
@@ -1536,6 +1538,7 @@ function RolesTab() {
           { key: 'name', header: t('Account'), cell: (u) => <Link to={`/players/${encodeURIComponent(u.username)}`}>{u.username}</Link> },
           { key: 'role', header: t('Role'), cell: (u) => <Badge tone={ROLE_TONE[u.role]}>{roleName(u.role)}</Badge> },
           { key: 'clan', header: t('Clan'), cell: (u) => u.clanTag ?? '—' },
+          { key: 'email', header: t('E-mail confirmed'), cell: (u) => (u.emailVerified === false ? <Badge tone="warning">{t('pending')}</Badge> : t('yes')) },
           { key: 'created', header: t('Created'), cell: (u) => new Date(u.createdAt).toLocaleDateString() },
           { key: 'seen', header: t('Last seen'), cell: (u) => (u.lastSeenAt ? when(u.lastSeenAt) : '—') },
           {

@@ -14,6 +14,7 @@ export type SecurityEvent =
   | 'authn_login_lock'
   | 'authn_password_change'
   | 'authn_password_reset_request'
+  | 'authn_email_verified'
   | 'authz_change'
   | 'user_updated'
   | 'user_deleted';

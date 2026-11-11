@@ -13,6 +13,8 @@ export interface AccountUser {
   readonly isAdmin: boolean;
   /** Moderador do painel (OG-087). */
   readonly isModerator?: boolean;
+  /** E-mail confirmado (OG-610, RN-EML-01); ausente em API antiga = confirmado. */
+  readonly emailVerified?: boolean;
 }
 
 interface AccountContextValue {
