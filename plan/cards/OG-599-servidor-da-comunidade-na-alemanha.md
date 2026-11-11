@@ -15,7 +15,7 @@
 > **Só subir depois do OG-597 no beta:** antes disso a máquina poderia receber salas Ranked.
 
 ## Máquina (conferido em 2026-11-07)
-IP 141.147.24.18, `VM.Standard.E2.1.Micro` (1 OCPU, 1 GB, x86_64), `eu-frankfurt-1`, 30 GB de disco, usuário `opc`, SELinux ligado. O boot volume tem 47 GB (29,5 GB no `/`, 15 GB em `/var/oled`), mas a memória continua sendo a do Micro. Chave em `~/.ssh/outgun-de.key`, fora do repo. O Oracle Linux reserva 448 MB para o kernel de crash (`crashkernel=1G-64G:448M`) e sobram 498 MB; o beta, no mesmo shape, tem 952 MB. A porta 22 responde; 80/443 não responderam de fora com o firewall da VM aberto e um servidor de teste subindo, então devem estar fechadas na VCN (teste único, de 2026-11-07, sem conferir se o servidor já escutava).
+IP 141.147.24.18, `VM.Standard.E2.1.Micro` (1 OCPU, 1 GB, x86_64), `eu-frankfurt-1`, 30 GB de disco, usuário `opc`, SELinux ligado. O boot volume tem 47 GB (29,5 GB no `/`, 15 GB em `/var/oled`), mas a memória continua sendo a do Micro. Chave em `~/.ssh/outgun-de.key`, fora do repo. O Oracle Linux reserva 448 MB para o kernel de crash (`crashkernel=1G-64G:448M`) e sobram 498 MB; o beta, no mesmo shape, tem 952 MB. Sem o kernel de crash (depois do reboot), ficou com 945 MB. Portas 80/443 abertas na VCN pelo membro e conferidas pelo PO.
 
 ## História
 Como jogador na Europa, quero uma sala Casual com ping baixo enquanto o servidor oficial de Madrid não sai.
@@ -36,3 +36,4 @@ Como jogador na Europa, quero uma sala Casual com ping baixo enquanto o servidor
 - [ ] O deploy normal atualiza as duas máquinas na mesma versão.
 
 ## Notas de implementação
+Subiu na v2.64.0 em 2026-11-07: `gs-de` em `CASUAL_ONLY_SERVERS`, certificado emitido com SELinux ligado, `main-de` online na API em `de`, `git config outgun.satellites` gravado. A primeira execução do `machine.sh` com 498 MB travou a VM; depois do reboot, com 945 MB, levou cerca de 25 min. Conexão TCP medida do computador do PO: 54 ms até `fra`, 207 ms até o beta. Falta o PO conferir os critérios no jogo, medir o ping do Brasil e ver o primeiro deploy normal com as duas máquinas.
