@@ -26,6 +26,7 @@
     "appId": "br.com.outgunweb.desktop",
     "productName": "Outgun",
     "copyright": "GPL-2.0-or-later",
+    "afterPack": "./after-pack.cjs",
     "files": [
       "main.js",
       "display-win.js",

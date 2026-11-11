@@ -63,8 +63,11 @@ STEAM_USER=<conta> pnpm steam:upload <run> # ou uma execução específica
 O build entra só na branch `beta` (com senha). Para liberar a todos, o PO coloca o build na
 `default` em Steamworks › SteamPipe › Builds; o build antigo (5426019, `outgun.exe`) é a volta atrás.
 Opções de inicialização (Installation › General): `Outgun.exe` no Windows, `Outgun.app` no macOS e
-`outgun` com o argumento `--no-sandbox` no Linux (a Steam não instala o `chrome-sandbox` com setuid,
-e o Ubuntu 24.04 bloqueia o sandbox sem ele; a janela só abre o site do jogo).
+`outgun` no Linux, sem argumentos. No Linux, `outgun` é um script gerado pelo `after-pack.cjs`
+(OG-604) que chama o binário `outgun-bin` e acrescenta `--no-sandbox` sozinho quando o app é aberto
+pela Steam ou quando o sistema não deixa o sandbox subir (a Steam não instala o `chrome-sandbox` com
+setuid, e o Ubuntu 24.04 bloqueia o sandbox sem ele; a janela só abre o site do jogo). O argumento
+`--no-sandbox` em Steamworks deixou de ser necessário; se ainda estiver lá, não atrapalha.
 
 No macOS, o SteamCMD do Homebrew vem com a marca de quarentena e o Gatekeeper diz que o
 `Breakpad.framework` está danificado: `xattr -dr com.apple.quarantine /usr/local/Caskroom/steamcmd
