@@ -63,7 +63,7 @@ STEAM_USER=<conta> pnpm steam:upload <run> # ou uma execução específica
 O build entra só na branch `beta` (com senha). Para liberar a todos, o PO coloca o build na
 `default` em Steamworks › SteamPipe › Builds; o build antigo (5426019, `outgun.exe`) é a volta atrás.
 Opções de inicialização (Installation › General): `Outgun.exe` no Windows, `Outgun.app` no macOS e
-`outgun` no Linux, sem argumentos. No Linux, `outgun` é um script gerado pelo `after-pack.cjs`
+`outgun` no Linux, sem argumentos. No Linux, `outgun` é um script gerado pelo `after-pack.mjs`
 (OG-604) que chama o binário `outgun-bin` e acrescenta `--no-sandbox` sozinho quando o app é aberto
 pela Steam ou quando o sistema não deixa o sandbox subir (a Steam não instala o `chrome-sandbox` com
 setuid, e o Ubuntu 24.04 bloqueia o sandbox sem ele; a janela só abre o site do jogo). O argumento

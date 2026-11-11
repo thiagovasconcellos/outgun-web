@@ -39,5 +39,5 @@ Como jogador, quero que isto deixe de acontecer: Nao consegui abrir
 - [ ] O jogador da issue confirma que abre na branch `beta`.
 
 ## Notas de implementação
-`apps/desktop/after-pack.cjs` (hook `afterPack`, só Linux): `outgun` vira script `sh` e o binário passa a `outgun-bin`. O script põe `--no-sandbox` quando aberto pela Steam (`SteamAppId`/`SteamGameId`) ou quando não há `chrome-sandbox` setuid de root nem `unshare --user`; no `.deb` em sistema que deixa o sandbox subir, ele continua ligado. O workflow confere script, binário ELF e o `.deb`.
+`apps/desktop/after-pack.mjs` (hook `afterPack`, só Linux): `outgun` vira script `sh` e o binário passa a `outgun-bin`. O script põe `--no-sandbox` quando aberto pela Steam (`SteamAppId`/`SteamGameId`) ou quando não há `chrome-sandbox` setuid de root nem `unshare --user`; no `.deb` em sistema que deixa o sandbox subir, ele continua ligado. O workflow confere script, binário ELF e o `.deb`.
 Causa ainda é hipótese: o README já pedia `--no-sandbox` em Steamworks; se a opção estava lá, o motivo é outro (Steam em snap, GPU, biblioteca). Pendente: PO confirmar se a opção estava configurada e pedir ao jogador, na issue #51, para testar a branch `beta` e, se não abrir, mandar a saída de `./outgun` no terminal da pasta do jogo.

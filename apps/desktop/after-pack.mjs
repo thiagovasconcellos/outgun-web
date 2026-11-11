@@ -5,17 +5,15 @@
 // bloqueia user namespaces sem ele, então o app morria no arranque, sem janela. Assim o app não
 // depende da opção de inicialização em Steamworks. A janela só abre o site do jogo, e o
 // `sandbox: true` do renderer e a navegação restrita (main.js) continuam valendo.
-'use strict';
-
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const REAL_SUFFIX = '-bin';
 
 /** Texto do script que fica no lugar do executável. */
-function launcherScript(realName) {
+export function launcherScript(realName) {
   return `#!/bin/sh
-# Gerado por apps/desktop/after-pack.cjs (OG-604). Não edite: muda a cada build.
+# Gerado por apps/desktop/after-pack.mjs (OG-604). Não edite: muda a cada build.
 here="$(dirname "$(readlink -f "$0")")"
 
 # O sandbox do Chromium precisa do chrome-sandbox com setuid de root ou de user namespaces liberados.
@@ -34,7 +32,7 @@ exec "$here/${realName}" --no-sandbox "$@"
 }
 
 /** Troca o executável pelo script. Idempotente: rodar de novo só regrava o script. */
-function installLauncher(appOutDir, executableName) {
+export function installLauncher(appOutDir, executableName) {
   const launcher = path.join(appOutDir, executableName);
   const realName = executableName + REAL_SUFFIX;
   const real = path.join(appOutDir, realName);
@@ -45,12 +43,7 @@ function installLauncher(appOutDir, executableName) {
   return { launcher, real };
 }
 
-async function afterPack(context) {
+export default async function afterPack(context) {
   if (context.electronPlatformName !== 'linux') return;
   installLauncher(context.appOutDir, context.packager.executableName);
 }
-
-module.exports = afterPack;
-module.exports.default = afterPack;
-module.exports.installLauncher = installLauncher;
-module.exports.launcherScript = launcherScript;
