@@ -228,6 +228,10 @@ describe.skipIf(!pgAdminUrl)('registro de salas (OG-086)', () => {
     const res = await post('/rooms/quick-join', { mode: 'casual', name: 'Rápido' });
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({ roomId: 'c-b', name: 'Rápido*', guest: true });
+    // OG-605: sala de treino, mesmo a mais cheia, nunca é escolhida
+    await t.db.insert(rooms).values({ id: 'c-aim', name: 'Mira', mode: 'casual', preset: 'classic', maxPlayers: 16, training: { mode: 'aim', bots: 1, allies: 0, level: 0, powerups: false, sameStart: true } });
+    await heartbeat('gs-1', [{ id: 'main', players: 2 }, { id: 'c-a', players: 5 }, { id: 'c-b', players: 9 }, { id: 'c-full', players: 16 }, { id: 'c-aim', players: 12 }]);
+    expect((await post('/rooms/quick-join', { mode: 'casual', name: 'Outro' })).json().roomId).toBe('c-b');
     // Ranked: convidado precisa de conta; com conta, cai na sala da plataforma (aberta sob demanda)
     expect((await post('/rooms/quick-join', { mode: 'ranked', name: 'Rápido' })).json().error).toBe('account_required');
     const ranked = await post('/rooms/quick-join', { mode: 'ranked' }, true);

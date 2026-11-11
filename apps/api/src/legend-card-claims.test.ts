@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 // Resgate semanal (OG-576, RN-CRT-04/05/06): semana de Brasília, 3 partidas liberam 2 resgates,
 // sorteio pelo peso sem repetir, cópia nº 0 da lenda.
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { claimCard, ClaimError, claimStatus, drawCard, weekKey, weekStart, type DrawCandidate } from './legend-card-claims.js';
+import { claimCard, ClaimError, claimStatus, drawCard, grantLegendRewards, weekKey, weekStart, type DrawCandidate } from './legend-card-claims.js';
 import { migrateUp } from './db/migrate.js';
 import { cardClassOdds, legendCards, matches, matchPlayers, userCards, users } from './db/schema.js';
 import { seed } from './db/seed.js';
@@ -94,5 +94,20 @@ describe.skipIf(!pgAdminUrl)('resgate no banco (OG-576)', () => {
     expect(r).toMatchObject({ own: true, serial: 0 });
     const [uc] = await t.db.select().from(userCards).where(eq(userCards.userId, legend));
     expect(uc!.serial).toBe(0);
+  });
+
+  it('conta vinculada depois de já ter a carta: a cópia vira a nº 0 e o marco sai uma vez só (OG-609)', async () => {
+    const marks = async (id: string) => (await t.db.execute<{ n: number }>(sql`SELECT count(*)::int AS n FROM player_milestones WHERE user_id = ${id} AND milestone = 'card_legend'`))[0]!.n;
+    const notices = async (id: string) => (await t.db.execute<{ n: number }>(sql`SELECT count(*)::int AS n FROM notifications WHERE user_id = ${id} AND kind = 'milestone' AND data->'milestones' ? 'card_legend'`))[0]!.n;
+    expect([await marks(legend), await notices(legend)]).toEqual([1, 1]); // do resgate
+    const [mine] = await t.db.select().from(userCards).where(eq(userCards.userId, uid));
+    expect(mine!.serial).toBeGreaterThan(0);
+    expect(await grantLegendRewards(t.db)).toEqual([]); // sem vínculo novo, nada muda
+    await t.db.update(legendCards).set({ linkedUserId: uid }).where(eq(legendCards.id, mine!.cardId));
+    expect(await grantLegendRewards(t.db, mine!.cardId)).toEqual([uid]);
+    expect(await grantLegendRewards(t.db)).toEqual([]);
+    const [now0] = await t.db.select().from(userCards).where(and(eq(userCards.userId, uid), eq(userCards.cardId, mine!.cardId)));
+    expect(now0!.serial).toBe(0);
+    expect([await marks(uid), await notices(uid), await marks(legend), await notices(legend)]).toEqual([1, 1, 1, 1]);
   });
 });

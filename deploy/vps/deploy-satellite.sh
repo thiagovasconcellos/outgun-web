@@ -42,7 +42,7 @@ scp -q -r "${opts[@]}" deploy/vps/satellite/fluent-bit "$host:/opt/outgun/"
 
 # o mesmo jogo da principal: variáveis de partida do .env de lá (as de cada máquina, como
 # MAX_ROOMS, ficam no .env do satélite)
-shared='^(ROTATION|RANKED_ROTATION|GAMEMOD|PRESET|MAX_PLAYERS|CASUAL_BOTS_FILL|CHAT_FILTER|MAX_SPECTATORS|EMPTY_TIMEOUT_S|IDLE_TIMEOUT_S|REPLAY_RETENTION_DAYS|MAX_CONNECTIONS_PER_IP|SENTRY_DSN|SENTRY_ENVIRONMENT)='
+shared='^(ROTATION|RANKED_ROTATION|GAMEMOD|PRESET|MAX_PLAYERS|CASUAL_BOTS_FILL|CHAT_FILTER|MAX_SPECTATORS|EMPTY_TIMEOUT_S|PLAYER_ROOM_GRACE_S|IDLE_TIMEOUT_S|REPLAY_RETENTION_DAYS|MAX_CONNECTIONS_PER_IP|SENTRY_DSN|SENTRY_ENVIRONMENT)='
 main_ "grep -E '$shared' /opt/outgun/.env || true" | sat_ "umask 077; cat > /opt/outgun/shared.env"
 
 echo "== satélite $host: instalação"

@@ -92,12 +92,35 @@ describe('MessageFeed', () => {
     expect(feed.lines[0]?.parts[0]).toEqual({ text: 'Ana', color: 'red' });
   });
 
+  it('a sequência não passa para a partida seguinte: 9 mortes, fim de partida, 1 morte (OG-608)', () => {
+    const feed = new MessageFeed(en);
+    const kill = (attacker: number, target: number) => feed.onMessage(message('kill', { attacker, target, cause: 'rocket', carriedFlag: 'none', carrierDefended: false, flagDefended: false }), ctx);
+    for (let i = 0; i < 9; i++) kill(0, 8);
+    feed.onMessage(message('gameOver', { reason: 'captureLimit', seconds: 5 }), ctx);
+    expect(kill(0, 8).spreeStarted).toBeUndefined();
+    expect(text(feed).some((l) => l.includes('killing spree'))).toBe(false);
+    // quem estava em sequência no fim da partida também não tem o "fim da sequência" anunciado na seguinte
+    for (let i = 0; i < 9; i++) kill(0, 8);
+    expect(text(feed).at(-1)).toBe('Ana is on a killing spree!');
+    feed.onMessage(message('gameOver', { reason: 'captureLimit', seconds: 5 }), ctx);
+    kill(8, 0);
+    expect(text(feed).some((l) => l.includes('was ended'))).toBe(false);
+  });
+
   it('sequência de 10 mortes e o fim dela', () => {
     const feed = new MessageFeed(en);
     for (let i = 0; i < 10; i++) feed.onMessage(message('kill', { attacker: 0, target: 8, cause: 'rocket', carriedFlag: 'none', carrierDefended: false, flagDefended: false }), ctx);
     expect(text(feed).at(-1)).toBe('Ana is on a killing spree!');
     feed.onMessage(message('kill', { attacker: 8, target: 0, cause: 'deathbringer', carriedFlag: 'none', carrierDefended: false, flagDefended: false }), ctx);
     expect(text(feed).slice(-2)).toEqual(['Ana was choked by Bia$.', "Ana's killing spree was ended by Bia$."]);
+  });
+
+  it('F8 recusado na sala Ranked: aviso traduzido e o fato para o HUD apagar a marca (OG-603)', () => {
+    const feed = new MessageFeed(pt);
+    const facts = feed.onMessage(message('text', { kind: 'server', from: 255, text: 'Ranked: the map is voted in the lobby, so F8 has no effect here.' }), ctx);
+    expect(facts).toMatchObject({ voteRefused: true });
+    expect(facts.voteNoEffect).toBeUndefined();
+    expect(text(feed)).toEqual(['Ranked: o mapa é votado no lobby, então o F8 não tem efeito aqui.']);
   });
 
   it('entrada só anuncia quem chega depois; chat com o time do remetente', () => {

@@ -19,6 +19,7 @@ import type { AppDeps, Services } from '../app.js';
 import type { SessionUser } from '../auth/sessions.js';
 import { usernameKey } from '../db/keys.js';
 import { adminActions, cardClassOdds, cardGenerations, legendCardRevisions, legendCards, userCards, users } from '../db/schema.js';
+import { grantLegendRewards } from '../legend-card-claims.js';
 import { hasRole, type Role } from './admin.js';
 import { ErrorSchema } from './schemas.js';
 import { likePrefix } from './social.js';
@@ -346,6 +347,8 @@ export function legendCardAdminRoutes(deps: AppDeps, services: Services): Fastif
               .set({ ...card, slug, nickKey: cardNickKey(card.nick), revision, updatedBy: user.id, updatedAt: new Date() })
               .where(eq(legendCards.id, cur.id));
             await tx.insert(legendCardRevisions).values({ cardId: cur.id, number: revision, data: { ...card }, note: request.body.note?.trim() ?? '', editedBy: user.id });
+            // conta vinculada que já tinha a carta: cópia nº 0 e marco da lenda (OG-609)
+            if (card.linkedUserId) await grantLegendRewards(tx, cur.id);
           });
           await audit(user, 'card-edit', card.nick, { card: cur.id, revision });
           return { id: cur.id, slug, revision, changed: true };
@@ -398,6 +401,7 @@ export function legendCardAdminRoutes(deps: AppDeps, services: Services): Fastif
           await db.transaction(async (tx) => {
             await tx.update(legendCards).set({ ...card, slug, nickKey: cardNickKey(card.nick), revision, updatedBy: user.id, updatedAt: new Date() }).where(eq(legendCards.id, cur.id));
             await tx.insert(legendCardRevisions).values({ cardId: cur.id, number: revision, data: { ...card }, note: `Volta à revisão ${old.number}`, editedBy: user.id });
+            if (card.linkedUserId) await grantLegendRewards(tx, cur.id);
           });
           await audit(user, 'card-restore', card.nick, { card: cur.id, revision, from: old.number });
           return { id: cur.id, slug, revision };

@@ -4,7 +4,7 @@
 // TICKET_JWKS_URL (chaves dos tickets da API; padrão http://localhost:7800/.well-known/jwks.json),
 // API_URL (http://localhost:7800), GS_ID e GS_SECRET (assinatura das rotas internas; padrão dev),
 // CHAT_FILTER (palavras trocadas por * no chat, separadas por vírgula), TRUST_PROXY (1 = X-Forwarded-For),
-// EMPTY_TIMEOUT_S (300), PUBLIC_WS_URL (endereço anunciado à API; ws://localhost:PORT), REGION (local),
+// EMPTY_TIMEOUT_S (300; sala vazia), PLAYER_ROOM_GRACE_S (15; sala de jogador depois que o último humano sai, D-98), PUBLIC_WS_URL (endereço anunciado à API; ws://localhost:PORT), REGION (local),
 // MAX_ROOMS (50), RANKED_ROTATION (rotação oficial do Ranked; padrão ROTATION), HEARTBEAT (0 = não registra na API),
 // CASUAL_BOTS_FILL (bots_fill das salas Casual; padrão 0), REPLAYS (0 = não grava), REPLAY_DIR (var/replays do
 // repositório), REPLAY_PUBLIC_URL (padrão http://<PUBLIC_WS_URL>/replays), REPLAY_RETENTION_DAYS (30; 0 = para sempre),
@@ -95,6 +95,7 @@ pruneTimer.unref();
 
 const manager = new RoomManager({
   emptyTimeoutMs: Number(env.EMPTY_TIMEOUT_S ?? 300) * 1000,
+  playerRoomGraceMs: Number(env.PLAYER_ROOM_GRACE_S ?? 15) * 1000,
   maxRooms: Number(env.MAX_ROOMS ?? 50),
   ...(env.SEED ? { seed: () => Number(env.SEED) } : {}),
   roomDefaults: {

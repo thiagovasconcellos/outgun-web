@@ -44,6 +44,19 @@ jobs:
       # o npm novo pode pular o postinstall do Electron; garante o binário
       - run: node node_modules/electron/install.js
       - run: npm run dist:${{ matrix.target }}
+      # OG-604: no Linux o `outgun` é um script que chama o binário com --no-sandbox quando preciso
+      - name: Confere o lançador do Linux
+        if: matrix.target == 'linux'
+        shell: bash
+        run: |
+          cd dist/linux-unpacked
+          test -x outgun && test -x outgun-bin
+          head -n 1 outgun | grep -qx '#!/bin/sh'
+          grep -q -- '--no-sandbox' outgun
+          sh -n outgun
+          file outgun-bin | grep -q ELF
+          # sem -q: o grep que sai no primeiro acerto derruba o dpkg-deb (SIGPIPE) e o pipefail acusa erro
+          dpkg-deb -c ../Outgun-linux-*.deb | grep '/opt/Outgun/outgun-bin$' > /dev/null
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: outgun-${{ matrix.target }}

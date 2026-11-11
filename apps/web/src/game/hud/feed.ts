@@ -100,10 +100,14 @@ export interface FeedFacts {
   readonly spreeStarted?: number;
   /** O servidor avisou que o voto para sair não vale sem voto num mapa (`want_map_exit_delayed`). */
   readonly voteNoEffect?: boolean;
+  /** O servidor recusou o voto para sair (sala Ranked, OG-603): a marca do F8 some. */
+  readonly voteRefused?: boolean;
 }
 
 /** Aviso do servidor quando `require_specific_map_vote` está ligado. */
 export const NO_EFFECT = 'Your vote has no effect until you vote for a specific map.';
+/** Aviso do servidor quando o F8 chega numa sala Ranked, onde o mapa é votado no lobby (OG-603). */
+export const RANKED_NO_VOTE = 'Ranked: the map is voted in the lobby, so F8 has no effect here.';
 
 /**
  * Tradução de texto com cores: o catálogo do 1.0.3 só tem a versão sem `$R`/`$G`/`$B`/`$>` (o
@@ -190,7 +194,7 @@ export class MessageFeed {
    * entrada foi anunciada e quem começou uma sequência de 10 mortes.
    */
   onMessage(m: AnyMessage, c: FeedContext): FeedFacts {
-    const facts: { joined?: boolean; spreeStarted?: number; voteNoEffect?: boolean } = {};
+    const facts: { joined?: boolean; spreeStarted?: number; voteNoEffect?: boolean; voteRefused?: boolean } = {};
     const t = this.t;
     const name = (pid: number) => (c.teamOf(pid) === 0 ? '$R' : '$B') + escapeFormatted(c.name(pid)) + '$>';
     const flag = (pid: number, carried: string) => {
@@ -280,8 +284,10 @@ export class MessageFeed {
         break;
       }
       case 'gameOver':
+        this.spree.clear(); // a sequência não passa para a partida seguinte (OG-608)
         break; // o placar final vem de `gameOverScores` (precisa do placar do cliente)
       case 'mapChange':
+        this.spree.clear(); // troca de mapa por voto ou pelo admin, sem fim de partida
         info(escapeFormatted(c.mapCount > 0 ? t('This map is $1 ($2 of $3).', m.title, String(m.mapIndex + 1), String(c.mapCount)) : t('This map is $1.', m.title)));
         break;
       case 'mapChangeInfo': {
@@ -293,9 +299,10 @@ export class MessageFeed {
       case 'text': {
         const team = m.from === 255 ? -1 : c.teamOf(m.from);
         // textos fixos do servidor que o original traduz (`net_text_message`)
-        const fixed = m.kind === 'server' && m.text === NO_EFFECT;
-        if (fixed) facts.voteNoEffect = true;
-        this.pushPlain(m.kind, fixed ? t(NO_EFFECT) : m.text, c.time, team);
+        const fixed = m.kind === 'server' && (m.text === NO_EFFECT || m.text === RANKED_NO_VOTE);
+        if (fixed && m.text === NO_EFFECT) facts.voteNoEffect = true;
+        if (fixed && m.text === RANKED_NO_VOTE) facts.voteRefused = true;
+        this.pushPlain(m.kind, fixed ? t(m.text) : m.text, c.time, team);
         break;
       }
       case 'teamChange':

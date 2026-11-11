@@ -40,12 +40,20 @@ interface Entry {
   name: string;
   persistent: boolean;
   emptySince: number | null;
+  /** Já teve alguém dentro: a partir daí vale a carência curta das salas de jogador (OG-606). */
+  hadPlayers: boolean;
   chosenMaps: readonly string[] | null;
 }
 
 export interface ManagerOptions {
   /** Sala vazia é encerrada depois deste tempo (ms). */
   emptyTimeoutMs: number;
+  /**
+   * Carência das salas criadas por jogador (não fixas, sem lobby Ranked) depois que o último humano sai
+   * (OG-606, D-98): dá tempo de recarregar a página ou reconectar. Antes de alguém entrar vale
+   * `emptyTimeoutMs`, para a sala recém-criada esperar o dono. Padrão: `emptyTimeoutMs`.
+   */
+  playerRoomGraceMs?: number;
   clock?: Clock;
   /** Semente das salas (testes); padrão: aleatória por sala. */
   seed?: () => number;
@@ -124,7 +132,7 @@ export class RoomManager {
     if (this.rooms.has(spec.id)) throw new Error(`sala já existe: ${spec.id}`);
     const seed = this.options.seed?.() ?? Math.floor(Math.random() * 2 ** 31);
     const room = new Room({ ...this.options.roomDefaults, id: spec.id, preset: spec.preset, maps: spec.maps, mapFiles: spec.mapFiles, ...(spec.randomSlots ? { randomSlots: spec.randomSlots } : {}), maxPlayers: spec.maxPlayers, ...(spec.ranked ? { ranked: spec.ranked } : {}), ...(spec.casualBots ? { casualBots: spec.casualBots } : {}), ...(spec.training ? { training: spec.training } : {}), ...(spec.cup ? { cup: spec.cup } : {}), seed, now: () => this.clock.now(), ...(spec.reconnectSeconds !== undefined ? { reconnectSeconds: spec.reconnectSeconds } : {}) });
-    this.rooms.set(spec.id, { room, name: spec.name ?? spec.id, persistent: spec.persistent ?? false, emptySince: null, chosenMaps: spec.chosenMaps ?? null });
+    this.rooms.set(spec.id, { room, name: spec.name ?? spec.id, persistent: spec.persistent ?? false, emptySince: null, hadPlayers: false, chosenMaps: spec.chosenMaps ?? null });
     return room;
   }
 
@@ -200,6 +208,12 @@ export class RoomManager {
     this.observer?.roomClosed?.(id, reason);
   }
 
+  /** Prazo da sala vazia: curto na sala de jogador que já teve gente; o geral nas demais (Ranked tem regra própria, OG-261). */
+  private emptyTimeout(entry: Entry): number {
+    const grace = this.options.playerRoomGraceMs;
+    return grace !== undefined && entry.hadPlayers && !entry.room.lobby ? Math.min(grace, this.options.emptyTimeoutMs) : this.options.emptyTimeoutMs;
+  }
+
   /** Um tick de todas as salas; depois, encerra as vazias há tempo demais. */
   tickAll(): void {
     const begin = this.clock.now();
@@ -224,9 +238,10 @@ export class RoomManager {
           observer.input(s.waits, s.overwritten);
         }
       } else entry.room.tick();
+      if (entry.room.playerCount > 0) entry.hadPlayers = true;
       if (entry.room.playerCount > 0 || entry.persistent) entry.emptySince = null;
       else if (entry.emptySince === null) entry.emptySince = now;
-      else if (now - entry.emptySince >= this.options.emptyTimeoutMs) this.close(id, 'empty');
+      else if (now - entry.emptySince >= this.emptyTimeout(entry)) this.close(id, 'empty');
     }
     const cost = this.clock.now() - begin;
     observer?.tick(cost, this.loop.stats.lastLateness);
