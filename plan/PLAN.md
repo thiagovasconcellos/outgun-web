@@ -1090,7 +1090,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-600](cards/OG-600-limites-servidor-so-casual.md) | Limites das rotas internas para servidor de terceiros | E16 | 3 | Should | — | OG-597 | Backlog |
 | [OG-601](cards/OG-601-heartbeat-depois-de-congelamento.md) | Satélite volta ao lobby sozinho depois de um congelamento | E16 | 3 | Must | — | OG-599 | Concluído |
 | [OG-602](cards/OG-602-ctrl-p-no-treino-mira.md) | Ctrl + P no treino mira (issue #49) | E11 | 3 | Won't (v2) | S65 | — | Cancelado |
-| [OG-603](cards/OG-603-apertamos-f8-e-nao-mudou-de.md) | Apertamos f8 e não mudou de mapa (issue #50) | E11 | 2 | Should | S65 | — | Pronto |
+| [OG-603](cards/OG-603-apertamos-f8-e-nao-mudou-de.md) | Apertamos f8 e não mudou de mapa (issue #50) | E11 | 2 | Should | S65 | — | Em revisão |
 | [OG-604](cards/OG-604-nao-consegui-abrir.md) | Nao consegui abrir (issue #51) | E7 | 3 | Must | S65 | — | Em revisão |
 | [OG-605](cards/OG-605-play-now-leva-a-uma-tela.md) | Play now leva a uma tela preta com treino de mira mas nem isso abre (issue #52) | E11 | 3 | Must | S65 | — | Em revisão |
 | [OG-606](cards/OG-606-se-eu-saio-da-sala-que.md) | Se eu saio da sala que criei a sala deveria fechar imediatamente (issue #53) | E12 | 3 | Should | S65 | — | Pronto |

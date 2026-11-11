@@ -185,6 +185,7 @@ export class OnlineHud {
     if (m.type === 'gameOver') this.feed.gameOverScores(this.session.teamScores[0], this.session.teamScores[1], this.context());
     const facts = this.feed.onMessage(m, this.context());
     if (facts.voteNoEffect) this.mapExitDelayed = true;
+    if (facts.voteRefused) this.wantMapExit = this.mapExitDelayed = false;
     return facts;
   }
 

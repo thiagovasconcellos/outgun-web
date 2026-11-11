@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 2 pts |
 | Sprint | S65 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | — |
 | Issue | [#50](https://github.com/thiagovasconcellos/outgun-web/issues/50) |
 | Regras de negócio | — |
@@ -32,9 +32,11 @@ Como jogador, quero que isto deixe de acontecer: apertamos f8 e não mudou de ma
 - A issue pede só "arrumar F8"; se o diagnóstico mostrar defeito de regra, registrar como D-NN.
 
 ## Critérios de aceite
-- [ ] Causa explicada nas notas do card.
-- [ ] Dois ou mais jogadores votando F8 trocam o mapa depois do bloqueio, e o jogador vê sempre o motivo de não ter trocado (teste do servidor + do feed).
+- [x] Causa explicada nas notas do card.
+- [x] Dois ou mais jogadores votando F8 trocam o mapa depois do bloqueio, e o jogador vê sempre o motivo de não ter trocado (teste do servidor + do feed).
 - [ ] PO confere.
 
 ## Notas de implementação
-(preenchido durante a execução)
+Causa: a sala da issue (`r-8ywumvzf`) é de lobby Ranked, e ali `checkMapExit` sai cedo porque o mapa é votado no lobby (OG-254). O servidor ainda guardava o voto e anunciava "2/2 votos", o HUD marcava o F8, e nada acontecia. A regra do Casual está certa e já tinha teste (`room.test.ts`: maioria dos humanos, bots fora).
+Correção: no Ranked o servidor não guarda o voto e responde "Ranked: o mapa é votado no lobby, então o F8 não tem efeito aqui."; o cliente apaga a marca do F8 (`voteRefused`). Testes em `ranked-lobby.test.ts` e `feed.test.ts`. Não mudou regra de voto, então sem D-NN.
+Não conferido: os dados da partida `73d1b999-…` no beta (leitura negada nesta sessão); a causa vem do prefixo `r-` da sala.

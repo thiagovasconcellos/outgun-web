@@ -100,6 +100,14 @@ describe('MessageFeed', () => {
     expect(text(feed).slice(-2)).toEqual(['Ana was choked by Bia$.', "Ana's killing spree was ended by Bia$."]);
   });
 
+  it('F8 recusado na sala Ranked: aviso traduzido e o fato para o HUD apagar a marca (OG-603)', () => {
+    const feed = new MessageFeed(pt);
+    const facts = feed.onMessage(message('text', { kind: 'server', from: 255, text: 'Ranked: the map is voted in the lobby, so F8 has no effect here.' }), ctx);
+    expect(facts).toMatchObject({ voteRefused: true });
+    expect(facts.voteNoEffect).toBeUndefined();
+    expect(text(feed)).toEqual(['Ranked: o mapa é votado no lobby, então o F8 não tem efeito aqui.']);
+  });
+
   it('entrada só anuncia quem chega depois; chat com o time do remetente', () => {
     const feed = new MessageFeed(pt);
     feed.onMessage(message('playersPresent', { pids: [0, 8] }), ctx);

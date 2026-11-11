@@ -1358,6 +1358,12 @@ export class Room {
           break;
         }
         case 'mapExit':
+          // lobby Ranked: o mapa é votado no lobby (OG-254); o F8 não conta e o jogador é avisado
+          // (OG-603: antes o voto era guardado, anunciado como "2/2 votos" e nada acontecia)
+          if (this.lobby) {
+            if (m.on) this.queueTo(pid, message('text', { kind: 'server', from: 255, text: 'Ranked: the map is voted in the lobby, so F8 has no effect here.' }));
+            break;
+          }
           if (m.on === client.wantMapExit) break;
           client.wantMapExit = m.on;
           if (m.on && this.settings.server.requireSpecificMapVote && client.mapVote === -1) this.noEffectWarning(pid);

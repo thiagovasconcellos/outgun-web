@@ -293,6 +293,17 @@ describe('sala Ranked 3x3 com lobby (OG-252)', () => {
     expect([r.playerCount, r.lobby?.phase, r.lobby?.acceptsJoins]).toEqual([5, 'lobby', true]);
   });
 
+  it('F8 no jogo Ranked não conta nem é anunciado: o jogador recebe o aviso (OG-603)', () => {
+    const { r, players } = fullRoom();
+    play(r, players);
+    for (const p of players) r.handle(p.pid, [message('mapExit', { on: true })]);
+    run(r, 60);
+    for (const p of players) expect(p.conn.received.filter((m) => m.type === 'text' && m.text.startsWith('Ranked: the map is voted in the lobby'))).toHaveLength(1);
+    expect(players[0]!.conn.last('mapChangeInfo')).toBeUndefined();
+    expect(players[0]!.conn.received.filter((m) => m.type === 'mapChange' && m.reason === 'vote')).toHaveLength(0);
+    expect(r.lobby?.phase).toBe('game');
+  });
+
   it('série md3: fim de jogo volta todos ao voto com o placar da série; 2-0 encerra e a sala fecha (D-41)', () => {
     const { r, players } = fullRoom();
     play(r, players);

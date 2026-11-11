@@ -451,6 +451,7 @@ export const WEB_TEXTS: Partial<Record<Locale, Readonly<Record<string, string>>>
     '$1 team is voting: $2 s': 'Time $1 votando: $2 s',
     'Team vote: $1 s': 'Voto do time: $1 s',
     'Bot in place ($1)': 'Bot no lugar ($1)',
+    'Ranked: the map is voted in the lobby, so F8 has no effect here.': 'Ranked: o mapa é votado no lobby, então o F8 não tem efeito aqui.',
     'Play one short ($1)': 'Seguir com um a menos ($1)',
     'Pause left - Red: $1 s ($2) Blue: $3 s ($4)': 'Saldo de pausa - Vermelho: $1 s ($2) Azul: $3 s ($4)',
     'Control scheme': 'Esquema de teclas',
