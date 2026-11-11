@@ -296,11 +296,13 @@ describe('sala Ranked 3x3 com lobby (OG-252)', () => {
   it('F8 no jogo Ranked não conta nem é anunciado: o jogador recebe o aviso (OG-603)', () => {
     const { r, players } = fullRoom();
     play(r, players);
+    const changes = () => players[0]!.conn.received.filter((m) => m.type === 'mapChange').length; // o voto do lobby já trocou uma vez
+    const before = changes();
     for (const p of players) r.handle(p.pid, [message('mapExit', { on: true })]);
     run(r, 60);
     for (const p of players) expect(p.conn.received.filter((m) => m.type === 'text' && m.text.startsWith('Ranked: the map is voted in the lobby'))).toHaveLength(1);
     expect(players[0]!.conn.last('mapChangeInfo')).toBeUndefined();
-    expect(players[0]!.conn.received.filter((m) => m.type === 'mapChange' && m.reason === 'vote')).toHaveLength(0);
+    expect(changes()).toBe(before);
     expect(r.lobby?.phase).toBe('game');
   });
 
