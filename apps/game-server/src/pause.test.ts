@@ -126,6 +126,27 @@ describe('sala pausada (OG-260)', () => {
     expect(a.conn.last('pauseState')).toMatchObject({ phase: 'none', redSeconds: r.world.teamOf(a.pid) === 0 ? 50 : 60 });
   });
 
+  it('ataque segurado ao pausar e solto na pausa não continua na retomada (Ctrl de Ctrl+P, OG-607)', () => {
+    const { r, players } = setup('ranked');
+    const a = players[0]!;
+    const pl = r.world.players[a.pid]!;
+    // Ctrl↓ (ataque) e P↓ (pausa) no mesmo instante; Ctrl↑ já com a partida pausada
+    r.handle(a.pid, [message('fire', { on: true }), message('pauseRequest', { on: true })]);
+    run(r, 1);
+    expect(r.pause?.active).toBe(true);
+    r.handle(a.pid, [message('fire', { on: false }), message('dropFlag', { on: false })]);
+    expect([pl.attack, pl.attackOnce]).toEqual([false, false]);
+    // apertar na pausa continua sem efeito
+    r.handle(a.pid, [message('fire', { on: true })]);
+    expect([pl.attack, pl.attackOnce]).toEqual([false, false]);
+    r.handle(a.pid, [message('pauseRequest', { on: false })]);
+    const rockets = r.world.rockets.length;
+    run(r, RESUME_FRAMES + 30);
+    expect(r.pause?.active).toBe(false);
+    expect(pl.attack).toBe(false);
+    expect(r.world.rockets.length).toBe(rockets);
+  });
+
   it('Casual não tem pausa', () => {
     const { r, players } = setup('classic');
     const a = players[0]!;

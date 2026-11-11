@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 2 pts |
 | Sprint | S65 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | — |
 | Issue | [#54](https://github.com/thiagovasconcellos/outgun-web/issues/54) |
 | Regras de negócio | — |
@@ -31,9 +31,11 @@ Como jogador, quero que isto deixe de acontecer: Após o pause, o jogo fica dand
 - Passo 2: corrigir (ao pausar/retomar, zerar teclas de ataque seguradas no cliente e no servidor; o `release` de `input.ts:132` já faz isso no `blur`). Teste que reproduz o caso.
 
 ## Critérios de aceite
-- [ ] Teste que reproduz o soco repetido depois da retomada e passa a ser verde.
-- [ ] Ao retomar, o personagem não ataca sem tecla apertada.
+- [x] Teste que reproduz o soco repetido depois da retomada e passa a ser verde.
+- [x] Ao retomar, o personagem não ataca sem tecla apertada.
 - [ ] PO confere.
 
 ## Notas de implementação
-(preenchido durante a execução)
+Causa confirmada em teste: o cliente só manda as bordas do ataque (`fire` on/off) e o servidor descartava tudo durante a pausa. Com o Ctrl de Ctrl+P (ou qualquer ataque segurado ao pausar), o "soltei" chegava com a partida pausada e sumia; `pl.attack` ficava ligado na retomada até o jogador apertar e soltar de novo, os "5-10 s de soquinho".
+Correção só no servidor (`room.ts`): na pausa, soltar o ataque e a tecla de largar bandeira vale; apertar continua sem efeito. Quem segura o ataque do começo ao fim da pausa precisa apertar de novo. Não mexe na simulação (`packages/sim`), então sem D-NN. Teste em `pause.test.ts`.
+O replay da partida `65f50691-…` não foi conferido.

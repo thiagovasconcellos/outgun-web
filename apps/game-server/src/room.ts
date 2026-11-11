@@ -1279,7 +1279,12 @@ export class Room {
           break;
         }
         case 'fire':
-          if (this.pause?.active) break;
+          if (this.pause?.active) {
+            // pausado ninguém atira, mas soltar a tecla vale: o cliente só manda as bordas, e o "soltei"
+            // descartado deixava o ataque preso na retomada, até apertar e soltar de novo (OG-607)
+            if (!m.on) pl.attack = pl.attackOnce = false;
+            break;
+          }
           if (m.on) {
             pl.attack = true;
             pl.attackOnce = true;
@@ -1287,7 +1292,7 @@ export class Room {
           } else pl.attack = false;
           break;
         case 'dropFlag':
-          if (this.pause?.active) break;
+          if (this.pause?.active && m.on) break; // soltar a tecla vale na pausa (OG-607)
           this.sim.setDropKey(pid, m.on);
           break;
         case 'suicide':
