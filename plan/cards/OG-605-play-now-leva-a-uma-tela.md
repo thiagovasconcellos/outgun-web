@@ -40,4 +40,4 @@ Como jogador, quero que isto deixe de acontecer: Play now leva a uma tela preta 
 ## Notas de implementação
 Causa achada no código: o `quick-join` não excluía salas de treino. A sala de Treino de mira que o jogador criou e deixou continua no ar por 5 min (OG-606), sem senha e com vaga, e era a escolhida: daí a "tela preta com treino de mira", sempre. Agora `rooms.training` não nulo fica fora do "Jogar agora" (teste em `registry.test.ts`).
 Além disso, `usePlayNow` deixou de navegar para `/play` em erro: mostra aviso (toast) com o texto do lobby; sem sala, sugere criar sala ou treinar (`playNowFailure`, testado).
-Pendente: confirmar nos logs do beta o `quick-join` de 2026-11-10 22:00 (-03); a leitura por SSH foi negada pelo modo automático nesta sessão.
+Logs do beta (2026-11-11): `POST /rooms/quick-join` às 00:58:38 e 00:58:51 UTC do mesmo endereço, pouco antes da issue (01:00 UTC), o que bate com o botão sendo tentado mais de uma vez; o log de entrada não diz a sala escolhida, então a sala de treino segue como causa deduzida do código.
