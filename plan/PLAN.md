@@ -637,6 +637,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | S63 | v2: inventário Steam, ajustes depois da primeira entrega real — entregas presas voltam à fila e imagens das cartas geradas de antemão | OG-587, OG-588 | |
 | S64 | v2: servidor da comunidade na Alemanha (D-97) — servidor só Casual marcado na API, registro de satélite que não confia na máquina, coluna Região nas listas de salas | OG-597, OG-598, OG-599 | |
 | S65 | v2: rodada de correções (issues #49–#55 do GitHub: F8, app Steam no Linux, Jogar agora com tela preta, sala que fecha ao sair, soco depois do pause, killing spree entre partidas) | OG-602 (cancelado, D-98), OG-603, OG-604, OG-605, OG-606, OG-607, OG-608, OG-609 | |
+| S66 | v2: segurança — verificação de e-mail no cadastro e proteção contra DDoS na frente do beta (levantamento de 2026-11-11) | OG-610, OG-611 | |
 
 > Duração total estimada: **13 sprints (~26 semanas)**. Replanejar após S2 com a velocidade real.
 
@@ -1097,8 +1098,10 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-607](cards/OG-607-apos-o-pause-o-jogo-fica.md) | Após o pause, o jogo fica dando soquinho por 5-10 segundos (issue #54) | E11 | 2 | Should | S65 | — | Concluído |
 | [OG-608](cards/OG-608-killing-spree-continua-na-partida-seguinte.md) | Killing spree continua na partida seguinte (issue #55) | E11 | 2 | Could | S65 | — | Concluído |
 | [OG-609](cards/OG-609-marco-a-lenda-em-pessoa-do-jaru.md) | Marco "A lenda em pessoa" ausente em quem tem a própria carta (jaru) | E18 | 2 | Should | S65 | OG-580 | Concluído |
+| [OG-610](cards/OG-610-verificacao-de-email-no-cadastro.md) | Verificação de e-mail no cadastro | E7 | 5 | Must | S66 | — | Pronto |
+| [OG-611](cards/OG-611-protecao-contra-ddos-na-borda.md) | Proteção contra DDoS na frente do beta | E7 | 5 | Should | S66 | — | Pronto |
 
-**Total:** 446 cards, 1405 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 377 cards, 1110 pts (OG-602 cancelado, 3 pts fora da soma; OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
+**Total:** 448 cards, 1415 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 379 cards, 1120 pts (OG-602 cancelado, 3 pts fora da soma; OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
 ---
 
