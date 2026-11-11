@@ -1095,7 +1095,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-605](cards/OG-605-play-now-leva-a-uma-tela.md) | Play now leva a uma tela preta com treino de mira mas nem isso abre (issue #52) | E11 | 3 | Must | S65 | — | Em revisão |
 | [OG-606](cards/OG-606-se-eu-saio-da-sala-que.md) | Se eu saio da sala que criei a sala deveria fechar imediatamente (issue #53) | E12 | 3 | Should | S65 | — | Em revisão |
 | [OG-607](cards/OG-607-apos-o-pause-o-jogo-fica.md) | Após o pause, o jogo fica dando soquinho por 5-10 segundos (issue #54) | E11 | 2 | Should | S65 | — | Em revisão |
-| [OG-608](cards/OG-608-killing-spree-continua-na-partida-seguinte.md) | Killing spree continua na partida seguinte (issue #55) | E11 | 2 | Could | S65 | — | Pronto |
+| [OG-608](cards/OG-608-killing-spree-continua-na-partida-seguinte.md) | Killing spree continua na partida seguinte (issue #55) | E11 | 2 | Could | S65 | — | Em revisão |
 | [OG-609](cards/OG-609-marco-a-lenda-em-pessoa-do-jaru.md) | Marco "A lenda em pessoa" ausente em quem tem a própria carta (jaru) | E18 | 2 | Should | S65 | OG-580 | Em revisão |
 
 **Total:** 446 cards, 1405 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 377 cards, 1110 pts (OG-602 cancelado, 3 pts fora da soma; OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).

@@ -284,8 +284,10 @@ export class MessageFeed {
         break;
       }
       case 'gameOver':
+        this.spree.clear(); // a sequência não passa para a partida seguinte (OG-608)
         break; // o placar final vem de `gameOverScores` (precisa do placar do cliente)
       case 'mapChange':
+        this.spree.clear(); // troca de mapa por voto ou pelo admin, sem fim de partida
         info(escapeFormatted(c.mapCount > 0 ? t('This map is $1 ($2 of $3).', m.title, String(m.mapIndex + 1), String(c.mapCount)) : t('This map is $1.', m.title)));
         break;
       case 'mapChangeInfo': {

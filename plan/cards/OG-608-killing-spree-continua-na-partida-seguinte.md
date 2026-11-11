@@ -7,7 +7,7 @@
 | Prioridade | Could |
 | Estimativa | 2 pts |
 | Sprint | S65 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | — |
 | Issue | [#55](https://github.com/thiagovasconcellos/outgun-web/issues/55) |
 | Regras de negócio | — |
@@ -31,9 +31,10 @@ Como jogador, quero que isto deixe de acontecer: killing spree continua na parti
 - Teste: 9 mortes, fim de partida, 1 morte na seguinte → nada de "matança".
 
 ## Critérios de aceite
-- [ ] Teste do `Feed` reproduz o caso e passa.
-- [ ] Matança de verdade dentro da mesma partida continua sendo anunciada (teste).
+- [x] Teste do `Feed` reproduz o caso e passa.
+- [x] Matança de verdade dentro da mesma partida continua sendo anunciada (teste).
 - [ ] PO confere.
 
 ## Notas de implementação
-(preenchido durante a execução)
+O contador do feed (`MessageFeed.spree`) só zerava na morte ou na saída do jogador. Agora zera também no `gameOver` e no `mapChange` (troca por voto ou pelo admin, sem fim de partida), o que cobre tanto o anúncio indevido quanto o "matança encerrada" na partida seguinte. O som `spree` sai do mesmo fato (`spreeStarted`), então some junto.
+O servidor não guarda contagem equivalente em `room.ts`; nada a mudar lá. Testes em `feed.test.ts` (o caso da issue e o anúncio normal, que já existia).
