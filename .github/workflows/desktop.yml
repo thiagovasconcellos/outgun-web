@@ -55,7 +55,8 @@ jobs:
           grep -q -- '--no-sandbox' outgun
           sh -n outgun
           file outgun-bin | grep -q ELF
-          dpkg-deb -c ../Outgun-linux-*.deb | grep -q '/opt/Outgun/outgun-bin$'
+          # sem -q: o grep que sai no primeiro acerto derruba o dpkg-deb (SIGPIPE) e o pipefail acusa erro
+          dpkg-deb -c ../Outgun-linux-*.deb | grep '/opt/Outgun/outgun-bin$' > /dev/null
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: outgun-${{ matrix.target }}
