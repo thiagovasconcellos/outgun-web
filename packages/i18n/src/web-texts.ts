@@ -972,6 +972,7 @@ export const WEB_TEXTS: Partial<Record<Locale, Readonly<Record<string, string>>>
     'needs an account': 'exige conta',
     'Casual only': 'só no Casual',
     'No room available right now.': 'Nenhuma sala disponível agora.',
+    'No room available right now. Create a room or try a training mode.': 'Nenhuma sala disponível agora. Crie uma sala ou entre num modo de treino.',
     'No rooms open. "Play now" opens one.': 'Nenhuma sala aberta. "Jogar agora" abre uma.',
     'Players': 'Jogadores',
     'Join': 'Entrar na sala',

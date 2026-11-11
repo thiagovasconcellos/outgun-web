@@ -242,7 +242,9 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
           .select({ room: rooms, region: gameServers.region })
           .from(rooms)
           .leftJoin(gameServers, eq(gameServers.id, rooms.serverId))
-          .where(and(eq(rooms.mode, mode), isNull(rooms.passwordHash), isNull(rooms.format))) // salas de lobby Ranked: pela lista (RN-RKL-05)
+          // salas de lobby Ranked: pela lista (RN-RKL-05); sala de treino é de quem criou e nunca entra no
+          // "Jogar agora" (OG-605: a de mira, vazia mas ainda no ar, era escolhida e abria a tela preta)
+          .where(and(eq(rooms.mode, mode), isNull(rooms.passwordHash), isNull(rooms.format), isNull(rooms.training)))
           .orderBy(desc(rooms.players), rooms.id);
         const now = Date.now();
         const servers = serversForMode(await onlineServers(db, now), mode, deps.config.casualOnlyServers);

@@ -7,7 +7,7 @@
 | Prioridade | Must |
 | Estimativa | 3 pts |
 | Sprint | S65 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | — |
 | Issue | [#52](https://github.com/thiagovasconcellos/outgun-web/issues/52) |
 | Regras de negócio | — |
@@ -32,10 +32,12 @@ Como jogador, quero que isto deixe de acontecer: Play now leva a uma tela preta 
 - O "Contorno" da issue ("play now da home e do menu não podem ter o modo alterado") parece pedir que o botão sempre entre em Casual; já é assim. Se o pedido era outro, perguntar na issue.
 
 ## Critérios de aceite
-- [ ] Falha no `quick-join` mostra mensagem na tela e não abre a tela preta (teste do hook).
+- [x] Falha no `quick-join` mostra mensagem na tela e não abre a tela preta (teste do hook).
 - [ ] Causa da falha de 2026-11-10 identificada nas notas.
-- [ ] Sem sala disponível, o jogador entende o que fazer (criar sala ou treinar).
+- [x] Sem sala disponível, o jogador entende o que fazer (criar sala ou treinar).
 - [ ] PO confere.
 
 ## Notas de implementação
-(preenchido durante a execução)
+Causa achada no código: o `quick-join` não excluía salas de treino. A sala de Treino de mira que o jogador criou e deixou continua no ar por 5 min (OG-606), sem senha e com vaga, e era a escolhida: daí a "tela preta com treino de mira", sempre. Agora `rooms.training` não nulo fica fora do "Jogar agora" (teste em `registry.test.ts`).
+Além disso, `usePlayNow` deixou de navegar para `/play` em erro: mostra aviso (toast) com o texto do lobby; sem sala, sugere criar sala ou treinar (`playNowFailure`, testado).
+Pendente: confirmar nos logs do beta o `quick-join` de 2026-11-10 22:00 (-03); a leitura por SSH foi negada pelo modo automático nesta sessão.
