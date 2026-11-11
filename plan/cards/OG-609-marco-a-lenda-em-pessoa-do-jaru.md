@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 2 pts |
 | Sprint | S65 |
-| Status | Pronto |
+| Status | Em revisão |
 | Dependências | OG-580 |
 | Issue | — (pedido do PO em 2026-11-11) |
 | Regras de negócio | RN-CRT-09 |
@@ -29,9 +29,11 @@ Como jogador com carta própria (lenda), quero ter o marco "A lenda em pessoa" n
 
 ## Critérios de aceite
 - [ ] Causa explicada nas notas do card.
-- [ ] Teste: conta com cópia nº 0 sem o marco passa a ter `card_legend` depois da concessão; rodar duas vezes não duplica nem renotifica.
+- [x] Teste: conta com cópia nº 0 sem o marco passa a ter `card_legend` depois da concessão; rodar duas vezes não duplica nem renotifica.
 - [ ] `jaru` aparece com o marco no perfil depois do deploy; lista de contas afetadas nas notas.
 - [ ] PO confere.
 
 ## Notas de implementação
-(preenchido durante a execução)
+Causa provável, achada no código (o banco do beta não foi consultado: leitura negada nesta sessão): o resgate só dá a cópia nº 0 e o marco se a carta já está vinculada à conta na hora do sorteio. Quem tirou a carta antes de a moderação gravar o vínculo ficou com cópia numerada comum, sem marco, broche nem destaque. Nenhum código apaga marcos (hipótese 2 descartada).
+Correção: `grantLegendRewards` (cópia da conta vinculada vira a nº 0 se a nº 0 está livre; marco + aviso uma vez só) roda quando a moderação grava ou restaura a ficha com vínculo, e a migração 0063 faz a concessão retroativa no deploy. Teste em `legend-card-claims.test.ts`.
+Pendente depois do deploy: conferir o perfil do `jaru` e listar as contas afetadas (consulta no beta). Se o `jaru` ainda não tirou a própria carta no sorteio, a regra RN-CRT-09 não dá o marco e a decisão volta ao PO.

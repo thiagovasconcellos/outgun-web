@@ -178,6 +178,32 @@ export async function claimCard(db: Db, userId: string, seq: number, o: { now?: 
 }
 
 /**
+ * Recompensa da lenda para quem já tinha a carta quando a conta foi vinculada a ela (OG-609,
+ * RN-CRT-09): o resgate só dá a cópia nº 0 e o marco se o vínculo já existe na hora do sorteio. Aqui
+ * a cópia da conta vinculada vira a nº 0 (se a nº 0 está livre) e quem tem a nº 0 da própria carta
+ * sem o marco "A lenda em pessoa" ganha o marco e o aviso, uma vez só. Pode rodar quantas vezes
+ * quiser; com `cardId`, só essa carta. Devolve as contas que ganharam o marco agora.
+ * O mesmo SQL está na migração 0063, que faz a concessão retroativa.
+ */
+export async function grantLegendRewards(tx: Db | Tx, cardId?: number): Promise<string[]> {
+  const only = cardId === undefined ? sql`` : sql`AND lc.id = ${cardId}`;
+  await tx.execute(sql`
+    UPDATE user_cards uc SET serial = 0
+    FROM legend_cards lc
+    WHERE lc.id = uc.card_id AND lc.linked_user_id = uc.user_id AND uc.serial <> 0 ${only}
+      AND NOT EXISTS (SELECT 1 FROM user_cards z WHERE z.card_id = uc.card_id AND z.serial = 0)`);
+  const got = await tx.execute<{ user_id: string }>(sql`
+    INSERT INTO player_milestones (user_id, milestone, achieved_at, match_id)
+    SELECT uc.user_id, 'card_legend', uc.claimed_at, NULL
+    FROM user_cards uc JOIN legend_cards lc ON lc.id = uc.card_id AND lc.linked_user_id = uc.user_id
+    WHERE uc.serial = 0 ${only}
+    ON CONFLICT (user_id, milestone) DO NOTHING RETURNING user_id`);
+  const ids = got.map((r) => r.user_id);
+  await notify(tx, ids, 'milestone', { milestones: ['card_legend'] });
+  return ids;
+}
+
+/**
  * Depois de gravar uma partida: quem acabou de chegar à 3ª partida da semana ganha o aviso de que
  * os resgates estão liberados (uma vez por semana), se ainda há carta a descobrir.
  */
