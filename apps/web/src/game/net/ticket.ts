@@ -56,6 +56,8 @@ export function joinErrorText(code: string): string {
       return 'The room is full.';
     case 'room_offline':
       return 'The room is not running.';
+    case 'email_not_verified':
+      return 'Confirm your e-mail first: use the link we sent you, or ask for a new one in Account.';
     case 'room_not_found':
       return 'Room not found.';
     default:

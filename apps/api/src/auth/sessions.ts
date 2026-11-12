@@ -20,6 +20,16 @@ export interface SessionUser {
   isAdmin: boolean;
   /** Moderador do painel (OG-087). */
   isModerator: boolean;
+  /** E-mail confirmado (OG-610, RN-EML-01); nulo = ainda não. */
+  emailVerifiedAt: Date | null;
+}
+
+/** Resposta padrão das ações que exigem e-mail confirmado (RN-EML-01). */
+export const EMAIL_NOT_VERIFIED = { error: 'email_not_verified', message: 'confirm your e-mail first' } as const;
+
+/** A conta está barrada das ações que exigem e-mail confirmado? Só com `EMAIL_VERIFICATION=1` (o desligamento rápido se o envio de e-mail falhar). */
+export function emailBlocked(config: { requireVerifiedEmail: boolean }, user: Pick<SessionUser, 'emailVerifiedAt'>): boolean {
+  return config.requireVerifiedEmail && user.emailVerifiedAt === null;
 }
 
 export class SessionStore {
@@ -66,6 +76,7 @@ export class SessionStore {
         clanLabel: users.clanLabel,
         isAdmin: users.isAdmin,
         isModerator: users.isModerator,
+        emailVerifiedAt: users.emailVerifiedAt,
       })
       .from(sessions)
       .innerJoin(users, eq(users.id, sessions.userId))

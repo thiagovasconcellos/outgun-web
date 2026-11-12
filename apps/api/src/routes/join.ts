@@ -9,6 +9,7 @@ import { and, desc, eq, gt, isNull, or } from 'drizzle-orm';
 import type { FastifyRequest } from 'fastify';
 import { createHash, randomUUID } from 'node:crypto';
 import type { AppDeps, Services } from '../app.js';
+import { EMAIL_NOT_VERIFIED, emailBlocked } from '../auth/sessions.js';
 import { checkGuestName } from '../auth/names.js';
 import { verifyPassword } from '../auth/password.js';
 import { roomInviteToken, validRoomInvite } from '../room-invite.js';
@@ -51,6 +52,8 @@ export function joinRoutes(deps: AppDeps, services: Services): FastifyPluginAsyn
     // beta fechado (OG-106): só quem tem conta (o cadastro exige convite)
     if (!user && deps.config.beta) return fail(401, 'beta_account_required', 'the closed beta needs an account');
     if (!user && room.mode === 'ranked') return fail(401, 'account_required', 'ranked rooms require an account');
+    // RN-EML-01 (OG-610): Ranked e OutCup só com e-mail confirmado
+    if (user && room.mode === 'ranked' && emailBlocked(deps.config, user)) return fail(403, EMAIL_NOT_VERIFIED.error, EMAIL_NOT_VERIFIED.message);
 
     let name: string;
     if (user) name = user.username;

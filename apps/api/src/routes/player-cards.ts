@@ -6,6 +6,7 @@ import { Type, type FastifyPluginAsyncTypebox } from '@fastify/type-provider-typ
 import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { CARD_CLASS_IDS, cardChance, cardClass, type CardClassId } from '@outgun/protocol';
 import type { AppDeps, Services } from '../app.js';
+import { EMAIL_NOT_VERIFIED, emailBlocked } from '../auth/sessions.js';
 import { claimCard, ClaimError, claimStatus } from '../legend-card-claims.js';
 import { cardPng } from '../legend-card-png-cache.js';
 import { cardClassOdds, cardGenerations, legendCards, userCards, users } from '../db/schema.js';
@@ -37,7 +38,7 @@ const ClaimStatusSchema = Type.Object({
   total: Type.Integer(),
 });
 
-export function playerCardRoutes({ database }: AppDeps, { sessions }: Services): FastifyPluginAsyncTypebox {
+export function playerCardRoutes({ database, config }: AppDeps, { sessions }: Services): FastifyPluginAsyncTypebox {
   const { db } = database;
   return async (app) => {
     app.get(
@@ -61,6 +62,7 @@ export function playerCardRoutes({ database }: AppDeps, { sessions }: Services):
           response: {
             200: Type.Object({ card: CardFace, serial: Type.Integer(), own: Type.Boolean(), seq: Type.Integer(), status: ClaimStatusSchema }),
             401: ErrorSchema,
+            403: ErrorSchema,
             409: ErrorSchema,
           },
         },
@@ -68,6 +70,7 @@ export function playerCardRoutes({ database }: AppDeps, { sessions }: Services):
       async (request, reply) => {
         const user = await sessions.current(request);
         if (!user) return reply.code(401).send({ error: 'unauthorized', message: 'sign in first' });
+        if (emailBlocked(config, user)) return reply.code(403).send(EMAIL_NOT_VERIFIED); // RN-EML-01
         try {
           const r = await claimCard(db, user.id, request.body.seq);
           const [card] = await db.select().from(legendCards).where(eq(legendCards.id, r.cardId));

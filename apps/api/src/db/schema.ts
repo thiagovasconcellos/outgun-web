@@ -62,6 +62,8 @@ export const users = pgTable(
     steamId: text('steam_id'),
     steamLinkedAt: tstz('steam_linked_at'),
     /** Termos e política aceitos no cadastro (OG-107). */
+    /** E-mail confirmado pelo link (OG-610, RN-EML-01); nulo = ainda não. */
+    emailVerifiedAt: tstz('email_verified_at'),
     termsVersion: text('terms_version'),
     termsAcceptedAt: tstz('terms_accepted_at'),
     usernameChangedAt: tstz('username_changed_at'),
@@ -614,6 +616,22 @@ export const adminActions = pgTable('admin_actions', {
   details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: tstz('created_at').notNull().defaultNow(),
 });
+
+/** Links de confirmação de e-mail (OG-610): hash do token, 24 h, uso único. */
+export const emailVerifications = pgTable(
+  'email_verifications',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    emailKey: text('email_key').notNull(),
+    createdAt: tstz('created_at').notNull().defaultNow(),
+    expiresAt: tstz('expires_at').notNull(),
+    usedAt: tstz('used_at'),
+  },
+  (t) => [index('email_verifications_user_idx').on(t.userId)],
+);
 
 export const passwordResets = pgTable(
   'password_resets',
@@ -1169,6 +1187,7 @@ export const allTables = {
   feedback_images: feedbackImages,
   net_reports: netReports,
   password_resets: passwordResets,
+  email_verifications: emailVerifications,
   reserved_names: reservedNames,
   cups,
   cup_entries: cupEntries,

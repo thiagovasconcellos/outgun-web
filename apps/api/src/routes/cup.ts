@@ -6,7 +6,7 @@ import { Type, type FastifyPluginAsyncTypebox, type Static } from '@fastify/type
 import { and, asc, desc, eq, inArray, or } from 'drizzle-orm';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { AppDeps, Services } from '../app.js';
-import type { SessionUser } from '../auth/sessions.js';
+import { EMAIL_NOT_VERIFIED, emailBlocked, type SessionUser } from '../auth/sessions.js';
 import type { Db } from '../db/client.js';
 import { usernameKey } from '../db/keys.js';
 import { adminActions, cupAvailability, cupDuos, cupEntries, cupMatches, cups, matches, rankedSeries, rooms, users } from '../db/schema.js';
@@ -255,6 +255,7 @@ export function cupRoutes({ database, config }: AppDeps, { sessions, mailer }: S
         const [cup] = await db.select().from(cups).where(eq(cups.edition, request.params.edition));
         if (!cup) return reply.code(404).send({ error: 'cup_not_found', message: 'no such edition' });
         if (!entryWindow(cup)) return reply.code(409).send({ error: 'registration_closed', message: 'sign-ups are closed' });
+        if (emailBlocked(config, user)) return reply.code(403).send(EMAIL_NOT_VERIFIED); // RN-EML-01
         if (await platformBanned(db, user.id)) return reply.code(403).send({ error: 'banned', message: 'banned accounts cannot sign up' });
         await db.insert(cupEntries).values({ cupId: cup.id, userId: user.id }).onConflictDoNothing();
         liveBus.publish('cup');

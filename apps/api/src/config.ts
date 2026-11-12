@@ -22,6 +22,8 @@ export interface ApiConfig {
   logLevel: string;
   /** Beta fechado (OG-106): cadastro só com convite e partidas só com conta. */
   beta: boolean;
+  /** RN-EML-01 (OG-610): Ranked, OutCup, cartas, clã e denúncias só com e-mail confirmado. Desligado, só o aviso aparece. */
+  requireVerifiedEmail: boolean;
   /** Exige `Authorization: Bearer <token>` em /metrics (OG-102). */
   metricsToken: string | undefined;
   /** DSN do serviço de erros (Sentry/GlitchTip); vazio desliga. */
@@ -90,6 +92,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ApiConfig {
     internalMaxSkewMs: Number(env.INTERNAL_MAX_SKEW_S ?? 30) * 1000,
     logLevel: env.LOG_LEVEL ?? 'info',
     beta: env.BETA === '1',
+    requireVerifiedEmail: env.EMAIL_VERIFICATION === '1',
     metricsToken: env.METRICS_TOKEN || undefined,
     sentryDsn: env.SENTRY_DSN || undefined,
     environment: env.SENTRY_ENVIRONMENT ?? env.NODE_ENV ?? 'development',

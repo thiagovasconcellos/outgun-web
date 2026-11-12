@@ -17,6 +17,7 @@ import {
   LoginScreen,
   RegisterScreen,
   ResetPasswordScreen,
+  VerifyEmailScreen,
 } from './screens/account.js';
 import { CreateRoomScreen, JoinRoomScreen, LobbyScreen } from './screens/lobby.js';
 import { CreateRankedRoomScreen } from './screens/ranked-rooms.js';
@@ -74,6 +75,7 @@ const router = createBrowserRouter([
           { path: 'register', element: <RegisterScreen /> },
           { path: 'forgot-password', element: <ForgotPasswordScreen /> },
           { path: 'reset-password', element: <ResetPasswordScreen /> },
+          { path: 'verify-email', element: <VerifyEmailScreen /> },
           { path: 'account', element: <AccountScreen /> },
           { path: 'account/password', element: <ChangePasswordScreen /> },
           { path: 'account/delete', element: <DeleteAccountScreen /> },

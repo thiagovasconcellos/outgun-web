@@ -25,7 +25,7 @@ const PORTAL = [
   /^\/$/,
   /^\/(help|credits|source|terms|privacy|about|feedback|admin|ranking|hall-da-fama|players|jogadores|clans|outcup)\/?$/,
   /^\/outcup\/\d{4}-\d{2}\/?$/,
-  /^\/(login|register|forgot-password|reset-password)\/?$/,
+  /^\/(login|register|forgot-password|reset-password|verify-email)\/?$/,
   /^\/account(\/(password|delete|username|clan-tag))?\/?$/,
   /^\/clans\/[^/]+\/?$/,
   /^\/players\/[^/]+\/?$/,

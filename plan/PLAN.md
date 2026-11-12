@@ -637,7 +637,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | S63 | v2: inventário Steam, ajustes depois da primeira entrega real — entregas presas voltam à fila e imagens das cartas geradas de antemão | OG-587, OG-588 | |
 | S64 | v2: servidor da comunidade na Alemanha (D-97) — servidor só Casual marcado na API, registro de satélite que não confia na máquina, coluna Região nas listas de salas | OG-597, OG-598, OG-599 | |
 | S65 | v2: rodada de correções (issues #49–#55 do GitHub: F8, app Steam no Linux, Jogar agora com tela preta, sala que fecha ao sair, soco depois do pause, killing spree entre partidas) | OG-602 (cancelado, D-98), OG-603, OG-604, OG-605, OG-606, OG-607, OG-608, OG-609 | |
-| S66 | v2: segurança — verificação de e-mail no cadastro e proteção contra DDoS na frente do beta (levantamento de 2026-11-11) | OG-610, OG-611 | |
+| S66 | v2: segurança — verificação de e-mail no cadastro (D-99; levantamento de 2026-11-11) | OG-610 | |
 
 > Duração total estimada: **13 sprints (~26 semanas)**. Replanejar após S2 com a velocidade real.
 
@@ -1098,8 +1098,8 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-607](cards/OG-607-apos-o-pause-o-jogo-fica.md) | Após o pause, o jogo fica dando soquinho por 5-10 segundos (issue #54) | E11 | 2 | Should | S65 | — | Concluído |
 | [OG-608](cards/OG-608-killing-spree-continua-na-partida-seguinte.md) | Killing spree continua na partida seguinte (issue #55) | E11 | 2 | Could | S65 | — | Concluído |
 | [OG-609](cards/OG-609-marco-a-lenda-em-pessoa-do-jaru.md) | Marco "A lenda em pessoa" ausente em quem tem a própria carta (jaru) | E18 | 2 | Should | S65 | OG-580 | Concluído |
-| [OG-610](cards/OG-610-verificacao-de-email-no-cadastro.md) | Verificação de e-mail no cadastro | E7 | 5 | Must | S66 | — | Pronto |
-| [OG-611](cards/OG-611-protecao-contra-ddos-na-borda.md) | Proteção contra DDoS na frente do beta | E7 | 5 | Should | S66 | — | Pronto |
+| [OG-610](cards/OG-610-verificacao-de-email-no-cadastro.md) | Verificação de e-mail no cadastro | E7 | 5 | Must | S66 | — | Concluído |
+| [OG-611](cards/OG-611-protecao-contra-ddos-na-borda.md) | Proteção contra DDoS na frente do beta | E7 | 5 | Should | — | — | Backlog |
 
 **Total:** 448 cards, 1415 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 379 cards, 1120 pts (OG-602 cancelado, 3 pts fora da soma; OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
@@ -1220,6 +1220,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | D-96 | **v2** — Nomenclatura dos mapas (proposta de Nosferatu, OG-589 a OG-596) | Só corrigir as telas / regra única de chave, título oficial em toda tela e migração das chaves | ✅ **Decidido em 2026-11-06 com as respostas de Nosferatu** (página `plan/specs/nomes-de-mapas/proposta.html`): chave técnica em `snake_case`, derivada uma vez do `P title`; o título oficial atual aparece em toda tela e a revisão jogada é indicada à parte. Migração em etapas: compatibilidade e telas antes, troca das 13 chaves depois, sem alterar `matches.map`, TXT nem CRC. P1 nada de dois mapas com o mesmo título: nova revisão ou mudar o `P title`. P2 revisão que colide com o título de outro mapa é recusada. P3 mudança de título mostra antigo e novo e o efeito no histórico antes de publicar. P4 títulos abandonados e aliases ficam reservados para sempre. P5 grafia parecida pede confirmação e não bloqueia. P6 apóstrofo some, o resto vira separador, ø/æ/ß/ð/þ viram letras equivalentes. P7 underscore ou espaços repetidos no título pedem confirmação. P8 título que cai em chave reservada é recusado. P9 chave visível só no histórico do mapa e nas mensagens de conflito. P10 ordem das rotações preservada; o funcionamento delas é discutido à parte (OG-596); toda lista de mapas da moderação em ordem alfabética pelo título, sem afetar a rotação. **Interpretação a confirmar na revisão (P2):** a colisão considera título ativo, chave e alias de outro mapa. RN-MRV-12..16 | PO + Nosferatu |
 | D-97 | **v2** — Servidor da comunidade na Alemanha (OG-597 a OG-599) | Liberar Ranked e OutCup nele ou só Casual; bandeira junto ao ping ou coluna própria | ✅ **Decidido pelo PO em 2026-11-06:** só Casual por enquanto, mesmo com confiança no operador, porque com o segredo do servidor dá para enviar resultado de partida à API central. A marca fica na API (`CASUAL_ONLY_SERVERS`), não no heartbeat. Quem está na Europa segue jogando Ranked no Brasil até haver servidor oficial lá. As listas de salas ganham uma coluna Região, com bandeira e nome do país. |
 | D-98 | **v2** — Pausa no treino (OG-602, issue #49) | Pausa em treino com um humano / sem pausa | ✅ **Decidido pelo PO em 2026-11-11:** não deve existir pausa em treino; Ctrl+P segue só no Ranked. OG-602 cancelado. Na mesma rodada: OG-606 fecha a sala de jogador quando sai o último humano, com 15 s de carência | PO |
+| D-99 | **v2** — Verificação de e-mail (OG-610) | O que travar sem e-mail confirmado; o que fazer com as contas já existentes | ✅ **Decidido pelo PO em 2026-11-11:** Casual fica liberado; Ranked, OutCup, resgate de carta, clã e denúncias só com e-mail confirmado. As contas que já existem ficam como confirmadas, menos as de domínio que não recebe e-mail (hoje só `ae@ae.ae`), que veem o aviso. Proteção contra DDoS (OG-611) fica em Backlog. RN-EML-01 | PO |
 
 ---
 
@@ -1429,3 +1430,4 @@ Em 2026-10-14 o port ficou completo (S0–S12) e o beta com veteranos está no a
 | RN-CRT-08 | **v2:** Carta não se compra, não se vende e não se troca, e não é entregue fora do sorteio. Não dá vantagem nem aparece na partida. As fichas ficam só no banco, fora do repositório público. |
 | RN-CRT-09 | **v2:** A lenda que tira a própria carta ganha o broche "Lenda" no nick (portal, fora da partida), a carta em destaque no perfil e o marco "A lenda em pessoa". |
 | RN-CRT-10 | **v2 (D-95):** Quem liga a conta Steam (app desktop) recebe cada carta também no inventário Steam, inclusive as já resgatadas. O item é só a imagem da frente da carta (boneco, nick, classe e moldura), sem texto da ficha, e não é trocável nem vendável. A moderação pode deixar uma carta fora da Steam. |
+| RN-EML-01 | **v2 (D-99):** A conta nova recebe um link de confirmação de e-mail (24 h, uso único). Sem e-mail confirmado a conta joga Casual, mas não entra em Ranked nem na OutCup, não resgata carta, não cria nem entra em clã e não faz denúncia. Trocar o e-mail zera a confirmação. |

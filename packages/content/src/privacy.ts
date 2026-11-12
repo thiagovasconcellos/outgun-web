@@ -24,6 +24,7 @@ export const TABLES: Readonly<Record<string, 'personal' | 'none'>> = {
   sessions: 'personal',
   player_profiles: 'personal',
   password_resets: 'personal',
+  email_verifications: 'personal',
   reserved_names: 'personal',
   matches: 'none',
   match_players: 'personal',
@@ -108,6 +109,12 @@ export const DATA_INVENTORY: readonly DataItem[] = [
     where: ['password_resets'],
     why: b('Trocar a senha esquecida', 'Resetting a forgotten password'),
     retention: b('30 minutos (uso único)', '30 minutes (single use)'),
+  },
+  {
+    what: b('Confirmação de e-mail: link enviado no cadastro (só o hash do token) e a data da confirmação', 'E-mail confirmation: link sent at sign-up (token hash only) and the confirmation date'),
+    where: ['email_verifications', 'users'],
+    why: b('Confirmar que o e-mail da conta é de quem a criou', 'Confirming that the account e-mail belongs to who created it'),
+    retention: b('Link: 24 horas (uso único); a data fica enquanto a conta existir', 'Link: 24 hours (single use); the date stays while the account exists'),
   },
   {
     what: b('Partidas: nome em jogo, time, placar e estatísticas; eventos das ranqueadas (quem matou quem e quando, ações de bandeira); ranking da temporada; replays (nomes e chat da partida)', 'Matches: in-game name, team, score and statistics; Ranked match events (who killed whom and when, flag actions); season ranking; replays (names and match chat)'),

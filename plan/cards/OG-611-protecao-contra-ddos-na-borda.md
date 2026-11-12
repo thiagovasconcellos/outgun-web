@@ -6,8 +6,8 @@
 | Tipo | Segurança |
 | Prioridade | Should |
 | Estimativa | 5 pts |
-| Sprint | S66 |
-| Status | Pronto |
+| Sprint | — |
+| Status | Backlog |
 | Dependências | — |
 | Issue | — (pedido do PO em 2026-11-11) |
 | Regras de negócio | — |

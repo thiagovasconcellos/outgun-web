@@ -40,6 +40,36 @@ export function passwordResetMail(to: string, username: string, link: string, lo
   };
 }
 
+const VERIFY = {
+  'pt-BR': {
+    subject: 'Outgun Web: confirme seu e-mail',
+    hello: (name: string) => `Olá, ${name}.`,
+    body: 'Confirme seu e-mail para liberar Ranqueado, OutCup, resgate de cartas, clãs e denúncias. O link vale por 24 horas e só funciona uma vez.',
+    action: 'Confirmar e-mail',
+    ignore: 'Se você não criou esta conta, ignore este e-mail.',
+  },
+  en: {
+    subject: 'Outgun Web: confirm your e-mail',
+    hello: (name: string) => `Hi, ${name}.`,
+    body: 'Confirm your e-mail to unlock Ranked, OutCup, card claims, clans and reports. The link is valid for 24 hours and works only once.',
+    action: 'Confirm e-mail',
+    ignore: "If you didn't create this account, ignore this e-mail.",
+  },
+} as const;
+
+/** Link de confirmação de e-mail pedido de novo pelo portal (OG-610). */
+export function verifyEmailMail(to: string, username: string, link: string, locale: MailLocale): Mail {
+  const t = VERIFY[locale];
+  return {
+    to,
+    subject: t.subject,
+    text: `${t.hello(username)}\n\n${t.body}\n\n${link}\n\n${t.ignore}\n`,
+    html:
+      `<p>${escape(t.hello(username))}</p><p>${escape(t.body)}</p>` +
+      `<p><a href="${escape(link)}">${escape(t.action)}</a></p><p>${escape(t.ignore)}</p>`,
+  };
+}
+
 const WELCOME = {
   'pt-BR': {
     subject: 'Bem-vindo ao Outgun Web',
@@ -108,8 +138,10 @@ function layout(o: { locale: MailLocale; webUrl: string; title: string; eyebrow?
 }
 
 /** Boas-vindas depois do cadastro (D-23: Resend). */
-export function welcomeMail(to: string, username: string, webUrl: string, locale: MailLocale): Mail {
+/** Boas-vindas; com `confirmLink`, leva também o pedido de confirmação do e-mail (OG-610). */
+export function welcomeMail(to: string, username: string, webUrl: string, locale: MailLocale, confirmLink?: string): Mail {
   const t = WELCOME[locale];
+  const v = VERIFY[locale];
   const modes = t.modes
     .map(([name, desc]) => `<li style="margin:0 0 6px"><strong style="color:${C.text}">${escape(name)}:</strong> ${escape(desc)}</li>`)
     .join('');
@@ -120,6 +152,7 @@ export function welcomeMail(to: string, username: string, webUrl: string, locale
     heading: t.hello(username),
     body:
       p(escape(t.body)) +
+      (confirmLink ? p(escape(v.body)) + button(confirmLink, v.action) : '') +
       button(webUrl, t.play) +
       p(escape(t.start)) +
       `<ul style="margin:0 0 16px;padding-left:20px;${FONT};font-size:15px;line-height:1.55;color:${C.muted}">${modes}</ul>` +
@@ -130,6 +163,7 @@ export function welcomeMail(to: string, username: string, webUrl: string, locale
   const text = [
     t.hello(username),
     t.body,
+    ...(confirmLink ? [`${v.body}\n${v.action}: ${confirmLink}`] : []),
     `${t.play}: ${webUrl}`,
     t.start,
     t.modes.map(([name, desc]) => `- ${name}: ${desc}`).join('\n'),
