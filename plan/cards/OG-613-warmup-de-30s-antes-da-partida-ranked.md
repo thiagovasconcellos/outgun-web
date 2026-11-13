@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 5 pts |
 | Sprint | — |
-| Status | Em revisão |
+| Status | Concluído |
 | Dependências | — |
 | Issue | — (pedido da comunidade, 2026-11-13) |
 | Regras de negócio | RN-RKL-11, RN-RKL-12 |

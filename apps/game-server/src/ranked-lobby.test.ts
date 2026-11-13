@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { loadMaps } from './maps.js';
 import { COUNTDOWN_FRAMES, RankedLobby, READY_FRAMES, tallyVotes, VOTE_FRAMES } from './ranked-lobby.js';
 import { RANKED_RECONNECT_FRAMES } from './pause.js';
-import { Room, type Connection } from './room.js';
+import { Room, WARMUP_FRAMES, type Connection } from './room.js';
 
 const first = () => 0;
 
@@ -163,8 +163,13 @@ describe('sala Ranked 3x3 com lobby (OG-252)', () => {
     expect(r.world.map.title).toBe(maps[1]!.title);
     expect(r.world.mapTime()).toBeLessThan(5); // o tempo do mapa começa com o jogo
     for (const p of players) r.handle(p.pid, [message('clientReady', {})]);
-    run(r, 30);
+    // warmup (OG-613): 30 s com o mapa carregado e o mundo parado; só depois ninguém está parado
+    run(r, 5);
+    expect(players[0]!.conn.last('pauseState')).toMatchObject({ phase: 'warmup' });
+    expect(alive(r)).toBe(0);
+    run(r, WARMUP_FRAMES + 30);
     expect(alive(r)).toBe(6);
+    expect(players[0]!.conn.last('pauseState')).toMatchObject({ phase: 'none' });
   });
 
   it('o lado vira o clã já no lobby (D-78) e fica assim o jogo todo, mesmo com queda', () => {
@@ -330,7 +335,7 @@ describe('sala Ranked 3x3 com lobby (OG-252)', () => {
       run(r, 1);
       play(r, players);
       for (const p of players) r.handle(p.pid, [message('clientReady', {})]);
-      run(r, 30);
+      run(r, WARMUP_FRAMES + 30);
       const side = (team: number) => players.filter((p) => r.world.teamOf(p.pid) === team);
       return { r, players, side, reports };
     };
@@ -378,7 +383,7 @@ describe('sala Ranked 3x3 com lobby (OG-252)', () => {
     run(r, 1);
     play(r, players);
     for (const p of players) r.handle(p.pid, [message('clientReady', {})]);
-    run(r, 30);
+    run(r, WARMUP_FRAMES + 30);
     const a = players[0]!;
     const team = r.world.teamOf(a.pid);
     const account = '00000000-0000-4000-8000-000000000001'; // J1

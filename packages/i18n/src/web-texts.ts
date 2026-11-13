@@ -406,8 +406,6 @@ export const WEB_TEXTS: Partial<Record<Locale, Readonly<Record<string, string>>>
     PAUSED: 'PAUSADO',
     'Resuming in $1': 'Retomando em $1',
     'WARMUP': 'AQUECIMENTO',
-    'Format': 'Formato',
-    'Series': 'Série',
     'Match starts in $1 s': 'A partida começa em $1 s',
     'Training - $1': 'Treino · $1',
     Attack: 'Ataque',
