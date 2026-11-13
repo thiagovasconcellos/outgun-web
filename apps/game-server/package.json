@@ -30,7 +30,7 @@
     "@outgun/settings": "workspace:*",
     "@outgun/sim": "workspace:*",
     "@outgun/tickets": "workspace:*",
-    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.52.0"
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.71.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0"
