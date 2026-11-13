@@ -405,6 +405,8 @@ export const WEB_TEXTS: Partial<Record<Locale, Readonly<Record<string, string>>>
     'Vote: play one short': 'Voto: seguir com um a menos',
     PAUSED: 'PAUSADO',
     'Resuming in $1': 'Retomando em $1',
+    'WARMUP': 'AQUECIMENTO',
+    'Match starts in $1 s': 'A partida começa em $1 s',
     'Training - $1': 'Treino · $1',
     Attack: 'Ataque',
     Escape: 'Fuga',

@@ -25,6 +25,9 @@ export interface RoomSpec {
   randomSlots?: readonly (RandomMapParams | null)[];
   /** Formato e série da sala Ranked (OG-250). */
   ranked?: RankedRoomFormat;
+  /** Conta que criou o lobby Ranked e recriação da sala com outro formato (OG-612). */
+  ownerId?: string;
+  reconfigure?: (next: RankedRoomFormat) => void;
   /** Bots da sala privada Casual escolhidos pelo dono (OG-289). */
   casualBots?: CasualBots;
   /** Sala de treino (OG-490, OG-492). */
@@ -80,7 +83,7 @@ export interface TickObserver {
 }
 
 /** Por que a sala foi encerrada: a partida acabou de vez, ficou vazia tempo demais ou o processo está parando. */
-export type RoomCloseReason = 'finished' | 'empty' | 'shutdown';
+export type RoomCloseReason = 'finished' | 'empty' | 'shutdown' | 'reconfigured';
 
 /** O que o heartbeat conta à API sobre cada sala (OG-086). */
 export interface HostedRoom {
@@ -131,7 +134,7 @@ export class RoomManager {
   create(spec: RoomSpec): Room {
     if (this.rooms.has(spec.id)) throw new Error(`sala já existe: ${spec.id}`);
     const seed = this.options.seed?.() ?? Math.floor(Math.random() * 2 ** 31);
-    const room = new Room({ ...this.options.roomDefaults, id: spec.id, preset: spec.preset, maps: spec.maps, mapFiles: spec.mapFiles, ...(spec.randomSlots ? { randomSlots: spec.randomSlots } : {}), maxPlayers: spec.maxPlayers, ...(spec.ranked ? { ranked: spec.ranked } : {}), ...(spec.casualBots ? { casualBots: spec.casualBots } : {}), ...(spec.training ? { training: spec.training } : {}), ...(spec.cup ? { cup: spec.cup } : {}), seed, now: () => this.clock.now(), ...(spec.reconnectSeconds !== undefined ? { reconnectSeconds: spec.reconnectSeconds } : {}) });
+    const room = new Room({ ...this.options.roomDefaults, id: spec.id, preset: spec.preset, maps: spec.maps, mapFiles: spec.mapFiles, ...(spec.randomSlots ? { randomSlots: spec.randomSlots } : {}), maxPlayers: spec.maxPlayers, ...(spec.ranked ? { ranked: spec.ranked } : {}), ...(spec.ownerId ? { ownerId: spec.ownerId } : {}), ...(spec.reconfigure ? { reconfigure: spec.reconfigure } : {}), ...(spec.casualBots ? { casualBots: spec.casualBots } : {}), ...(spec.training ? { training: spec.training } : {}), ...(spec.cup ? { cup: spec.cup } : {}), seed, now: () => this.clock.now(), ...(spec.reconnectSeconds !== undefined ? { reconnectSeconds: spec.reconnectSeconds } : {}) });
     this.rooms.set(spec.id, { room, name: spec.name ?? spec.id, persistent: spec.persistent ?? false, emptySince: null, hadPlayers: false, chosenMaps: spec.chosenMaps ?? null });
     return room;
   }
@@ -202,7 +205,7 @@ export class RoomManager {
     if (!entry) return;
     // fim de partida ou sala vazia: quem assiste ainda está no atraso e vê o fim (OG-533)
     const keep = reason !== 'shutdown' && entry.room.spectatorCount > 0;
-    entry.room.close(keep);
+    entry.room.close(keep, reason === 'reconfigured');
     if (keep) this.tails.add(entry.room);
     this.rooms.delete(id);
     this.observer?.roomClosed?.(id, reason);

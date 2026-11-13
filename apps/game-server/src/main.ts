@@ -182,6 +182,7 @@ const server = await startServer({
     mapsDir,
     map: mapFile,
     generatedMaps,
+    reconfigureApi: (roomId, next) => platform.post('/internal/rooms/reconfigure', { roomId, ...next }, 2),
     log: (line) => logger.info(line),
   }),
   ticketKeys: () => jwks.keys,

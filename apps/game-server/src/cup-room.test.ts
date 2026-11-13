@@ -7,7 +7,7 @@ import { decodeFrame, message, type AnyMessage } from '@outgun/protocol';
 import { describe, expect, it } from 'vitest';
 import { loadMaps } from './maps.js';
 import { COUNTDOWN_FRAMES } from './ranked-lobby.js';
-import { Room, type Connection } from './room.js';
+import { Room, WARMUP_FRAMES, type Connection } from './room.js';
 
 class TestConnection implements Connection {
   received: AnyMessage[] = [];
@@ -42,7 +42,7 @@ function duoRoom(opts: { cup?: Record<string, 0 | 1>; start?: boolean } = {}) {
     for (const p of players) r.handle(p.pid, [message('lobbyReady', { ready: true })]);
     run(r, COUNTDOWN_FRAMES + 2);
     for (const p of players) r.handle(p.pid, [message('clientReady', {})]);
-    run(r, 30);
+    run(r, WARMUP_FRAMES + 30);
   }
   return { r, players };
 }

@@ -4,7 +4,7 @@
 import { matchMapRefs } from '../map-catalog.js';
 import { Type, type FastifyPluginAsyncTypebox, type Static, type TArray, type TOptional, type TString } from '@fastify/type-provider-typebox';
 import { and, eq, gt, inArray, isNotNull, isNull, lt, ne, notInArray, or } from 'drizzle-orm';
-import { BOT_CHAT_MESSAGE_MAX_LENGTH, BOT_CHAT_MESSAGES_MAX, BOT_CHAT_PER_MINUTE_MAX, PRESETS, ROTATION_KEYS, seriesOver, seriesWinner, seriesWinsNeeded, type RotationKey } from '@outgun/settings';
+import { formatPlayers, BOT_CHAT_MESSAGE_MAX_LENGTH, BOT_CHAT_MESSAGES_MAX, BOT_CHAT_PER_MINUTE_MAX, PRESETS, ROTATION_KEYS, seriesOver, seriesWinner, seriesWinsNeeded, type RotationKey } from '@outgun/settings';
 import type { AppDeps, Services } from '../app.js';
 import { EmblemSchema } from './schemas.js';
 import { CupOutbox, cupSeriesFinished, deliver } from '../cup.js';
@@ -445,6 +445,28 @@ export function internalRoutes({ config, database }: AppDeps, { mailer }: Pick<S
         await applyAcks(database.db, serverId, request.body.acks ?? [], now);
         const commands = await takeCommands(database.db, serverId, now);
         return { updated: request.body.rooms.length, commands, config: await lastGoodRead(database.db, 'config', () => platformConfig(database.db), warn('configuração')) };
+      },
+    );
+
+    app.post(
+      '/rooms/reconfigure',
+      {
+        schema: {
+          tags: ['interno'],
+          summary: 'Game server registra o novo formato e a nova série de um lobby Ranked que ainda não começou a série (OG-612)',
+          security,
+          body: Type.Object({ roomId: RoomId, format: RankedFormatSchema, bestOf: SeriesBestOfSchema }),
+          response: { 200: Type.Object({ ok: Type.Literal(true) }), 401: ErrorSchema, 404: ErrorSchema, 422: ErrorSchema },
+        },
+      },
+      async (request, reply) => {
+        const { roomId, format, bestOf } = request.body;
+        const [room] = await database.db.select().from(rooms).where(eq(rooms.id, roomId));
+        if (!room || (room.serverId && room.serverId !== request.serverId)) return reply.code(404).send({ error: 'room_not_found', message: 'room not found on this server' });
+        if (room.mode !== 'ranked' || !room.format || room.persistent || room.cup) return reply.code(422).send({ error: 'not_ranked_lobby', message: 'room has no ranked format' });
+        await database.db.update(rooms).set({ format, bestOf, maxPlayers: formatPlayers(format) }).where(eq(rooms.id, roomId));
+        liveBus.publish('rooms');
+        return { ok: true as const };
       },
     );
 

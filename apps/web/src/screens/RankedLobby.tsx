@@ -177,6 +177,27 @@ export function RankedLobby({ view, host, onLeave, onFinished, onReport, room, p
           {' · '}
           {`${lobby.teamSize}x${lobby.teamSize}`}
         </p>
+        {/* o anfitrião troca formato e série antes de a série começar (OG-612); a sala é recriada e todos reconectam */}
+        {lobby.configurable && lobby.host === me && (
+          <p className="ranked-config">
+            <label>
+              {t('Format')}{' '}
+              <select value={lobby.teamSize} onChange={(e) => send({ type: 'lobbyConfig', teamSize: Number(e.target.value), bestOf: lobby.bestOf })}>
+                {[2, 3, 4, 5].map((n) => (
+                  <option key={n} value={n} disabled={n * 2 < lobby.members.length}>{`${n}x${n}`}</option>
+                ))}
+              </select>
+            </label>{' '}
+            <label>
+              {t('Series')}{' '}
+              <select value={lobby.bestOf} onChange={(e) => send({ type: 'lobbyConfig', teamSize: lobby.teamSize, bestOf: Number(e.target.value) })}>
+                {[1, 3, 5].map((n) => (
+                  <option key={n} value={n}>{`md${n}`}</option>
+                ))}
+              </select>
+            </label>
+          </p>
+        )}
         <h2 className="ranked-phase">
           {lobby.phase === 'countdown'
             ? t('Starting in $1', String(seconds))

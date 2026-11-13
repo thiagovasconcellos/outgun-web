@@ -48,7 +48,7 @@ import { watchContextLoss, type VideoState } from './render/context-loss.js';
 
 export { GENERATED_MAP, loadMap } from './map-loader.js';
 
-export type LobbyAction = Extract<AnyMessage, { type: 'lobbyReady' | 'lobbyVote' | 'lobbySide' | 'lobbySwapAnswer' }>;
+export type LobbyAction = Extract<AnyMessage, { type: 'lobbyReady' | 'lobbyVote' | 'lobbySide' | 'lobbySwapAnswer' | 'lobbyConfig' }>;
 
 export interface GameHost {
   /** Com o menu aberto o jogo não lê teclas. */
@@ -181,6 +181,8 @@ export interface GameOptions {
   readonly onAction?: (action: PressAction | 'menu') => void;
   /** Avisado quando o mapa e o tema terminam de carregar (ou falham). */
   readonly onStatus?: (status: GameStatus) => void;
+  /** O anfitrião trocou formato/série e a sala foi recriada (OG-612): a tela remonta e entra de novo. */
+  readonly onReconfigured?: () => void;
   /** Divisão da tela da partida online a cada mudança (celular: os botões da tela seguem o HUD). */
   readonly onScreen?: (screen: ScreenLayout) => void;
   /** Modo da sala, ao ser aceito nela (a trilha toca só no Casual, D-37). */
@@ -575,6 +577,7 @@ export function mountGame(container: HTMLElement, opts: GameOptions): GameHost {
     const dropped = (reason: string) => {
       if (destroyed || ended) return;
       // a vaga foi retomada por outra janela: não briga por ela
+      if (reason === 'reconfigured') return opts.onReconfigured?.();
       if (reason === 'resumed') return end(opts.translate('The game continued in another window.'));
       if (!resumeToken) return end(reason);
       const now = performance.now();

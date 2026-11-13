@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { GameMap } from '@outgun/sim';
-import { clampTraining, formatPlayers, isRankedFormat, isSeriesBestOf, TRAINING_MAX_PLAYERS, trainingMapsFor } from '@outgun/settings';
+import { clampTraining, type RankedRoomFormat, formatPlayers, isRankedFormat, isSeriesBestOf, TRAINING_MAX_PLAYERS, trainingMapsFor } from '@outgun/settings';
 import type { RoomSpawn } from '@outgun/tickets';
 import { casualChoices, loadMaps, panelRotationKeys, resolveRotation, rotationFor, withinRotation, type Rotations } from './maps.js';
 import type { GeneratedMaps } from './generated-maps.js';
@@ -24,6 +24,8 @@ export interface SpawnerOptions {
   generatedMaps?: GeneratedMaps;
   /** Busca de mapas por nome; padrão: só a pasta (a do `main` inclui os da moderação, OG-367). */
   map?: (name: string) => GameMap | undefined;
+  /** Registra na API o novo formato/série do lobby (OG-612); ausente = sem API, vale direto. */
+  reconfigureApi?: (roomId: string, next: { format: string; bestOf: number }) => Promise<boolean>;
 }
 
 /** Mapas da pasta por nome, com cache (nomes com barra ou inexistentes dão undefined). */
@@ -45,7 +47,7 @@ export function mapLoader(mapsDir: string): (name: string) => GameMap | undefine
 export function makeSpawner(manager: RoomManager, options: SpawnerOptions): (id: string, spec: RoomSpawn) => Room | undefined {
   const map = options.map ?? mapLoader(options.mapsDir);
 
-  return (id, spec) => {
+  const spawn = (id: string, spec: RoomSpawn): Room | undefined => {
     const preset = findPreset(spec.preset);
     if (!preset || preset.mode !== spec.mode) return undefined;
     // formato e série só no Ranked, e a sala tem exatamente 2 × N vagas (OG-250)
@@ -81,6 +83,14 @@ export function makeSpawner(manager: RoomManager, options: SpawnerOptions): (id:
       maxPlayers: ranked ? formatPlayers(ranked.format) : training ? TRAINING_MAX_PLAYERS : spec.maxPlayers,
       persistent: spec.persistent,
       ...(ranked ? { ranked: { format: ranked.format, bestOf: ranked.bestOf } } : {}),
+      ...(ranked && spec.ownerId ? { ownerId: spec.ownerId } : {}),
+      ...(ranked && spec.ownerId && !spec.cup
+        ? {
+            reconfigure: (next) => {
+              void reconfigure(id, spec, next);
+            },
+          }
+        : {}),
       ...(training ? { training } : {}),
       ...(ranked && spec.cup ? { cup: { sides: spec.cup.sides } } : {}),
       ...(spec.mode === 'casual' && !training && spec.casualBots ? { casualBots: { bots: spec.casualBots.bots, level: spec.casualBots.level } } : {}),
@@ -89,4 +99,22 @@ export function makeSpawner(manager: RoomManager, options: SpawnerOptions): (id:
     options.log?.(`sala ${id} aberta (${spec.mode}, ${preset.id}, ${files.length} mapas${ranked ? `, ${ranked.format} md${ranked.bestOf}` : ''})`);
     return room;
   };
+
+  /** Recria o lobby com o novo formato (OG-612): API primeiro; depois a sala velha fecha e a nova abre com o mesmo id. */
+  const reconfigure = async (id: string, spec: RoomSpawn, next: RankedRoomFormat): Promise<void> => {
+    const room = manager.get(id);
+    if (!room?.reconfigurable) return;
+    const ok = options.reconfigureApi ? await options.reconfigureApi(id, next) : true;
+    const revert = () => (spec.ranked && options.reconfigureApi ? options.reconfigureApi(id, spec.ranked) : Promise.resolve(true));
+    if (!ok) return;
+    // a fase pode ter mudado durante a chamada: desfaz na API e deixa a sala como está
+    if (manager.get(id) !== room || !room.reconfigurable) {
+      await revert();
+      return;
+    }
+    manager.close(id, 'reconfigured');
+    const fresh = spawn(id, { ...spec, ranked: next, maxPlayers: formatPlayers(next.format) });
+    options.log?.(`sala ${id} recriada: ${next.format} md${next.bestOf}${fresh ? '' : ' (FALHOU)'}`);
+  };
+  return spawn;
 }

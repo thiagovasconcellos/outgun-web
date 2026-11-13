@@ -843,6 +843,10 @@ export const MESSAGES = {
       chosenMap: i16,
       members: list(struct({ pid, ready: bool, vote: i16 }, 'membro do lobby'), 32),
       swaps: list(struct({ from: pid, to: pid }, 'pedido de troca de lado'), 32),
+      /** Anfitrião do lobby (quem criou a sala, OG-612); 255 = fora da sala ou sem conta. */
+      host: pidOrNone,
+      /** Formato e série ainda podem mudar (OG-612): fase `lobby` e série sem jogo disputado. */
+      configurable: bool,
     },
   ),
   lobbyReady: msg(121, 'c2s', 'event', '— (web, OG-254)', 'Marca ou desmarca "Pronto" no lobby Ranked.', {
@@ -874,9 +878,9 @@ export const MESSAGES = {
     's2c',
     'event',
     '— (web, OG-260)',
-    'Pausa do jogo Ranked: fase (sem pausa, pausado ou contagem de retomada), motivo (pedido do time, queda ou voto do bot substituto), time e quem pediu/caiu/saiu, segundos restantes (saldo do time, prazo de reconexão, voto ou contagem), o saldo de pausa de cada time e, no voto, os votos de cada opção.',
+    'Pausa do jogo Ranked: fase (sem pausa, pausado, contagem de retomada ou warmup de 30 s antes do jogo, OG-613), motivo (pedido do time, queda ou voto do bot substituto), time e quem pediu/caiu/saiu, segundos restantes (saldo do time, prazo de reconexão, voto ou contagem), o saldo de pausa de cada time e, no voto, os votos de cada opção.',
     {
-      phase: enumOf('none', 'paused', 'resuming'),
+      phase: enumOf('none', 'paused', 'resuming', 'warmup'),
       reason: enumOf('team', 'drop', 'vote'),
       team: u8,
       by: pidOrNone,
@@ -966,6 +970,10 @@ export const MESSAGES = {
     style: u8,
   }),
   // --- som de sala no replay (OG-535): sem equivalente no original ---
+  lobbyConfig: msg(137, 'c2s', 'event', '— (web, OG-612)', 'Anfitrião troca o formato e a série do lobby Ranked (só na fase `lobby`, antes de a série começar). A sala é recriada e todos reconectam.', {
+    teamSize: u8,
+    bestOf: u8,
+  }),
   roomSound: msg(135, 's2c', 'event', '— (web, OG-535)', 'Só no replay e no espectador: o `sound` que o servidor mandou a quem estava na sala (`screenSample`), com a sala de origem; toca só para quem está vendo essa sala.', {
     sample: u8,
     roomX,
