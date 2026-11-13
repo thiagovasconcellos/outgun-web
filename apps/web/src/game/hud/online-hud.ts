@@ -155,6 +155,7 @@ export class OnlineHud {
     const team = (n: number) => this.session.teamIdentity[n as 0 | 1]?.tag ?? t(n === 0 ? 'Red' : 'Blue');
     const name = p.by !== 255 ? ctx.name(p.by) : '';
     const footer = t('Pause left - Red: $1 s ($2) Blue: $3 s ($4)', String(p.redSeconds), String(p.redRequests), String(p.blueSeconds), String(p.blueRequests));
+    if (p.phase === 'warmup') return { title: t('WARMUP'), detail: t('Match starts in $1 s', String(p.seconds)), options: null, footer: '', hint: null };
     if (p.phase === 'resuming') return { title: t('Resuming in $1', String(p.seconds)), detail: '', options: null, footer, hint: null };
     if (p.reason === 'team') {
       const mine = ctx.teamOf(this.session.me) === p.team;

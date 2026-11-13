@@ -874,9 +874,9 @@ export const MESSAGES = {
     's2c',
     'event',
     '— (web, OG-260)',
-    'Pausa do jogo Ranked: fase (sem pausa, pausado ou contagem de retomada), motivo (pedido do time, queda ou voto do bot substituto), time e quem pediu/caiu/saiu, segundos restantes (saldo do time, prazo de reconexão, voto ou contagem), o saldo de pausa de cada time e, no voto, os votos de cada opção.',
+    'Pausa do jogo Ranked: fase (sem pausa, pausado, contagem de retomada ou warmup de 30 s antes do jogo, OG-613), motivo (pedido do time, queda ou voto do bot substituto), time e quem pediu/caiu/saiu, segundos restantes (saldo do time, prazo de reconexão, voto ou contagem), o saldo de pausa de cada time e, no voto, os votos de cada opção.',
     {
-      phase: enumOf('none', 'paused', 'resuming'),
+      phase: enumOf('none', 'paused', 'resuming', 'warmup'),
       reason: enumOf('team', 'drop', 'vote'),
       team: u8,
       by: pidOrNone,

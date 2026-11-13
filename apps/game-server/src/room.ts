@@ -264,6 +264,8 @@ const PAUSE_TEXT: Record<PauseRefusal | 'unavailable', string> = {
   notYours: 'Só o time que pediu a pausa pode retomar.',
 };
 /** Aviso da partida Ranked cancelada (RN-RKL-26). */
+/** Warmup do Ranked antes de cada jogo (OG-613): 30 s, sempre. */
+export const WARMUP_FRAMES = 300;
 const CANCELLED_TEXT = 'Partida cancelada: um dos lados ficou sem jogadores. Nada conta para o ranking e o jogo será disputado de novo.';
 /** Ações que contam como atividade do jogador (o idle kick do original olha os controles). */
 function isActivity(m: AnyMessage): boolean {
@@ -290,6 +292,8 @@ export class Room {
   private readonly announcer: VoteAnnouncer = { votes: 0, needed: 0, nextFrame: 0 };
   /** Placar de fim de partida: até este frame o mundo não é simulado. */
   private gameOverUntil: number | null = null;
+  /** Fim do warmup de 30 s do Ranked (OG-613): mapa carregado, mundo parado, o jogo começa depois. */
+  private warmupUntil: number | null = null;
   /** Servidor desligando (OG-103): a sala fecha no fim da partida em andamento. */
   private draining = false;
   /** Partida acabou durante a drenagem (ou não há humanos): o gerenciador fecha a sala. */
@@ -1442,6 +1446,7 @@ export class Room {
     }
     if (this.gameOverUntil !== null && world.frame >= this.gameOverUntil) {
       this.gameOverUntil = null;
+      this.warmupUntil = null;
       if (this.draining) {
         // a partida seguinte não começa: o placar já foi mostrado e o resultado enviado
         this.finished = true;
@@ -1617,12 +1622,13 @@ export class Room {
   private pauseStateMessage(): AnyMessage {
     const pause = this.pause!;
     const cause = pause.cause;
+    const warmup = this.warmupUntil !== null && !pause.active;
     const state = {
-      phase: pause.phase,
+      phase: warmup ? ('warmup' as const) : pause.phase,
       reason: cause?.reason ?? 'team',
       team: cause?.team ?? 0,
       by: cause?.by ?? 255, // 255 = ninguém (`pidOrNone`)
-      seconds: pause.seconds(this.uptimeFrames),
+      seconds: warmup ? Math.max(0, Math.ceil((this.warmupUntil! - this.world.frame) / 10)) : pause.seconds(this.uptimeFrames),
       redSeconds: Math.ceil(pause.balance[0] / 10),
       redRequests: PAUSE_REQUESTS - pause.requests[0],
       blueSeconds: Math.ceil(pause.balance[1] / 10),
@@ -2121,6 +2127,7 @@ export class Room {
     this.departed.clear();
     this.away.clear();
     this.lobby!.gameEnded(false, this.world.frame);
+    this.warmupUntil = null;
     this.gameOverUntil = this.world.frame + 1;
     this.broadcast(message('text', { kind: 'warning', from: 255, text: CANCELLED_TEXT }));
     this.sendPauseState();
@@ -2231,7 +2238,9 @@ export class Room {
   private startLobbyGame(map: number): void {
     this.swapRequests.clear();
     this.nextMap('vote', map);
-    this.gameOverUntil = this.world.frame + 1;
+    // warmup (OG-613): todos no mapa, conexão confirmada, o time combina a estratégia; o jogo vale depois
+    this.warmupUntil = this.gameOverUntil = this.world.frame + WARMUP_FRAMES;
+    this.broadcast(message('text', { kind: 'server', from: 255, text: 'Warmup de 30 s: a partida começa quando acabar.' }));
   }
 
   /** Fim de um jogo da série: placar na tela e volta ao lobby (ou fim da série, D-41). */

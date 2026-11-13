@@ -1100,6 +1100,8 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-609](cards/OG-609-marco-a-lenda-em-pessoa-do-jaru.md) | Marco "A lenda em pessoa" ausente em quem tem a própria carta (jaru) | E18 | 2 | Should | S65 | OG-580 | Concluído |
 | [OG-610](cards/OG-610-verificacao-de-email-no-cadastro.md) | Verificação de e-mail no cadastro | E7 | 5 | Must | S66 | — | Concluído |
 | [OG-611](cards/OG-611-protecao-contra-ddos-na-borda.md) | Proteção contra DDoS na frente do beta | E7 | 5 | Should | — | — | Backlog |
+| [OG-612](cards/OG-612-mudar-formato-e-serie-dentro-do-lobby-ranked.md) | Mudar formato e série dentro do lobby Ranked | E5 | 8 | Should | — | — | Em andamento |
+| [OG-613](cards/OG-613-warmup-de-30s-antes-da-partida-ranked.md) | Warmup de 30 s antes de cada partida Ranked | E5 | 5 | Should | — | — | Em revisão |
 
 **Total:** 448 cards, 1415 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 379 cards, 1120 pts (OG-602 cancelado, 3 pts fora da soma; OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
 
