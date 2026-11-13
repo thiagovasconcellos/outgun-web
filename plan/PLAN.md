@@ -1100,7 +1100,7 @@ Como <persona>, quero <ação>, para <benefício>.
 | [OG-609](cards/OG-609-marco-a-lenda-em-pessoa-do-jaru.md) | Marco "A lenda em pessoa" ausente em quem tem a própria carta (jaru) | E18 | 2 | Should | S65 | OG-580 | Concluído |
 | [OG-610](cards/OG-610-verificacao-de-email-no-cadastro.md) | Verificação de e-mail no cadastro | E7 | 5 | Must | S66 | — | Concluído |
 | [OG-611](cards/OG-611-protecao-contra-ddos-na-borda.md) | Proteção contra DDoS na frente do beta | E7 | 5 | Should | — | — | Backlog |
-| [OG-612](cards/OG-612-mudar-formato-e-serie-dentro-do-lobby-ranked.md) | Mudar formato e série dentro do lobby Ranked | E5 | 8 | Should | — | — | Em andamento |
+| [OG-612](cards/OG-612-mudar-formato-e-serie-dentro-do-lobby-ranked.md) | Mudar formato e série dentro do lobby Ranked | E5 | 8 | Should | — | — | Em revisão |
 | [OG-613](cards/OG-613-warmup-de-30s-antes-da-partida-ranked.md) | Warmup de 30 s antes de cada partida Ranked | E5 | 5 | Should | — | — | Em revisão |
 
 **Total:** 448 cards, 1415 pontos — v1: 69 cards, 295 pts (OG-048 quebrado em OG-050 a OG-054, seus 13 pts saem da soma; OG-105 quebrado na S12 em OG-106 a OG-109 e reestimado em 3 pts); v2: 379 cards, 1120 pts (OG-602 cancelado, 3 pts fora da soma; OG-210, OG-216, OG-205 e OG-459 cancelados, 14 pts fora da soma; OG-356 quebrado em OG-362 a OG-364, seus 8 pts saem da soma).
@@ -1324,7 +1324,7 @@ Em 2026-10-14 o port ficou completo (S0–S12) e o beta com veteranos está no a
 | RN-RKL-08 | Jogadores do mesmo clã cadastrado (RN-CLA-01) entram preferencialmente do mesmo lado; sem clã ou empate, vale RN-TIM-01. |
 | RN-RKL-09 | No lobby, o jogador troca de lado se houver vaga; com o outro lado cheio, pede a troca e ela só acontece com o aceite de um jogador de lá. |
 | RN-RKL-10 | Com a sala completa há voto de mapa entre os mapas da rotação do formato. O voto termina quando todos votam ou em 30 s; empate → sorteio entre os empatados; sem votos → sorteio na rotação. |
-| RN-RKL-11 | Depois do voto, todos precisam marcar "Pronto". Com todos prontos começa uma contagem de **5 s** antes de carregar o mapa. |
+| RN-RKL-11 | Depois do voto, todos precisam marcar "Pronto". Com todos prontos começa uma contagem de **5 s** antes de carregar o mapa. Depois dela o mapa carrega e há um **warmup de 30 s** (mundo parado, só chat; fixo, sem pular) antes de cada jogo da série (OG-613). Antes de a série começar, só o anfitrião (quem criou o lobby) troca formato e série; a sala é recriada e todos reconectam (OG-612). |
 | RN-RKL-21 | Quem não marca "Pronto" em 60 s depois do voto sai da sala e a vaga reabre (D-43). |
 | RN-CLA-01 | **Clã** é um cadastro da comunidade: nome (único), tag de 1 a 3 caracteres (única, sem diferença de maiúsculas e acentos), descrição, data de formação, membros e estatísticas. Substitui a clan tag livre (D-47). |
 | RN-CLA-02 | Qualquer conta sem clã pode criar um e vira o **líder**. Cada jogador está em no máximo um clã. |

@@ -7,7 +7,7 @@
 | Prioridade | Should |
 | Estimativa | 8 pts |
 | Sprint | — |
-| Status | Em andamento |
+| Status | Em revisão |
 | Dependências | — |
 | Issue | — (pedido da comunidade, 2026-11-13) |
 | Regras de negócio | RN-RKL-07, RN-RKL-10, RN-RKL-21 |
@@ -37,4 +37,6 @@ Como jogador num lobby Ranked que não enche, quero trocar o formato (2x2, 3x3..
 - [ ] Testes do servidor (`ranked-lobby`/`room`) e do cliente.
 
 ## Notas de implementação
-(preenchido durante a execução)
+- Plano A: o anfitrião (claim `spawn.ownerId`, vindo de `rooms.owner_id`) manda `lobbyConfig` (msg 137); o spawner avisa a API (`POST /internal/rooms/reconfigure` atualiza format/bestOf/maxPlayers), fecha a sala com o código 4020 `reconfigured` e abre outra com o mesmo id. O cliente remonta (`onReconfigured`) e pega ticket novo.
+- Só vale em fase `lobby` com 0 jogos da série (md3/md5 em andamento: travado) e fora da OutCup; recusa se houver mais jogadores que o novo formato. UI: dois seletores no lobby, só para o anfitrião.
+- Pendente: testes (spawner/`room`/API) na verificação da sprint; lados e votos recomeçam na sala nova.

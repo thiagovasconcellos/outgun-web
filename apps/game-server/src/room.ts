@@ -4,7 +4,7 @@
 // entrada chegam nos cards OG-043..047; aqui ficam entrar, sair, aplicar entradas, simular a 10 Hz,
 // mandar a cada jogador só o que ele vê (OG-042, aoi.ts), fim de partida e troca de mapa.
 import { chatName, encodeFrame, message, packNumberStyle, PERSONAL_COLORS, PROTOCOL_VERSION, type AnyMessage, type MessageOf } from '@outgun/protocol';
-import { applyGamemod, formatGamemod, formatPlayers, MAX_SUBSTITUTES, maxSubstitutesPerSide, newSeries, recordSeriesGame, seriesOver, seriesWinner, settingsOf, type GameMode, type GameSettings, type Preset, type RankedRoomFormat, type SeriesScore } from '@outgun/settings';
+import { applyGamemod, formatGamemod, formatPlayers, isRankedFormat, isSeriesBestOf, MAX_SUBSTITUTES, maxSubstitutesPerSide, newSeries, recordSeriesGame, seriesOver, seriesWinner, settingsOf, type GameMode, type GameSettings, type Preset, type RankedRoomFormat, type SeriesScore } from '@outgun/settings';
 import { findPreset } from './presets.js';
 import type { GeneratedMaps, RandomMapParams } from './generated-maps.js';
 import { createHash, randomUUID } from 'node:crypto';
@@ -183,6 +183,10 @@ export interface RoomOptions {
   maxSpectators?: number;
   /** Formato e série da sala Ranked (OG-250); `maxPlayers` tem de ser 2 × N. */
   ranked?: RankedRoomFormat;
+  /** Conta que criou o lobby Ranked (OG-612): só ela troca formato e série. */
+  ownerId?: string;
+  /** Pede ao dono da sala (spawner) para recriá-la com outro formato/série (OG-612); true = aceito. */
+  reconfigure?: (next: RankedRoomFormat) => void;
   /** Sala de treino (OG-490, D-86): só no Casual; tentativas em laço, sem fim de partida. */
   training?: TrainingConfig;
   /** Sala de confronto da OutCup (OG-525): só estas contas entram, cada uma no seu lado. */
@@ -1320,6 +1324,9 @@ export class Room {
         case 'lobbyVote':
           if (this.lobby?.vote(pid, m.map, this.world.frame)) this.lobbyDirty = true;
           break;
+        case 'lobbyConfig':
+          this.lobbyConfig(pid, m.teamSize, m.bestOf);
+          break;
         case 'lobbySide':
           this.lobbySide(pid, m.target);
           break;
@@ -2208,6 +2215,31 @@ export class Room {
     }
   }
 
+  /** Formato e série ainda podem mudar: fase `lobby` e nenhum jogo da série disputado (OG-612). */
+  get reconfigurable(): boolean {
+    return !!this.lobby && !!this.options.reconfigure && !this.options.cup && this.lobby.phase === 'lobby' && (this.series?.score.games ?? 0) === 0;
+  }
+
+  private get hostPid(): number {
+    const owner = this.options.ownerId;
+    if (!owner) return 255;
+    for (const [pid, c] of this.clients) if (!c.bot && c.identity.accountId === owner) return pid;
+    return 255;
+  }
+
+  /** O anfitrião troca formato e série (OG-612): a sala é recriada e todos reconectam. */
+  private lobbyConfig(pid: number, teamSize: number, bestOf: number): void {
+    const warn = (text: string) => this.queueTo(pid, message('text', { kind: 'warning', from: 255, text }));
+    if (pid !== this.hostPid) return warn('Só quem criou o lobby muda o formato e a série.');
+    if (!this.reconfigurable) return warn('Formato e série só mudam no lobby, antes de a série começar.');
+    const format = `${teamSize}x${teamSize}`;
+    if (!isRankedFormat(format) || !isSeriesBestOf(bestOf)) return warn('Formato ou série inválido.');
+    const next = { format, bestOf } as RankedRoomFormat;
+    if (this.options.ranked && next.format === this.options.ranked.format && next.bestOf === this.options.ranked.bestOf) return;
+    if (this.lobby!.members.size > formatPlayers(format)) return warn(`Há jogadores demais no lobby para ${format}.`);
+    this.options.reconfigure!(next);
+  }
+
   private lobbyStateMessage(): AnyMessage {
     const lobby = this.lobby!;
     const score = this.series?.score;
@@ -2222,6 +2254,8 @@ export class Room {
       chosenMap: lobby.chosenMap,
       members: [...lobby.members].map(([pid, m]) => ({ pid, ready: m.ready, vote: m.vote })),
       swaps: [...this.swapRequests].map(([from, to]) => ({ from, to })),
+      host: this.hostPid,
+      configurable: this.reconfigurable,
     });
   }
 
@@ -2632,11 +2666,12 @@ export class Room {
   }
 
   /** Encerra a sala: avisa e fecha todas as conexões (`keepSpectators`: eles seguem no `drainSpectators`). */
-  close(keepSpectators = false): void {
+  close(keepSpectators = false, reconfigured = false): void {
     for (const pid of [...this.clients.keys()]) {
       const c = this.clients.get(pid) as Client;
-      c.conn.send(encodeFrame(message('disconnecting', { reason: 'shutdown', seconds: 0 })));
-      c.conn.close(1001, 'sala encerrada');
+      if (!reconfigured) c.conn.send(encodeFrame(message('disconnecting', { reason: 'shutdown', seconds: 0 })));
+      // OG-612: o cliente reconecta sozinho na sala recriada
+      c.conn.close(reconfigured ? 4020 : 1001, reconfigured ? 'reconfigured' : 'sala encerrada');
       this.leave(pid);
     }
     if (!keepSpectators) this.spectators.close();

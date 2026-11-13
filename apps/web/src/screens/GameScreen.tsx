@@ -104,6 +104,8 @@ export default function GameScreen() {
   /** Opções por cima da partida (OG-339): a sala continua; o Esc volta ao menu. */
   const [optionsTab, setOptionsTab] = useState<OptionsTab | null>(null);
   const [status, setStatus] = useState<GameStatus | null>(null);
+  /** Sobe a cada recriação do lobby Ranked pelo anfitrião (OG-612): refaz a conexão. */
+  const [restart, setRestart] = useState(0);
   // trilha (OG-221, D-37): playlist no Casual e no Ranked (OG-334); até o servidor dizer o modo, silêncio
   const [roomMode, setRoomMode] = useState<'casual' | 'ranked' | null>(null);
   // perda do contexto WebGL (OG-539): aviso por cima do jogo; sem volta no prazo, recarregar
@@ -172,6 +174,7 @@ export default function GameScreen() {
       preferThemeColours: prefs.preferThemeColours,
       client: clientOptions(prefs),
       onStatus: setStatus,
+      onReconfigured: () => setRestart((n) => n + 1),
       onScreen: setScreen,
       onRoomMode: setRoomMode,
       onVideo: setVideo,
@@ -192,7 +195,7 @@ export default function GameScreen() {
     });
     host.current = game;
     return () => game.destroy();
-  }, [map, theme, rooms, room, demo, params, prefs.continuousTextures, prefs.colourTheme, prefs.preferThemeColours]);
+  }, [map, theme, rooms, room, demo, params, prefs.continuousTextures, prefs.colourTheme, prefs.preferThemeColours, restart]);
 
   // OG-232: na partida online, fechar a aba (Ctrl/Cmd+W ou Q sem querer) pede confirmação, e a dica do
   // modo foco aparece uma vez por navegador

@@ -98,7 +98,7 @@ Canal `frame`: estado do frame, pode ser descartado se chegar um mais novo; `eve
 | 123 | [`lobbySide`](#lobbyside) | cliente → servidor | event | — (web, OG-253) | Troca de lado no lobby: sem alvo, vai para a vaga livre do outro lado; com alvo, pede para trocar com ele. |
 | 124 | [`lobbySwapAnswer`](#lobbyswapanswer) | cliente → servidor | event | — (web, OG-253) | Resposta a um pedido de troca de lado. |
 | 125 | [`playerClan`](#playerclan) | servidor → cliente | event | — (web, OG-206) | Tag do clã cadastrado de um jogador, já decorada pelo estilo do clã: "(Dk)", "Dk." (OG-338). Logo depois do `playerJoined`; sem clã, não vem. |
-| 126 | [`pauseState`](#pausestate) | servidor → cliente | event | — (web, OG-260) | Pausa do jogo Ranked: fase (sem pausa, pausado ou contagem de retomada), motivo (pedido do time, queda ou voto do bot substituto), time e quem pediu/caiu/saiu, segundos restantes (saldo do time, prazo de reconexão, voto ou contagem), o saldo de pausa de cada time e, no voto, os votos de cada opção. |
+| 126 | [`pauseState`](#pausestate) | servidor → cliente | event | — (web, OG-260) | Pausa do jogo Ranked: fase (sem pausa, pausado, contagem de retomada ou warmup de 30 s antes do jogo, OG-613), motivo (pedido do time, queda ou voto do bot substituto), time e quem pediu/caiu/saiu, segundos restantes (saldo do time, prazo de reconexão, voto ou contagem), o saldo de pausa de cada time e, no voto, os votos de cada opção. |
 | 127 | [`pauseRequest`](#pauserequest) | cliente → servidor | event | — (web, OG-260) | Pede a pausa tática do time (on) ou a retomada (off); só no Ranked. |
 | 128 | [`substituteVote`](#substitutevote) | cliente → servidor | event | — (web, OG-262) | Voto do time desfalcado: bot no lugar (bot) ou seguir com um a menos. |
 | 129 | [`casualBots`](#casualbots) | cliente → servidor | event | — (web, OG-289) | Dono da sala privada ou admin: quantidade de bots e nível (1–5; 0 = variável) para a próxima partida; com `restart`, reinicia já. |
@@ -108,6 +108,7 @@ Canal `frame`: estado do frame, pode ser descartado se chegar um mais novo; `eve
 | 134 | [`trainingState`](#trainingstate) | servidor → cliente | event | — (web, OG-490) | Tentativa da sala de treino: fase (contagem, em jogo ou resultado), modo, segundos da contagem, resultado e motivo do fim, duração da tentativa (décimos de s), sucessos e tentativas da sessão, nível dos bots e se ele mudou (dificuldade progressiva, OG-499). |
 | 136 | [`trainingAim`](#trainingaim) | servidor → cliente | event | — (web, OG-568) | Treino de mira (D-93): tiros e acertos de quem treina na tentativa, décimos de segundo que faltam e o lado da gaiola (0 esquerda, 1 direita). Vem quando muda (no máximo uma vez por segundo, fora tiro e acerto) e no resultado. |
 | 132 | [`playerNumber`](#playernumber) | servidor → cliente | event | — (web, OG-410) | Número do jogador (1 a 99), no centro do boneco, e o estilo dele (OG-413: 0 Bloco, 1 Corrida, 2 Contorno, 3 Estêncil; nos bits 4–5, a medalha do pódio do mês anterior, OG-532: `packNumberStyle`). Logo depois do `playerJoined`; sem número (convidado, bot), não vem. |
+| 137 | [`lobbyConfig`](#lobbyconfig) | cliente → servidor | event | — (web, OG-612) | Anfitrião troca o formato e a série do lobby Ranked (só na fase `lobby`, antes de a série começar). A sala é recriada e todos reconectam. |
 | 135 | [`roomSound`](#roomsound) | servidor → cliente | event | — (web, OG-535) | Só no replay e no espectador: o `sound` que o servidor mandou a quem estava na sala (`screenSample`), com a sala de origem; toca só para quem está vendo essa sala. |
 
 ## Campos
@@ -731,6 +732,8 @@ Código 120. Estado do lobby da sala Ranked: fase, série, prazo, voto/"Pronto" 
 - `chosenMap`: i16
 - `members`: lista (até 32) de membro do lobby
 - `swaps`: lista (até 32) de pedido de troca de lado
+- `host`: pid (u8, 255 = nenhum)
+- `configurable`: bool (u8 0/1)
 
 ### lobbyReady
 
@@ -766,9 +769,9 @@ Código 125. Tag do clã cadastrado de um jogador, já decorada pelo estilo do c
 
 ### pauseState
 
-Código 126. Pausa do jogo Ranked: fase (sem pausa, pausado ou contagem de retomada), motivo (pedido do time, queda ou voto do bot substituto), time e quem pediu/caiu/saiu, segundos restantes (saldo do time, prazo de reconexão, voto ou contagem), o saldo de pausa de cada time e, no voto, os votos de cada opção.
+Código 126. Pausa do jogo Ranked: fase (sem pausa, pausado, contagem de retomada ou warmup de 30 s antes do jogo, OG-613), motivo (pedido do time, queda ou voto do bot substituto), time e quem pediu/caiu/saiu, segundos restantes (saldo do time, prazo de reconexão, voto ou contagem), o saldo de pausa de cada time e, no voto, os votos de cada opção.
 
-- `phase`: u8 enum: 0 = none, 1 = paused, 2 = resuming
+- `phase`: u8 enum: 0 = none, 1 = paused, 2 = resuming, 3 = warmup
 - `reason`: u8 enum: 0 = team, 1 = drop, 2 = vote
 - `team`: u8
 - `by`: pid (u8, 255 = nenhum)
@@ -860,6 +863,13 @@ Código 132. Número do jogador (1 a 99), no centro do boneco, e o estilo dele (
 - `pid`: pid (u8, 0..31)
 - `number`: u8
 - `style`: u8
+
+### lobbyConfig
+
+Código 137. Anfitrião troca o formato e a série do lobby Ranked (só na fase `lobby`, antes de a série começar). A sala é recriada e todos reconectam.
+
+- `teamSize`: u8
+- `bestOf`: u8
 
 ### roomSound
 
